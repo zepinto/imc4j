@@ -1,0 +1,1446 @@
+package pt.lsts.imc.msg;
+
+public class MessageFactory {
+	public static final int ID_EntityState = 1;
+
+	public static final int ID_QueryEntityState = 2;
+
+	public static final int ID_EntityInfo = 3;
+
+	public static final int ID_QueryEntityInfo = 4;
+
+	public static final int ID_EntityList = 5;
+
+	public static final int ID_CpuUsage = 7;
+
+	public static final int ID_TransportBindings = 8;
+
+	public static final int ID_RestartSystem = 9;
+
+	public static final int ID_DevCalibrationControl = 12;
+
+	public static final int ID_DevCalibrationState = 13;
+
+	public static final int ID_EntityActivationState = 14;
+
+	public static final int ID_QueryEntityActivationState = 15;
+
+	public static final int ID_VehicleOperationalLimits = 16;
+
+	public static final int ID_MsgList = 20;
+
+	public static final int ID_SimulatedState = 50;
+
+	public static final int ID_LeakSimulation = 51;
+
+	public static final int ID_UASimulation = 52;
+
+	public static final int ID_DynamicsSimParam = 53;
+
+	public static final int ID_StorageUsage = 100;
+
+	public static final int ID_CacheControl = 101;
+
+	public static final int ID_LoggingControl = 102;
+
+	public static final int ID_LogBookEntry = 103;
+
+	public static final int ID_LogBookControl = 104;
+
+	public static final int ID_ReplayControl = 105;
+
+	public static final int ID_ClockControl = 106;
+
+	public static final int ID_HistoricCTD = 107;
+
+	public static final int ID_HistoricTelemetry = 108;
+
+	public static final int ID_HistoricSonarData = 109;
+
+	public static final int ID_HistoricEvent = 110;
+
+	public static final int ID_Heartbeat = 150;
+
+	public static final int ID_Announce = 151;
+
+	public static final int ID_AnnounceService = 152;
+
+	public static final int ID_RSSI = 153;
+
+	public static final int ID_VSWR = 154;
+
+	public static final int ID_LinkLevel = 155;
+
+	public static final int ID_Sms = 156;
+
+	public static final int ID_SmsTx = 157;
+
+	public static final int ID_SmsRx = 158;
+
+	public static final int ID_SmsState = 159;
+
+	public static final int ID_TextMessage = 160;
+
+	public static final int ID_IridiumMsgRx = 170;
+
+	public static final int ID_IridiumMsgTx = 171;
+
+	public static final int ID_IridiumTxStatus = 172;
+
+	public static final int ID_GroupMembershipState = 180;
+
+	public static final int ID_SystemGroup = 181;
+
+	public static final int ID_LinkLatency = 182;
+
+	public static final int ID_ExtendedRSSI = 183;
+
+	public static final int ID_HistoricData = 184;
+
+	public static final int ID_CompressedHistory = 185;
+
+	public static final int ID_HistoricSample = 186;
+
+	public static final int ID_HistoricDataQuery = 187;
+
+	public static final int ID_RemoteCommand = 188;
+
+	public static final int ID_LblRange = 200;
+
+	public static final int ID_LblBeacon = 202;
+
+	public static final int ID_LblConfig = 203;
+
+	public static final int ID_AcousticMessage = 206;
+
+	public static final int ID_AcousticOperation = 211;
+
+	public static final int ID_AcousticSystemsQuery = 212;
+
+	public static final int ID_AcousticSystems = 213;
+
+	public static final int ID_AcousticLink = 214;
+
+	public static final int ID_Rpm = 250;
+
+	public static final int ID_Voltage = 251;
+
+	public static final int ID_Current = 252;
+
+	public static final int ID_GpsFix = 253;
+
+	public static final int ID_EulerAngles = 254;
+
+	public static final int ID_EulerAnglesDelta = 255;
+
+	public static final int ID_AngularVelocity = 256;
+
+	public static final int ID_Acceleration = 257;
+
+	public static final int ID_MagneticField = 258;
+
+	public static final int ID_GroundVelocity = 259;
+
+	public static final int ID_WaterVelocity = 260;
+
+	public static final int ID_VelocityDelta = 261;
+
+	public static final int ID_Distance = 262;
+
+	public static final int ID_Temperature = 263;
+
+	public static final int ID_Pressure = 264;
+
+	public static final int ID_Depth = 265;
+
+	public static final int ID_DepthOffset = 266;
+
+	public static final int ID_SoundSpeed = 267;
+
+	public static final int ID_WaterDensity = 268;
+
+	public static final int ID_Conductivity = 269;
+
+	public static final int ID_Salinity = 270;
+
+	public static final int ID_WindSpeed = 271;
+
+	public static final int ID_RelativeHumidity = 272;
+
+	public static final int ID_DevDataText = 273;
+
+	public static final int ID_DevDataBinary = 274;
+
+	public static final int ID_SonarData = 276;
+
+	public static final int ID_Pulse = 277;
+
+	public static final int ID_PulseDetectionControl = 278;
+
+	public static final int ID_FuelLevel = 279;
+
+	public static final int ID_GpsNavData = 280;
+
+	public static final int ID_ServoPosition = 281;
+
+	public static final int ID_DeviceState = 282;
+
+	public static final int ID_BeamConfig = 283;
+
+	public static final int ID_DataSanity = 284;
+
+	public static final int ID_RhodamineDye = 285;
+
+	public static final int ID_CrudeOil = 286;
+
+	public static final int ID_FineOil = 287;
+
+	public static final int ID_Turbidity = 288;
+
+	public static final int ID_Chlorophyll = 289;
+
+	public static final int ID_Fluorescein = 290;
+
+	public static final int ID_Phycocyanin = 291;
+
+	public static final int ID_Phycoerythrin = 292;
+
+	public static final int ID_GpsFixRtk = 293;
+
+	public static final int ID_ExternalNavData = 294;
+
+	public static final int ID_DissolvedOxygen = 295;
+
+	public static final int ID_AirSaturation = 296;
+
+	public static final int ID_Throttle = 297;
+
+	public static final int ID_PH = 298;
+
+	public static final int ID_Redox = 299;
+
+	public static final int ID_CameraZoom = 300;
+
+	public static final int ID_SetThrusterActuation = 301;
+
+	public static final int ID_SetServoPosition = 302;
+
+	public static final int ID_SetControlSurfaceDeflection = 303;
+
+	public static final int ID_RemoteActionsRequest = 304;
+
+	public static final int ID_RemoteActions = 305;
+
+	public static final int ID_ButtonEvent = 306;
+
+	public static final int ID_LcdControl = 307;
+
+	public static final int ID_PowerOperation = 308;
+
+	public static final int ID_PowerChannelControl = 309;
+
+	public static final int ID_QueryPowerChannelState = 310;
+
+	public static final int ID_PowerChannelState = 311;
+
+	public static final int ID_LedBrightness = 312;
+
+	public static final int ID_QueryLedBrightness = 313;
+
+	public static final int ID_SetLedBrightness = 314;
+
+	public static final int ID_SetPWM = 315;
+
+	public static final int ID_PWM = 316;
+
+	public static final int ID_EstimatedState = 350;
+
+	public static final int ID_EstimatedStreamVelocity = 351;
+
+	public static final int ID_IndicatedSpeed = 352;
+
+	public static final int ID_TrueSpeed = 353;
+
+	public static final int ID_NavigationUncertainty = 354;
+
+	public static final int ID_NavigationData = 355;
+
+	public static final int ID_GpsFixRejection = 356;
+
+	public static final int ID_LblRangeAcceptance = 357;
+
+	public static final int ID_DvlRejection = 358;
+
+	public static final int ID_LblEstimate = 360;
+
+	public static final int ID_AlignmentState = 361;
+
+	public static final int ID_GroupStreamVelocity = 362;
+
+	public static final int ID_Airflow = 363;
+
+	public static final int ID_DesiredHeading = 400;
+
+	public static final int ID_DesiredZ = 401;
+
+	public static final int ID_DesiredSpeed = 402;
+
+	public static final int ID_DesiredRoll = 403;
+
+	public static final int ID_DesiredPitch = 404;
+
+	public static final int ID_DesiredVerticalRate = 405;
+
+	public static final int ID_DesiredPath = 406;
+
+	public static final int ID_DesiredControl = 407;
+
+	public static final int ID_DesiredHeadingRate = 408;
+
+	public static final int ID_DesiredVelocity = 409;
+
+	public static final int ID_PathControlState = 410;
+
+	public static final int ID_AllocatedControlTorques = 411;
+
+	public static final int ID_ControlParcel = 412;
+
+	public static final int ID_Brake = 413;
+
+	public static final int ID_DesiredLinearState = 414;
+
+	public static final int ID_DesiredThrottle = 415;
+
+	public static final int ID_Goto = 450;
+
+	public static final int ID_PopUp = 451;
+
+	public static final int ID_Teleoperation = 452;
+
+	public static final int ID_Loiter = 453;
+
+	public static final int ID_IdleManeuver = 454;
+
+	public static final int ID_LowLevelControl = 455;
+
+	public static final int ID_Rows = 456;
+
+	public static final int ID_FollowPath = 457;
+
+	public static final int ID_PathPoint = 458;
+
+	public static final int ID_YoYo = 459;
+
+	public static final int ID_TeleoperationDone = 460;
+
+	public static final int ID_StationKeeping = 461;
+
+	public static final int ID_Elevator = 462;
+
+	public static final int ID_FollowTrajectory = 463;
+
+	public static final int ID_TrajectoryPoint = 464;
+
+	public static final int ID_CustomManeuver = 465;
+
+	public static final int ID_VehicleFormation = 466;
+
+	public static final int ID_VehicleFormationParticipant = 467;
+
+	public static final int ID_StopManeuver = 468;
+
+	public static final int ID_RegisterManeuver = 469;
+
+	public static final int ID_ManeuverControlState = 470;
+
+	public static final int ID_FollowSystem = 471;
+
+	public static final int ID_CommsRelay = 472;
+
+	public static final int ID_CoverArea = 473;
+
+	public static final int ID_PolygonVertex = 474;
+
+	public static final int ID_CompassCalibration = 475;
+
+	public static final int ID_FormationParameters = 476;
+
+	public static final int ID_FormationPlanExecution = 477;
+
+	public static final int ID_FollowReference = 478;
+
+	public static final int ID_Reference = 479;
+
+	public static final int ID_FollowRefState = 480;
+
+	public static final int ID_FormationMonitor = 481;
+
+	public static final int ID_RelativeState = 482;
+
+	public static final int ID_Dislodge = 483;
+
+	public static final int ID_Formation = 484;
+
+	public static final int ID_Launch = 485;
+
+	public static final int ID_Drop = 486;
+
+	public static final int ID_ScheduledGoto = 487;
+
+	public static final int ID_RowsCoverage = 488;
+
+	public static final int ID_Sample = 489;
+
+	public static final int ID_ImageTracking = 490;
+
+	public static final int ID_Takeoff = 491;
+
+	public static final int ID_Land = 492;
+
+	public static final int ID_AutonomousSection = 493;
+
+	public static final int ID_FollowPoint = 494;
+
+	public static final int ID_VehicleState = 500;
+
+	public static final int ID_VehicleCommand = 501;
+
+	public static final int ID_MonitorEntityState = 502;
+
+	public static final int ID_EntityMonitoringState = 503;
+
+	public static final int ID_OperationalLimits = 504;
+
+	public static final int ID_GetOperationalLimits = 505;
+
+	public static final int ID_Calibration = 506;
+
+	public static final int ID_ControlLoops = 507;
+
+	public static final int ID_VehicleMedium = 508;
+
+	public static final int ID_Collision = 509;
+
+	public static final int ID_FormState = 510;
+
+	public static final int ID_AutopilotMode = 511;
+
+	public static final int ID_FormationState = 512;
+
+	public static final int ID_ReportControl = 513;
+
+	public static final int ID_Abort = 550;
+
+	public static final int ID_PlanSpecification = 551;
+
+	public static final int ID_PlanManeuver = 552;
+
+	public static final int ID_PlanTransition = 553;
+
+	public static final int ID_EmergencyControl = 554;
+
+	public static final int ID_EmergencyControlState = 555;
+
+	public static final int ID_PlanDB = 556;
+
+	public static final int ID_PlanDBState = 557;
+
+	public static final int ID_PlanDBInformation = 558;
+
+	public static final int ID_PlanControl = 559;
+
+	public static final int ID_PlanControlState = 560;
+
+	public static final int ID_PlanVariable = 561;
+
+	public static final int ID_PlanGeneration = 562;
+
+	public static final int ID_LeaderState = 563;
+
+	public static final int ID_PlanStatistics = 564;
+
+	public static final int ID_ReportedState = 600;
+
+	public static final int ID_RemoteSensorInfo = 601;
+
+	public static final int ID_Map = 602;
+
+	public static final int ID_MapFeature = 603;
+
+	public static final int ID_MapPoint = 604;
+
+	public static final int ID_CcuEvent = 606;
+
+	public static final int ID_VehicleLinks = 650;
+
+	public static final int ID_TrexObservation = 651;
+
+	public static final int ID_TrexCommand = 652;
+
+	public static final int ID_TrexOperation = 655;
+
+	public static final int ID_TrexAttribute = 656;
+
+	public static final int ID_TrexToken = 657;
+
+	public static final int ID_TrexPlan = 658;
+
+	public static final int ID_Event = 660;
+
+	public static final int ID_CompressedImage = 702;
+
+	public static final int ID_ImageTxSettings = 703;
+
+	public static final int ID_RemoteState = 750;
+
+	public static final int ID_Target = 800;
+
+	public static final int ID_EntityParameter = 801;
+
+	public static final int ID_EntityParameters = 802;
+
+	public static final int ID_QueryEntityParameters = 803;
+
+	public static final int ID_SetEntityParameters = 804;
+
+	public static final int ID_SaveEntityParameters = 805;
+
+	public static final int ID_CreateSession = 806;
+
+	public static final int ID_CloseSession = 807;
+
+	public static final int ID_SessionSubscription = 808;
+
+	public static final int ID_SessionKeepAlive = 809;
+
+	public static final int ID_SessionStatus = 810;
+
+	public static final int ID_PushEntityParameters = 811;
+
+	public static final int ID_PopEntityParameters = 812;
+
+	public static final int ID_IoEvent = 813;
+
+	public static final int ID_UamTxFrame = 814;
+
+	public static final int ID_UamRxFrame = 815;
+
+	public static final int ID_UamTxStatus = 816;
+
+	public static final int ID_UamRxRange = 817;
+
+	public static final int ID_FormCtrlParam = 820;
+
+	public static final int ID_FormationEval = 821;
+
+	public static final int ID_FormationControlParams = 822;
+
+	public static final int ID_FormationEvaluation = 823;
+
+	public static final int ID_MessagePart = 877;
+
+	public static final int ID_NeptusBlob = 888;
+
+	public static final int ID_Aborted = 889;
+
+	public static final int ID_UsblAngles = 890;
+
+	public static final int ID_UsblPosition = 891;
+
+	public static final int ID_UsblFix = 892;
+
+	public static final int ID_ParametersXml = 893;
+
+	public static final int ID_GetParametersXml = 894;
+
+	public static final int ID_SetImageCoords = 895;
+
+	public static final int ID_GetImageCoords = 896;
+
+	public static final int ID_GetWorldCoordinates = 897;
+
+	public static final int ID_UsblAnglesExtended = 898;
+
+	public static final int ID_UsblPositionExtended = 899;
+
+	public static final int ID_UsblFixExtended = 900;
+
+	public static final int ID_UsblModem = 901;
+
+	public static final int ID_UsblConfig = 902;
+
+	public static final int ID_DissolvedOrganicMatter = 903;
+
+	public static final int ID_OpticalBackscatter = 904;
+
+	public static final int ID_Tachograph = 905;
+
+	public static Message create(int mgid) {
+		switch(mgid) {
+			case ID_EntityState: {
+				return new EntityState();
+			}
+			case ID_QueryEntityState: {
+				return new QueryEntityState();
+			}
+			case ID_EntityInfo: {
+				return new EntityInfo();
+			}
+			case ID_QueryEntityInfo: {
+				return new QueryEntityInfo();
+			}
+			case ID_EntityList: {
+				return new EntityList();
+			}
+			case ID_CpuUsage: {
+				return new CpuUsage();
+			}
+			case ID_TransportBindings: {
+				return new TransportBindings();
+			}
+			case ID_RestartSystem: {
+				return new RestartSystem();
+			}
+			case ID_DevCalibrationControl: {
+				return new DevCalibrationControl();
+			}
+			case ID_DevCalibrationState: {
+				return new DevCalibrationState();
+			}
+			case ID_EntityActivationState: {
+				return new EntityActivationState();
+			}
+			case ID_QueryEntityActivationState: {
+				return new QueryEntityActivationState();
+			}
+			case ID_VehicleOperationalLimits: {
+				return new VehicleOperationalLimits();
+			}
+			case ID_MsgList: {
+				return new MsgList();
+			}
+			case ID_SimulatedState: {
+				return new SimulatedState();
+			}
+			case ID_LeakSimulation: {
+				return new LeakSimulation();
+			}
+			case ID_UASimulation: {
+				return new UASimulation();
+			}
+			case ID_DynamicsSimParam: {
+				return new DynamicsSimParam();
+			}
+			case ID_StorageUsage: {
+				return new StorageUsage();
+			}
+			case ID_CacheControl: {
+				return new CacheControl();
+			}
+			case ID_LoggingControl: {
+				return new LoggingControl();
+			}
+			case ID_LogBookEntry: {
+				return new LogBookEntry();
+			}
+			case ID_LogBookControl: {
+				return new LogBookControl();
+			}
+			case ID_ReplayControl: {
+				return new ReplayControl();
+			}
+			case ID_ClockControl: {
+				return new ClockControl();
+			}
+			case ID_HistoricCTD: {
+				return new HistoricCTD();
+			}
+			case ID_HistoricTelemetry: {
+				return new HistoricTelemetry();
+			}
+			case ID_HistoricSonarData: {
+				return new HistoricSonarData();
+			}
+			case ID_HistoricEvent: {
+				return new HistoricEvent();
+			}
+			case ID_Heartbeat: {
+				return new Heartbeat();
+			}
+			case ID_Announce: {
+				return new Announce();
+			}
+			case ID_AnnounceService: {
+				return new AnnounceService();
+			}
+			case ID_RSSI: {
+				return new RSSI();
+			}
+			case ID_VSWR: {
+				return new VSWR();
+			}
+			case ID_LinkLevel: {
+				return new LinkLevel();
+			}
+			case ID_Sms: {
+				return new Sms();
+			}
+			case ID_SmsTx: {
+				return new SmsTx();
+			}
+			case ID_SmsRx: {
+				return new SmsRx();
+			}
+			case ID_SmsState: {
+				return new SmsState();
+			}
+			case ID_TextMessage: {
+				return new TextMessage();
+			}
+			case ID_IridiumMsgRx: {
+				return new IridiumMsgRx();
+			}
+			case ID_IridiumMsgTx: {
+				return new IridiumMsgTx();
+			}
+			case ID_IridiumTxStatus: {
+				return new IridiumTxStatus();
+			}
+			case ID_GroupMembershipState: {
+				return new GroupMembershipState();
+			}
+			case ID_SystemGroup: {
+				return new SystemGroup();
+			}
+			case ID_LinkLatency: {
+				return new LinkLatency();
+			}
+			case ID_ExtendedRSSI: {
+				return new ExtendedRSSI();
+			}
+			case ID_HistoricData: {
+				return new HistoricData();
+			}
+			case ID_CompressedHistory: {
+				return new CompressedHistory();
+			}
+			case ID_HistoricSample: {
+				return new HistoricSample();
+			}
+			case ID_HistoricDataQuery: {
+				return new HistoricDataQuery();
+			}
+			case ID_RemoteCommand: {
+				return new RemoteCommand();
+			}
+			case ID_LblRange: {
+				return new LblRange();
+			}
+			case ID_LblBeacon: {
+				return new LblBeacon();
+			}
+			case ID_LblConfig: {
+				return new LblConfig();
+			}
+			case ID_AcousticMessage: {
+				return new AcousticMessage();
+			}
+			case ID_AcousticOperation: {
+				return new AcousticOperation();
+			}
+			case ID_AcousticSystemsQuery: {
+				return new AcousticSystemsQuery();
+			}
+			case ID_AcousticSystems: {
+				return new AcousticSystems();
+			}
+			case ID_AcousticLink: {
+				return new AcousticLink();
+			}
+			case ID_Rpm: {
+				return new Rpm();
+			}
+			case ID_Voltage: {
+				return new Voltage();
+			}
+			case ID_Current: {
+				return new Current();
+			}
+			case ID_GpsFix: {
+				return new GpsFix();
+			}
+			case ID_EulerAngles: {
+				return new EulerAngles();
+			}
+			case ID_EulerAnglesDelta: {
+				return new EulerAnglesDelta();
+			}
+			case ID_AngularVelocity: {
+				return new AngularVelocity();
+			}
+			case ID_Acceleration: {
+				return new Acceleration();
+			}
+			case ID_MagneticField: {
+				return new MagneticField();
+			}
+			case ID_GroundVelocity: {
+				return new GroundVelocity();
+			}
+			case ID_WaterVelocity: {
+				return new WaterVelocity();
+			}
+			case ID_VelocityDelta: {
+				return new VelocityDelta();
+			}
+			case ID_Distance: {
+				return new Distance();
+			}
+			case ID_Temperature: {
+				return new Temperature();
+			}
+			case ID_Pressure: {
+				return new Pressure();
+			}
+			case ID_Depth: {
+				return new Depth();
+			}
+			case ID_DepthOffset: {
+				return new DepthOffset();
+			}
+			case ID_SoundSpeed: {
+				return new SoundSpeed();
+			}
+			case ID_WaterDensity: {
+				return new WaterDensity();
+			}
+			case ID_Conductivity: {
+				return new Conductivity();
+			}
+			case ID_Salinity: {
+				return new Salinity();
+			}
+			case ID_WindSpeed: {
+				return new WindSpeed();
+			}
+			case ID_RelativeHumidity: {
+				return new RelativeHumidity();
+			}
+			case ID_DevDataText: {
+				return new DevDataText();
+			}
+			case ID_DevDataBinary: {
+				return new DevDataBinary();
+			}
+			case ID_SonarData: {
+				return new SonarData();
+			}
+			case ID_Pulse: {
+				return new Pulse();
+			}
+			case ID_PulseDetectionControl: {
+				return new PulseDetectionControl();
+			}
+			case ID_FuelLevel: {
+				return new FuelLevel();
+			}
+			case ID_GpsNavData: {
+				return new GpsNavData();
+			}
+			case ID_ServoPosition: {
+				return new ServoPosition();
+			}
+			case ID_DeviceState: {
+				return new DeviceState();
+			}
+			case ID_BeamConfig: {
+				return new BeamConfig();
+			}
+			case ID_DataSanity: {
+				return new DataSanity();
+			}
+			case ID_RhodamineDye: {
+				return new RhodamineDye();
+			}
+			case ID_CrudeOil: {
+				return new CrudeOil();
+			}
+			case ID_FineOil: {
+				return new FineOil();
+			}
+			case ID_Turbidity: {
+				return new Turbidity();
+			}
+			case ID_Chlorophyll: {
+				return new Chlorophyll();
+			}
+			case ID_Fluorescein: {
+				return new Fluorescein();
+			}
+			case ID_Phycocyanin: {
+				return new Phycocyanin();
+			}
+			case ID_Phycoerythrin: {
+				return new Phycoerythrin();
+			}
+			case ID_GpsFixRtk: {
+				return new GpsFixRtk();
+			}
+			case ID_ExternalNavData: {
+				return new ExternalNavData();
+			}
+			case ID_DissolvedOxygen: {
+				return new DissolvedOxygen();
+			}
+			case ID_AirSaturation: {
+				return new AirSaturation();
+			}
+			case ID_Throttle: {
+				return new Throttle();
+			}
+			case ID_PH: {
+				return new PH();
+			}
+			case ID_Redox: {
+				return new Redox();
+			}
+			case ID_CameraZoom: {
+				return new CameraZoom();
+			}
+			case ID_SetThrusterActuation: {
+				return new SetThrusterActuation();
+			}
+			case ID_SetServoPosition: {
+				return new SetServoPosition();
+			}
+			case ID_SetControlSurfaceDeflection: {
+				return new SetControlSurfaceDeflection();
+			}
+			case ID_RemoteActionsRequest: {
+				return new RemoteActionsRequest();
+			}
+			case ID_RemoteActions: {
+				return new RemoteActions();
+			}
+			case ID_ButtonEvent: {
+				return new ButtonEvent();
+			}
+			case ID_LcdControl: {
+				return new LcdControl();
+			}
+			case ID_PowerOperation: {
+				return new PowerOperation();
+			}
+			case ID_PowerChannelControl: {
+				return new PowerChannelControl();
+			}
+			case ID_QueryPowerChannelState: {
+				return new QueryPowerChannelState();
+			}
+			case ID_PowerChannelState: {
+				return new PowerChannelState();
+			}
+			case ID_LedBrightness: {
+				return new LedBrightness();
+			}
+			case ID_QueryLedBrightness: {
+				return new QueryLedBrightness();
+			}
+			case ID_SetLedBrightness: {
+				return new SetLedBrightness();
+			}
+			case ID_SetPWM: {
+				return new SetPWM();
+			}
+			case ID_PWM: {
+				return new PWM();
+			}
+			case ID_EstimatedState: {
+				return new EstimatedState();
+			}
+			case ID_EstimatedStreamVelocity: {
+				return new EstimatedStreamVelocity();
+			}
+			case ID_IndicatedSpeed: {
+				return new IndicatedSpeed();
+			}
+			case ID_TrueSpeed: {
+				return new TrueSpeed();
+			}
+			case ID_NavigationUncertainty: {
+				return new NavigationUncertainty();
+			}
+			case ID_NavigationData: {
+				return new NavigationData();
+			}
+			case ID_GpsFixRejection: {
+				return new GpsFixRejection();
+			}
+			case ID_LblRangeAcceptance: {
+				return new LblRangeAcceptance();
+			}
+			case ID_DvlRejection: {
+				return new DvlRejection();
+			}
+			case ID_LblEstimate: {
+				return new LblEstimate();
+			}
+			case ID_AlignmentState: {
+				return new AlignmentState();
+			}
+			case ID_GroupStreamVelocity: {
+				return new GroupStreamVelocity();
+			}
+			case ID_Airflow: {
+				return new Airflow();
+			}
+			case ID_DesiredHeading: {
+				return new DesiredHeading();
+			}
+			case ID_DesiredZ: {
+				return new DesiredZ();
+			}
+			case ID_DesiredSpeed: {
+				return new DesiredSpeed();
+			}
+			case ID_DesiredRoll: {
+				return new DesiredRoll();
+			}
+			case ID_DesiredPitch: {
+				return new DesiredPitch();
+			}
+			case ID_DesiredVerticalRate: {
+				return new DesiredVerticalRate();
+			}
+			case ID_DesiredPath: {
+				return new DesiredPath();
+			}
+			case ID_DesiredControl: {
+				return new DesiredControl();
+			}
+			case ID_DesiredHeadingRate: {
+				return new DesiredHeadingRate();
+			}
+			case ID_DesiredVelocity: {
+				return new DesiredVelocity();
+			}
+			case ID_PathControlState: {
+				return new PathControlState();
+			}
+			case ID_AllocatedControlTorques: {
+				return new AllocatedControlTorques();
+			}
+			case ID_ControlParcel: {
+				return new ControlParcel();
+			}
+			case ID_Brake: {
+				return new Brake();
+			}
+			case ID_DesiredLinearState: {
+				return new DesiredLinearState();
+			}
+			case ID_DesiredThrottle: {
+				return new DesiredThrottle();
+			}
+			case ID_Goto: {
+				return new Goto();
+			}
+			case ID_PopUp: {
+				return new PopUp();
+			}
+			case ID_Teleoperation: {
+				return new Teleoperation();
+			}
+			case ID_Loiter: {
+				return new Loiter();
+			}
+			case ID_IdleManeuver: {
+				return new IdleManeuver();
+			}
+			case ID_LowLevelControl: {
+				return new LowLevelControl();
+			}
+			case ID_Rows: {
+				return new Rows();
+			}
+			case ID_FollowPath: {
+				return new FollowPath();
+			}
+			case ID_PathPoint: {
+				return new PathPoint();
+			}
+			case ID_YoYo: {
+				return new YoYo();
+			}
+			case ID_TeleoperationDone: {
+				return new TeleoperationDone();
+			}
+			case ID_StationKeeping: {
+				return new StationKeeping();
+			}
+			case ID_Elevator: {
+				return new Elevator();
+			}
+			case ID_FollowTrajectory: {
+				return new FollowTrajectory();
+			}
+			case ID_TrajectoryPoint: {
+				return new TrajectoryPoint();
+			}
+			case ID_CustomManeuver: {
+				return new CustomManeuver();
+			}
+			case ID_VehicleFormation: {
+				return new VehicleFormation();
+			}
+			case ID_VehicleFormationParticipant: {
+				return new VehicleFormationParticipant();
+			}
+			case ID_StopManeuver: {
+				return new StopManeuver();
+			}
+			case ID_RegisterManeuver: {
+				return new RegisterManeuver();
+			}
+			case ID_ManeuverControlState: {
+				return new ManeuverControlState();
+			}
+			case ID_FollowSystem: {
+				return new FollowSystem();
+			}
+			case ID_CommsRelay: {
+				return new CommsRelay();
+			}
+			case ID_CoverArea: {
+				return new CoverArea();
+			}
+			case ID_PolygonVertex: {
+				return new PolygonVertex();
+			}
+			case ID_CompassCalibration: {
+				return new CompassCalibration();
+			}
+			case ID_FormationParameters: {
+				return new FormationParameters();
+			}
+			case ID_FormationPlanExecution: {
+				return new FormationPlanExecution();
+			}
+			case ID_FollowReference: {
+				return new FollowReference();
+			}
+			case ID_Reference: {
+				return new Reference();
+			}
+			case ID_FollowRefState: {
+				return new FollowRefState();
+			}
+			case ID_FormationMonitor: {
+				return new FormationMonitor();
+			}
+			case ID_RelativeState: {
+				return new RelativeState();
+			}
+			case ID_Dislodge: {
+				return new Dislodge();
+			}
+			case ID_Formation: {
+				return new Formation();
+			}
+			case ID_Launch: {
+				return new Launch();
+			}
+			case ID_Drop: {
+				return new Drop();
+			}
+			case ID_ScheduledGoto: {
+				return new ScheduledGoto();
+			}
+			case ID_RowsCoverage: {
+				return new RowsCoverage();
+			}
+			case ID_Sample: {
+				return new Sample();
+			}
+			case ID_ImageTracking: {
+				return new ImageTracking();
+			}
+			case ID_Takeoff: {
+				return new Takeoff();
+			}
+			case ID_Land: {
+				return new Land();
+			}
+			case ID_AutonomousSection: {
+				return new AutonomousSection();
+			}
+			case ID_FollowPoint: {
+				return new FollowPoint();
+			}
+			case ID_VehicleState: {
+				return new VehicleState();
+			}
+			case ID_VehicleCommand: {
+				return new VehicleCommand();
+			}
+			case ID_MonitorEntityState: {
+				return new MonitorEntityState();
+			}
+			case ID_EntityMonitoringState: {
+				return new EntityMonitoringState();
+			}
+			case ID_OperationalLimits: {
+				return new OperationalLimits();
+			}
+			case ID_GetOperationalLimits: {
+				return new GetOperationalLimits();
+			}
+			case ID_Calibration: {
+				return new Calibration();
+			}
+			case ID_ControlLoops: {
+				return new ControlLoops();
+			}
+			case ID_VehicleMedium: {
+				return new VehicleMedium();
+			}
+			case ID_Collision: {
+				return new Collision();
+			}
+			case ID_FormState: {
+				return new FormState();
+			}
+			case ID_AutopilotMode: {
+				return new AutopilotMode();
+			}
+			case ID_FormationState: {
+				return new FormationState();
+			}
+			case ID_ReportControl: {
+				return new ReportControl();
+			}
+			case ID_Abort: {
+				return new Abort();
+			}
+			case ID_PlanSpecification: {
+				return new PlanSpecification();
+			}
+			case ID_PlanManeuver: {
+				return new PlanManeuver();
+			}
+			case ID_PlanTransition: {
+				return new PlanTransition();
+			}
+			case ID_EmergencyControl: {
+				return new EmergencyControl();
+			}
+			case ID_EmergencyControlState: {
+				return new EmergencyControlState();
+			}
+			case ID_PlanDB: {
+				return new PlanDB();
+			}
+			case ID_PlanDBState: {
+				return new PlanDBState();
+			}
+			case ID_PlanDBInformation: {
+				return new PlanDBInformation();
+			}
+			case ID_PlanControl: {
+				return new PlanControl();
+			}
+			case ID_PlanControlState: {
+				return new PlanControlState();
+			}
+			case ID_PlanVariable: {
+				return new PlanVariable();
+			}
+			case ID_PlanGeneration: {
+				return new PlanGeneration();
+			}
+			case ID_LeaderState: {
+				return new LeaderState();
+			}
+			case ID_PlanStatistics: {
+				return new PlanStatistics();
+			}
+			case ID_ReportedState: {
+				return new ReportedState();
+			}
+			case ID_RemoteSensorInfo: {
+				return new RemoteSensorInfo();
+			}
+			case ID_Map: {
+				return new Map();
+			}
+			case ID_MapFeature: {
+				return new MapFeature();
+			}
+			case ID_MapPoint: {
+				return new MapPoint();
+			}
+			case ID_CcuEvent: {
+				return new CcuEvent();
+			}
+			case ID_VehicleLinks: {
+				return new VehicleLinks();
+			}
+			case ID_TrexObservation: {
+				return new TrexObservation();
+			}
+			case ID_TrexCommand: {
+				return new TrexCommand();
+			}
+			case ID_TrexOperation: {
+				return new TrexOperation();
+			}
+			case ID_TrexAttribute: {
+				return new TrexAttribute();
+			}
+			case ID_TrexToken: {
+				return new TrexToken();
+			}
+			case ID_TrexPlan: {
+				return new TrexPlan();
+			}
+			case ID_Event: {
+				return new Event();
+			}
+			case ID_CompressedImage: {
+				return new CompressedImage();
+			}
+			case ID_ImageTxSettings: {
+				return new ImageTxSettings();
+			}
+			case ID_RemoteState: {
+				return new RemoteState();
+			}
+			case ID_Target: {
+				return new Target();
+			}
+			case ID_EntityParameter: {
+				return new EntityParameter();
+			}
+			case ID_EntityParameters: {
+				return new EntityParameters();
+			}
+			case ID_QueryEntityParameters: {
+				return new QueryEntityParameters();
+			}
+			case ID_SetEntityParameters: {
+				return new SetEntityParameters();
+			}
+			case ID_SaveEntityParameters: {
+				return new SaveEntityParameters();
+			}
+			case ID_CreateSession: {
+				return new CreateSession();
+			}
+			case ID_CloseSession: {
+				return new CloseSession();
+			}
+			case ID_SessionSubscription: {
+				return new SessionSubscription();
+			}
+			case ID_SessionKeepAlive: {
+				return new SessionKeepAlive();
+			}
+			case ID_SessionStatus: {
+				return new SessionStatus();
+			}
+			case ID_PushEntityParameters: {
+				return new PushEntityParameters();
+			}
+			case ID_PopEntityParameters: {
+				return new PopEntityParameters();
+			}
+			case ID_IoEvent: {
+				return new IoEvent();
+			}
+			case ID_UamTxFrame: {
+				return new UamTxFrame();
+			}
+			case ID_UamRxFrame: {
+				return new UamRxFrame();
+			}
+			case ID_UamTxStatus: {
+				return new UamTxStatus();
+			}
+			case ID_UamRxRange: {
+				return new UamRxRange();
+			}
+			case ID_FormCtrlParam: {
+				return new FormCtrlParam();
+			}
+			case ID_FormationEval: {
+				return new FormationEval();
+			}
+			case ID_FormationControlParams: {
+				return new FormationControlParams();
+			}
+			case ID_FormationEvaluation: {
+				return new FormationEvaluation();
+			}
+			case ID_MessagePart: {
+				return new MessagePart();
+			}
+			case ID_NeptusBlob: {
+				return new NeptusBlob();
+			}
+			case ID_Aborted: {
+				return new Aborted();
+			}
+			case ID_UsblAngles: {
+				return new UsblAngles();
+			}
+			case ID_UsblPosition: {
+				return new UsblPosition();
+			}
+			case ID_UsblFix: {
+				return new UsblFix();
+			}
+			case ID_ParametersXml: {
+				return new ParametersXml();
+			}
+			case ID_GetParametersXml: {
+				return new GetParametersXml();
+			}
+			case ID_SetImageCoords: {
+				return new SetImageCoords();
+			}
+			case ID_GetImageCoords: {
+				return new GetImageCoords();
+			}
+			case ID_GetWorldCoordinates: {
+				return new GetWorldCoordinates();
+			}
+			case ID_UsblAnglesExtended: {
+				return new UsblAnglesExtended();
+			}
+			case ID_UsblPositionExtended: {
+				return new UsblPositionExtended();
+			}
+			case ID_UsblFixExtended: {
+				return new UsblFixExtended();
+			}
+			case ID_UsblModem: {
+				return new UsblModem();
+			}
+			case ID_UsblConfig: {
+				return new UsblConfig();
+			}
+			case ID_DissolvedOrganicMatter: {
+				return new DissolvedOrganicMatter();
+			}
+			case ID_OpticalBackscatter: {
+				return new OpticalBackscatter();
+			}
+			case ID_Tachograph: {
+				return new Tachograph();
+			}
+			default: {
+				return null;
+			}
+		}
+	}
+}
