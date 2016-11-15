@@ -138,12 +138,12 @@ public class Sample extends Maneuver {
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
 			_out.writeFloat(z);
-			_out.writeByte((int)z_units.value());
+			_out.writeByte((int)(z_units != null? z_units.value() : 0));
 			_out.writeFloat(speed);
-			_out.writeByte((int)speed_units.value());
-			_out.writeByte((int)syringe0.value());
-			_out.writeByte((int)syringe1.value());
-			_out.writeByte((int)syringe2.value());
+			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
+			_out.writeByte((int)(syringe0 != null? syringe0.value() : 0));
+			_out.writeByte((int)(syringe1 != null? syringe1.value() : 0));
+			_out.writeByte((int)(syringe2 != null? syringe2.value() : 0));
 			SerializationUtils.serializePlaintext(_out, custom);
 			return _data.toByteArray();
 		}

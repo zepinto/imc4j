@@ -98,14 +98,14 @@ public class PlanControlState extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)state.value());
+			_out.writeByte((int)(state != null? state.value() : 0));
 			SerializationUtils.serializePlaintext(_out, plan_id);
 			_out.writeInt((int)plan_eta);
 			_out.writeFloat(plan_progress);
 			SerializationUtils.serializePlaintext(_out, man_id);
 			_out.writeShort(man_type);
 			_out.writeInt((int)man_eta);
-			_out.writeByte((int)last_outcome.value());
+			_out.writeByte((int)(last_outcome != null? last_outcome.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

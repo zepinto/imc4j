@@ -151,19 +151,21 @@ public class Elevator extends Maneuver {
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeShort(timeout);
 			long _flags = 0;
-			for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
-				_flags += __flags.value();
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
 			}
 			_out.writeByte((int)_flags);
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
 			_out.writeFloat(start_z);
-			_out.writeByte((int)start_z_units.value());
+			_out.writeByte((int)(start_z_units != null? start_z_units.value() : 0));
 			_out.writeFloat(end_z);
-			_out.writeByte((int)end_z_units.value());
+			_out.writeByte((int)(end_z_units != null? end_z_units.value() : 0));
 			_out.writeFloat(radius);
 			_out.writeFloat(speed);
-			_out.writeByte((int)speed_units.value());
+			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
 			SerializationUtils.serializePlaintext(_out, custom);
 			return _data.toByteArray();
 		}

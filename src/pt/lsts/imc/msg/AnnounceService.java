@@ -46,8 +46,10 @@ public class AnnounceService extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, service);
 			long _service_type = 0;
-			for (SERVICE_TYPE __service_type : service_type.toArray(new SERVICE_TYPE[0])) {
-				_service_type += __service_type.value();
+			if (service_type != null) {
+				for (SERVICE_TYPE __service_type : service_type.toArray(new SERVICE_TYPE[0])) {
+					_service_type += __service_type.value();
+				}
 			}
 			_out.writeByte((int)_service_type);
 			return _data.toByteArray();

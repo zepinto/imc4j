@@ -67,7 +67,7 @@ public class Dislodge extends Maneuver {
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeShort(timeout);
 			_out.writeFloat(rpm);
-			_out.writeByte((int)direction.value());
+			_out.writeByte((int)(direction != null? direction.value() : 0));
 			SerializationUtils.serializePlaintext(_out, custom);
 			return _data.toByteArray();
 		}

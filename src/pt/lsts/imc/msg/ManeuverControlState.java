@@ -52,7 +52,7 @@ public class ManeuverControlState extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)state.value());
+			_out.writeByte((int)(state != null? state.value() : 0));
 			_out.writeShort(eta);
 			SerializationUtils.serializePlaintext(_out, info);
 			return _data.toByteArray();

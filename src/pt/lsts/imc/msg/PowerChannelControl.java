@@ -53,7 +53,7 @@ public class PowerChannelControl extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, name);
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(op != null? op.value() : 0));
 			_out.writeDouble(sched_time);
 			return _data.toByteArray();
 		}

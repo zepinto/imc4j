@@ -115,7 +115,7 @@ public class FormationControlParams extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)Action.value());
+			_out.writeByte((int)(Action != null? Action.value() : 0));
 			_out.writeFloat(lon_gain);
 			_out.writeFloat(lat_gain);
 			_out.writeFloat(bond_thick);

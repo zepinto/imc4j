@@ -95,11 +95,11 @@ public class FollowSystem extends Message {
 			_out.writeShort(system);
 			_out.writeShort(duration);
 			_out.writeFloat(speed);
-			_out.writeByte((int)speed_units.value());
+			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
 			_out.writeFloat(x);
 			_out.writeFloat(y);
 			_out.writeFloat(z);
-			_out.writeByte((int)z_units.value());
+			_out.writeByte((int)(z_units != null? z_units.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

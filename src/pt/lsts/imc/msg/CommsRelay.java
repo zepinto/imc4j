@@ -101,7 +101,7 @@ public class CommsRelay extends Maneuver {
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
 			_out.writeFloat(speed);
-			_out.writeByte((int)speed_units.value());
+			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
 			_out.writeShort(duration);
 			_out.writeShort(sys_a);
 			_out.writeShort(sys_b);

@@ -45,7 +45,7 @@ public class SmsState extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeInt((int)seq);
-			_out.writeByte((int)state.value());
+			_out.writeByte((int)(state != null? state.value() : 0));
 			SerializationUtils.serializePlaintext(_out, error);
 			return _data.toByteArray();
 		}

@@ -96,7 +96,7 @@ public class Target extends Message {
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
 			_out.writeFloat(z);
-			_out.writeByte((int)z_units.value());
+			_out.writeByte((int)(z_units != null? z_units.value() : 0));
 			_out.writeFloat(cog);
 			_out.writeFloat(sog);
 			return _data.toByteArray();

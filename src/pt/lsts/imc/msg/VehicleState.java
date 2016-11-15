@@ -120,20 +120,24 @@ public class VehicleState extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)op_mode.value());
+			_out.writeByte((int)(op_mode != null? op_mode.value() : 0));
 			_out.writeByte(error_count);
 			SerializationUtils.serializePlaintext(_out, error_ents);
 			_out.writeShort(maneuver_type);
 			_out.writeDouble(maneuver_stime);
 			_out.writeShort(maneuver_eta);
 			long _control_loops = 0;
-			for (CLoopsMask __control_loops : control_loops.toArray(new CLoopsMask[0])) {
-				_control_loops += __control_loops.value();
+			if (control_loops != null) {
+				for (CLoopsMask __control_loops : control_loops.toArray(new CLoopsMask[0])) {
+					_control_loops += __control_loops.value();
+				}
 			}
 			_out.writeInt((int)(int)_control_loops);
 			long _flags = 0;
-			for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
-				_flags += __flags.value();
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
 			}
 			_out.writeByte((int)_flags);
 			SerializationUtils.serializePlaintext(_out, last_error);

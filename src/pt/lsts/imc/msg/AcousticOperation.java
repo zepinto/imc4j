@@ -61,7 +61,7 @@ public class AcousticOperation extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(op != null? op.value() : 0));
 			SerializationUtils.serializePlaintext(_out, system);
 			_out.writeFloat(range);
 			SerializationUtils.serializeInlineMsg(_out, msg);

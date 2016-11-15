@@ -79,11 +79,13 @@ public class DvlRejection extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			long _type = 0;
-			for (TYPE __type : type.toArray(new TYPE[0])) {
-				_type += __type.value();
+			if (type != null) {
+				for (TYPE __type : type.toArray(new TYPE[0])) {
+					_type += __type.value();
+				}
 			}
 			_out.writeByte((int)_type);
-			_out.writeByte((int)reason.value());
+			_out.writeByte((int)(reason != null? reason.value() : 0));
 			_out.writeFloat(value);
 			_out.writeFloat(timestep);
 			return _data.toByteArray();

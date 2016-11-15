@@ -59,7 +59,7 @@ public class LogBookEntry extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)type.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
 			_out.writeDouble(htime);
 			SerializationUtils.serializePlaintext(_out, context);
 			SerializationUtils.serializePlaintext(_out, text);

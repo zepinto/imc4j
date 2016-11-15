@@ -42,7 +42,7 @@ public class AutopilotMode extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)autonomy.value());
+			_out.writeByte((int)(autonomy != null? autonomy.value() : 0));
 			SerializationUtils.serializePlaintext(_out, mode);
 			return _data.toByteArray();
 		}

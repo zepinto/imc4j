@@ -95,8 +95,10 @@ public class DesiredControl extends Message {
 			_out.writeDouble(m);
 			_out.writeDouble(n);
 			long _flags = 0;
-			for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
-				_flags += __flags.value();
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
 			}
 			_out.writeByte((int)_flags);
 			return _data.toByteArray();

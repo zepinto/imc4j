@@ -54,8 +54,10 @@ public class Reference extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			long _flags = 0;
-			for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
-				_flags += __flags.value();
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
 			}
 			_out.writeByte((int)_flags);
 			SerializationUtils.serializeInlineMsg(_out, speed);

@@ -96,7 +96,7 @@ public class SonarData extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)type.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
 			_out.writeInt((int)frequency);
 			_out.writeShort(min_range);
 			_out.writeShort(max_range);

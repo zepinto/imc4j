@@ -53,7 +53,7 @@ public class ExternalNavData extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializeInlineMsg(_out, state);
-			_out.writeByte((int)type.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

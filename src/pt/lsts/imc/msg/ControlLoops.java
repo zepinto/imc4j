@@ -52,10 +52,12 @@ public class ControlLoops extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)enable.value());
+			_out.writeByte((int)(enable != null? enable.value() : 0));
 			long _mask = 0;
-			for (CLoopsMask __mask : mask.toArray(new CLoopsMask[0])) {
-				_mask += __mask.value();
+			if (mask != null) {
+				for (CLoopsMask __mask : mask.toArray(new CLoopsMask[0])) {
+					_mask += __mask.value();
+				}
 			}
 			_out.writeInt((int)(int)_mask);
 			_out.writeInt((int)scope_ref);

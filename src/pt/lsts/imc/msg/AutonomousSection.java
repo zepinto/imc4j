@@ -130,10 +130,12 @@ public class AutonomousSection extends Maneuver {
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
 			_out.writeFloat(speed);
-			_out.writeByte((int)speed_units.value());
+			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
 			long _limits = 0;
-			for (LIMITS __limits : limits.toArray(new LIMITS[0])) {
-				_limits += __limits.value();
+			if (limits != null) {
+				for (LIMITS __limits : limits.toArray(new LIMITS[0])) {
+					_limits += __limits.value();
+				}
 			}
 			_out.writeByte((int)_limits);
 			_out.writeDouble(max_depth);

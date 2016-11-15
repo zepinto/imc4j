@@ -111,7 +111,7 @@ public class ReportedState extends Message {
 			_out.writeDouble(yaw);
 			_out.writeDouble(rcp_time);
 			SerializationUtils.serializePlaintext(_out, sid);
-			_out.writeByte((int)s_type.value());
+			_out.writeByte((int)(s_type != null? s_type.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

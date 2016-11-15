@@ -75,7 +75,7 @@ public class HistoricSonarData extends Message {
 			_out.writeFloat(length);
 			_out.writeFloat(bearing);
 			_out.writeShort(pxl);
-			_out.writeByte((int)encoding.value());
+			_out.writeByte((int)(encoding != null? encoding.value() : 0));
 			SerializationUtils.serializeRawdata(_out, sonar_data);
 			return _data.toByteArray();
 		}

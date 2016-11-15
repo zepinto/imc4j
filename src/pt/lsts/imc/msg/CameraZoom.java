@@ -50,7 +50,7 @@ public class CameraZoom extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeByte(id);
 			_out.writeByte(zoom);
-			_out.writeByte((int)action.value());
+			_out.writeByte((int)(action != null? action.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

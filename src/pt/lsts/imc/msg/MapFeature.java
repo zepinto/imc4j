@@ -76,7 +76,7 @@ public class MapFeature extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, id);
-			_out.writeByte((int)feature_type.value());
+			_out.writeByte((int)(feature_type != null? feature_type.value() : 0));
 			_out.writeByte(rgb_red);
 			_out.writeByte(rgb_green);
 			_out.writeByte(rgb_blue);

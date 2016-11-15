@@ -35,7 +35,7 @@ public class SessionStatus extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeInt((int)sessid);
-			_out.writeByte((int)status.value());
+			_out.writeByte((int)(status != null? status.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

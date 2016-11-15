@@ -89,13 +89,15 @@ public class PlanControl extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)type.value());
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
+			_out.writeByte((int)(op != null? op.value() : 0));
 			_out.writeShort(request_id);
 			SerializationUtils.serializePlaintext(_out, plan_id);
 			long _flags = 0;
-			for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
-				_flags += __flags.value();
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
 			}
 			_out.writeShort((int)_flags);
 			SerializationUtils.serializeInlineMsg(_out, arg);

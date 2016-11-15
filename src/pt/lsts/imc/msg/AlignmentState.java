@@ -32,7 +32,7 @@ public class AlignmentState extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)state.value());
+			_out.writeByte((int)(state != null? state.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

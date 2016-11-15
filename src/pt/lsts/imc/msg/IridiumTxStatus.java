@@ -42,7 +42,7 @@ public class IridiumTxStatus extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeShort(req_id);
-			_out.writeByte((int)status.value());
+			_out.writeByte((int)(status != null? status.value() : 0));
 			SerializationUtils.serializePlaintext(_out, text);
 			return _data.toByteArray();
 		}

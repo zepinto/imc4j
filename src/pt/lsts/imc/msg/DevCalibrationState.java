@@ -63,8 +63,10 @@ public class DevCalibrationState extends Message {
 			_out.writeByte(step_number);
 			SerializationUtils.serializePlaintext(_out, step);
 			long _flags = 0;
-			for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
-				_flags += __flags.value();
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
 			}
 			_out.writeByte((int)_flags);
 			return _data.toByteArray();

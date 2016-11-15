@@ -77,7 +77,7 @@ public class GetWorldCoordinates extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)tracking.value());
+			_out.writeByte((int)(tracking != null? tracking.value() : 0));
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
 			_out.writeFloat(x);

@@ -40,7 +40,7 @@ public class EmergencyControlState extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)state.value());
+			_out.writeByte((int)(state != null? state.value() : 0));
 			SerializationUtils.serializePlaintext(_out, plan_id);
 			_out.writeByte(comm_level);
 			return _data.toByteArray();

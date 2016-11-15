@@ -47,7 +47,7 @@ public class TrexCommand extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)command.value());
+			_out.writeByte((int)(command != null? command.value() : 0));
 			SerializationUtils.serializePlaintext(_out, goal_id);
 			SerializationUtils.serializePlaintext(_out, goal_xml);
 			return _data.toByteArray();

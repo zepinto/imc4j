@@ -40,7 +40,7 @@ public class GpsFixRejection extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeFloat(utc_time);
-			_out.writeByte((int)reason.value());
+			_out.writeByte((int)(reason != null? reason.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

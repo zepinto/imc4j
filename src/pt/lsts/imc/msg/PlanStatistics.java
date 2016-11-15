@@ -83,10 +83,12 @@ public class PlanStatistics extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, plan_id);
-			_out.writeByte((int)type.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
 			long _properties = 0;
-			for (PROPERTIES __properties : properties.toArray(new PROPERTIES[0])) {
-				_properties += __properties.value();
+			if (properties != null) {
+				for (PROPERTIES __properties : properties.toArray(new PROPERTIES[0])) {
+					_properties += __properties.value();
+				}
 			}
 			_out.writeByte((int)_properties);
 			SerializationUtils.serializePlaintext(_out, durations);

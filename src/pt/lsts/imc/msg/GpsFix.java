@@ -168,11 +168,13 @@ public class GpsFix extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			long _validity = 0;
-			for (VALIDITY __validity : validity.toArray(new VALIDITY[0])) {
-				_validity += __validity.value();
+			if (validity != null) {
+				for (VALIDITY __validity : validity.toArray(new VALIDITY[0])) {
+					_validity += __validity.value();
+				}
 			}
 			_out.writeShort((int)_validity);
-			_out.writeByte((int)type.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
 			_out.writeShort(utc_year);
 			_out.writeByte(utc_month);
 			_out.writeByte(utc_day);

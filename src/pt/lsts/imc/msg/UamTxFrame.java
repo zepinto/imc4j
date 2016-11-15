@@ -47,8 +47,10 @@ public class UamTxFrame extends Message {
 			_out.writeShort(seq);
 			SerializationUtils.serializePlaintext(_out, sys_dst);
 			long _flags = 0;
-			for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
-				_flags += __flags.value();
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
 			}
 			_out.writeByte((int)_flags);
 			SerializationUtils.serializeRawdata(_out, data);

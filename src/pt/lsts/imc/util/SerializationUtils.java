@@ -94,6 +94,8 @@ public class SerializationUtils {
 	}
 	
 	public static int serializePlaintext(DataOutputStream out, String text) throws IOException {
+		if (text == null)
+			text = "";
 		return serializeRawdata(out, text.getBytes("UTF-8"));
 	}
 	
@@ -103,6 +105,9 @@ public class SerializationUtils {
 	}
 	
 	public static int serializeRawdata(DataOutputStream out, byte[] data) throws IOException {
+		if (data == null)
+			data = new byte[0];
+		
 		out.writeShort(data.length);
 		out.write(data);
 		return 2 + data.length;
@@ -174,9 +179,5 @@ public class SerializationUtils {
 			crc = (crc >>> 8) ^ crc_table[(crc ^ bytes[i]) & 0xff];
 		}
 		return crc;
-	}
-
-	public static void main(String[] args) {
-		
 	}
 }

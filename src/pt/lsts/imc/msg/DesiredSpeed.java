@@ -42,7 +42,7 @@ public class DesiredSpeed extends ControlCommand {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeDouble(value);
-			_out.writeByte((int)speed_units.value());
+			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

@@ -249,7 +249,7 @@ public class IMCGenerator {
 		mtype.getField().forEach(ftype -> {
 			String value = ftype.getAbbrev();
 			if (ftype.getUnit() != null && ftype.getUnit().equals("Enumerated")) {
-				value += ".value()";
+				value = String.format("(%s != null? %s.value() : 0)", value, value);
 				if (!ftype.getType().endsWith("64_t"))
 					value = "(int)" + value;
 			} else if (ftype.getUnit() != null && ftype.getUnit().equals("Bitfield")) {
@@ -260,8 +260,10 @@ public class IMCGenerator {
 					type = ftype.getBitfieldDef();
 
 				method.addStatement("long $L = 0", sum);
+				method.beginControlFlow("if ($L != null)", value);
 				method.beginControlFlow("for ($L $L : $L.toArray(new $L[0]))", type, iterator, value, type);
 				method.addStatement("$L += $L.value()", sum, iterator);
+				method.endControlFlow();
 				method.endControlFlow();
 				value = sum;
 

@@ -59,7 +59,7 @@ public class Distance extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)validity.value());
+			_out.writeByte((int)(validity != null? validity.value() : 0));
 			SerializationUtils.serializeMsgList(_out, location);
 			SerializationUtils.serializeMsgList(_out, beam_config);
 			_out.writeFloat(value);

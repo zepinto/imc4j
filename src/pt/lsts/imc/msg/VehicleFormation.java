@@ -122,9 +122,9 @@ public class VehicleFormation extends Maneuver {
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
 			_out.writeFloat(z);
-			_out.writeByte((int)z_units.value());
+			_out.writeByte((int)(z_units != null? z_units.value() : 0));
 			_out.writeFloat(speed);
-			_out.writeByte((int)speed_units.value());
+			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
 			SerializationUtils.serializeMsgList(_out, points);
 			SerializationUtils.serializeMsgList(_out, participants);
 			_out.writeDouble(start_time);

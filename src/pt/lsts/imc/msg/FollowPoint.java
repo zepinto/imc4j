@@ -104,11 +104,11 @@ public class FollowPoint extends Maneuver {
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, target);
 			_out.writeFloat(max_speed);
-			_out.writeByte((int)speed_units.value());
+			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
 			_out.writeFloat(z);
-			_out.writeByte((int)z_units.value());
+			_out.writeByte((int)(z_units != null? z_units.value() : 0));
 			SerializationUtils.serializePlaintext(_out, custom);
 			return _data.toByteArray();
 		}

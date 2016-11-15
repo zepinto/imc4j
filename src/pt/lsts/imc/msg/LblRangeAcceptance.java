@@ -57,7 +57,7 @@ public class LblRangeAcceptance extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeByte(id);
 			_out.writeFloat(range);
-			_out.writeByte((int)acceptance.value());
+			_out.writeByte((int)(acceptance != null? acceptance.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

@@ -47,8 +47,10 @@ public class UamRxFrame extends Message {
 			SerializationUtils.serializePlaintext(_out, sys_src);
 			SerializationUtils.serializePlaintext(_out, sys_dst);
 			long _flags = 0;
-			for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
-				_flags += __flags.value();
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
 			}
 			_out.writeByte((int)_flags);
 			SerializationUtils.serializeRawdata(_out, data);

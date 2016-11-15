@@ -215,15 +215,17 @@ public class PathControlState extends Message {
 			_out.writeDouble(start_lat);
 			_out.writeDouble(start_lon);
 			_out.writeFloat(start_z);
-			_out.writeByte((int)start_z_units.value());
+			_out.writeByte((int)(start_z_units != null? start_z_units.value() : 0));
 			_out.writeDouble(end_lat);
 			_out.writeDouble(end_lon);
 			_out.writeFloat(end_z);
-			_out.writeByte((int)end_z_units.value());
+			_out.writeByte((int)(end_z_units != null? end_z_units.value() : 0));
 			_out.writeFloat(lradius);
 			long _flags = 0;
-			for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
-				_flags += __flags.value();
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
 			}
 			_out.writeByte((int)_flags);
 			_out.writeFloat(x);

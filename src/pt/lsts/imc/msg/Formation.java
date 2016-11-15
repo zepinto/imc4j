@@ -233,12 +233,12 @@ public class Formation extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, formation_name);
-			_out.writeByte((int)type.value());
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
+			_out.writeByte((int)(op != null? op.value() : 0));
 			SerializationUtils.serializePlaintext(_out, group_name);
 			SerializationUtils.serializePlaintext(_out, plan_id);
 			SerializationUtils.serializePlaintext(_out, description);
-			_out.writeByte((int)reference_frame.value());
+			_out.writeByte((int)(reference_frame != null? reference_frame.value() : 0));
 			SerializationUtils.serializeMsgList(_out, participants);
 			_out.writeFloat(leader_bank_lim);
 			_out.writeFloat(leader_speed_min);

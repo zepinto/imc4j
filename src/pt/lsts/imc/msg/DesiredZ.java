@@ -42,7 +42,7 @@ public class DesiredZ extends ControlCommand {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeFloat(value);
-			_out.writeByte((int)z_units.value());
+			_out.writeByte((int)(z_units != null? z_units.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

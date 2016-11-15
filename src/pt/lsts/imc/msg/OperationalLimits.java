@@ -107,8 +107,10 @@ public class OperationalLimits extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			long _mask = 0;
-			for (OpLimitsMask __mask : mask.toArray(new OpLimitsMask[0])) {
-				_mask += __mask.value();
+			if (mask != null) {
+				for (OpLimitsMask __mask : mask.toArray(new OpLimitsMask[0])) {
+					_mask += __mask.value();
+				}
 			}
 			_out.writeByte((int)_mask);
 			_out.writeFloat(max_depth);

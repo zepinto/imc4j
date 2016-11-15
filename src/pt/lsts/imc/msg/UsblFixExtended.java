@@ -88,7 +88,7 @@ public class UsblFixExtended extends Message {
 			SerializationUtils.serializePlaintext(_out, target);
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
-			_out.writeByte((int)z_units.value());
+			_out.writeByte((int)(z_units != null? z_units.value() : 0));
 			_out.writeFloat(z);
 			_out.writeFloat(accuracy);
 			return _data.toByteArray();

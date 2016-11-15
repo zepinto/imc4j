@@ -34,7 +34,7 @@ public class DevCalibrationControl extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(op != null? op.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

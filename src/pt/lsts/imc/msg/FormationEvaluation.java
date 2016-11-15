@@ -90,8 +90,8 @@ public class FormationEvaluation extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)type.value());
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
+			_out.writeByte((int)(op != null? op.value() : 0));
 			_out.writeFloat(err_mean);
 			_out.writeFloat(dist_min_abs);
 			_out.writeFloat(dist_min_mean);

@@ -73,9 +73,9 @@ public class VehicleCommand extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)type.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
 			_out.writeShort(request_id);
-			_out.writeByte((int)command.value());
+			_out.writeByte((int)(command != null? command.value() : 0));
 			SerializationUtils.serializeInlineMsg(_out, maneuver);
 			_out.writeShort(calib_time);
 			SerializationUtils.serializePlaintext(_out, info);

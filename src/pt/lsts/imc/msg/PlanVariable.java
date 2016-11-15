@@ -49,8 +49,8 @@ public class PlanVariable extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, name);
 			SerializationUtils.serializePlaintext(_out, value);
-			_out.writeByte((int)type.value());
-			_out.writeByte((int)access.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
+			_out.writeByte((int)(access != null? access.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

@@ -44,8 +44,10 @@ public class Collision extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeFloat(value);
 			long _type = 0;
-			for (TYPE __type : type.toArray(new TYPE[0])) {
-				_type += __type.value();
+			if (type != null) {
+				for (TYPE __type : type.toArray(new TYPE[0])) {
+					_type += __type.value();
+				}
 			}
 			_out.writeByte((int)_type);
 			return _data.toByteArray();

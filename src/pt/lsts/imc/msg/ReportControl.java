@@ -62,10 +62,12 @@ public class ReportControl extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(op != null? op.value() : 0));
 			long _comm_interface = 0;
-			for (COMM_INTERFACE __comm_interface : comm_interface.toArray(new COMM_INTERFACE[0])) {
-				_comm_interface += __comm_interface.value();
+			if (comm_interface != null) {
+				for (COMM_INTERFACE __comm_interface : comm_interface.toArray(new COMM_INTERFACE[0])) {
+					_comm_interface += __comm_interface.value();
+				}
 			}
 			_out.writeByte((int)_comm_interface);
 			_out.writeShort(period);

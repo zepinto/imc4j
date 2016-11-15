@@ -81,9 +81,9 @@ public class FormState extends Message {
 			_out.writeFloat(PosSimErr);
 			_out.writeFloat(Converg);
 			_out.writeFloat(Turbulence);
-			_out.writeByte((int)PosSimMon.value());
-			_out.writeByte((int)CommMon.value());
-			_out.writeByte((int)ConvergMon.value());
+			_out.writeByte((int)(PosSimMon != null? PosSimMon.value() : 0));
+			_out.writeByte((int)(CommMon != null? CommMon.value() : 0));
+			_out.writeByte((int)(ConvergMon != null? ConvergMon.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

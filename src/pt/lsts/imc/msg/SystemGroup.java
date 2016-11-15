@@ -51,7 +51,7 @@ public class SystemGroup extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, GroupName);
-			_out.writeByte((int)Action.value());
+			_out.writeByte((int)(Action != null? Action.value() : 0));
 			SerializationUtils.serializePlaintext(_out, GroupList);
 			return _data.toByteArray();
 		}

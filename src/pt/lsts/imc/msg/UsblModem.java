@@ -78,7 +78,7 @@ public class UsblModem extends Message {
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
 			_out.writeFloat(z);
-			_out.writeByte((int)z_units.value());
+			_out.writeByte((int)(z_units != null? z_units.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

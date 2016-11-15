@@ -50,7 +50,7 @@ public class UASimulation extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)type.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
 			_out.writeShort(speed);
 			SerializationUtils.serializeRawdata(_out, data);
 			return _data.toByteArray();

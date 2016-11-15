@@ -238,7 +238,7 @@ public class LeaderState extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, group_name);
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(op != null? op.value() : 0));
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
 			_out.writeFloat(height);

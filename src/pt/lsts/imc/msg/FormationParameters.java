@@ -73,7 +73,7 @@ public class FormationParameters extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, formation_name);
-			_out.writeByte((int)reference_frame.value());
+			_out.writeByte((int)(reference_frame != null? reference_frame.value() : 0));
 			SerializationUtils.serializeMsgList(_out, participants);
 			SerializationUtils.serializePlaintext(_out, custom);
 			return _data.toByteArray();

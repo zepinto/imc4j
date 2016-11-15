@@ -96,14 +96,14 @@ public class FormationState extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)type.value());
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
+			_out.writeByte((int)(op != null? op.value() : 0));
 			_out.writeFloat(PosSimErr);
 			_out.writeFloat(Converg);
 			_out.writeFloat(Turbulence);
-			_out.writeByte((int)PosSimMon.value());
-			_out.writeByte((int)CommMon.value());
-			_out.writeByte((int)ConvergMon.value());
+			_out.writeByte((int)(PosSimMon != null? PosSimMon.value() : 0));
+			_out.writeByte((int)(CommMon != null? CommMon.value() : 0));
+			_out.writeByte((int)(ConvergMon != null? ConvergMon.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

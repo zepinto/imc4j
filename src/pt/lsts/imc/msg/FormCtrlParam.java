@@ -74,7 +74,7 @@ public class FormCtrlParam extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)Action.value());
+			_out.writeByte((int)(Action != null? Action.value() : 0));
 			_out.writeFloat(LonGain);
 			_out.writeFloat(LatGain);
 			_out.writeInt((int)BondThick);

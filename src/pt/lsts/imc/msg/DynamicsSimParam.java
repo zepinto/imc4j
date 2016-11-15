@@ -48,7 +48,7 @@ public class DynamicsSimParam extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(op != null? op.value() : 0));
 			_out.writeFloat(tas2acc_pgain);
 			_out.writeFloat(bank2p_pgain);
 			return _data.toByteArray();

@@ -124,8 +124,10 @@ public class DesiredLinearState extends Message {
 			_out.writeDouble(ay);
 			_out.writeDouble(az);
 			long _flags = 0;
-			for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
-				_flags += __flags.value();
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
 			}
 			_out.writeShort((int)_flags);
 			return _data.toByteArray();

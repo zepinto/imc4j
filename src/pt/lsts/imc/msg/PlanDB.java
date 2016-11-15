@@ -87,8 +87,8 @@ public class PlanDB extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)type.value());
-			_out.writeByte((int)op.value());
+			_out.writeByte((int)(type != null? type.value() : 0));
+			_out.writeByte((int)(op != null? op.value() : 0));
 			_out.writeShort(request_id);
 			SerializationUtils.serializePlaintext(_out, plan_id);
 			SerializationUtils.serializeInlineMsg(_out, arg);

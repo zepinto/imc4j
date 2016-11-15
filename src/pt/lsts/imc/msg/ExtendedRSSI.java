@@ -43,7 +43,7 @@ public class ExtendedRSSI extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeFloat(value);
-			_out.writeByte((int)units.value());
+			_out.writeByte((int)(units != null? units.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {

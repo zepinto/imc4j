@@ -63,8 +63,10 @@ public class GroundVelocity extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			long _validity = 0;
-			for (VALIDITY __validity : validity.toArray(new VALIDITY[0])) {
-				_validity += __validity.value();
+			if (validity != null) {
+				for (VALIDITY __validity : validity.toArray(new VALIDITY[0])) {
+					_validity += __validity.value();
+				}
 			}
 			_out.writeByte((int)_validity);
 			_out.writeDouble(x);

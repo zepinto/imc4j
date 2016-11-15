@@ -93,7 +93,7 @@ public class Announce extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, sys_name);
-			_out.writeByte((int)sys_type.value());
+			_out.writeByte((int)(sys_type != null? sys_type.value() : 0));
 			_out.writeShort(owner);
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);

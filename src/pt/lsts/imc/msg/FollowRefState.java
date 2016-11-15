@@ -63,10 +63,12 @@ public class FollowRefState extends Message {
 			_out.writeShort(control_src);
 			_out.writeByte(control_ent);
 			SerializationUtils.serializeInlineMsg(_out, reference);
-			_out.writeByte((int)state.value());
+			_out.writeByte((int)(state != null? state.value() : 0));
 			long _proximity = 0;
-			for (PROXIMITY __proximity : proximity.toArray(new PROXIMITY[0])) {
-				_proximity += __proximity.value();
+			if (proximity != null) {
+				for (PROXIMITY __proximity : proximity.toArray(new PROXIMITY[0])) {
+					_proximity += __proximity.value();
+				}
 			}
 			_out.writeByte((int)_proximity);
 			return _data.toByteArray();

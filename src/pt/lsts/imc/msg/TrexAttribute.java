@@ -53,7 +53,7 @@ public class TrexAttribute extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, name);
-			_out.writeByte((int)attr_type.value());
+			_out.writeByte((int)(attr_type != null? attr_type.value() : 0));
 			SerializationUtils.serializePlaintext(_out, min);
 			SerializationUtils.serializePlaintext(_out, max);
 			return _data.toByteArray();
