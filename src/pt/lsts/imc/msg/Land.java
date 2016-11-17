@@ -4,13 +4,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.def.SpeedUnits;
 import pt.lsts.imc.def.ZUnits;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * Automatic landing on the ground, for UAVs.
@@ -122,7 +122,7 @@ public class Land extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 492;
@@ -142,7 +142,7 @@ public class Land extends Maneuver {
 			_out.writeDouble(bearing);
 			_out.writeByte(glide_slope);
 			_out.writeFloat(glide_slope_alt);
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -163,7 +163,7 @@ public class Land extends Maneuver {
 			bearing = buf.getDouble();
 			glide_slope = buf.get() & 0xFF;
 			glide_slope_alt = buf.getFloat();
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

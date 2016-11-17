@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * This message is used to order the generation of plans based on
@@ -46,7 +47,7 @@ public class PlanGeneration extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String params = "";
+	public TupleList params = new TupleList("");
 
 	public int mgid() {
 		return 562;
@@ -59,7 +60,7 @@ public class PlanGeneration extends Message {
 			_out.writeByte((int)(cmd != null? cmd.value() : 0));
 			_out.writeByte((int)(op != null? op.value() : 0));
 			SerializationUtils.serializePlaintext(_out, plan_id);
-			SerializationUtils.serializePlaintext(_out, params);
+			SerializationUtils.serializePlaintext(_out, params == null? null : params.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -73,7 +74,7 @@ public class PlanGeneration extends Message {
 			cmd = CMD.valueOf(buf.get() & 0xFF);
 			op = OP.valueOf(buf.get() & 0xFF);
 			plan_id = SerializationUtils.deserializePlaintext(buf);
-			params = SerializationUtils.deserializePlaintext(buf);
+			params = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

@@ -26,6 +26,7 @@ import com.squareup.javapoet.TypeSpec;
 
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 import pt.lsts.imc.xml.FieldType;
 import pt.lsts.imc.xml.MessageType;
 import pt.lsts.imc.xml.Messages;
@@ -298,7 +299,11 @@ public class IMCGenerator {
 				method.addStatement("$T.serializeRawdata(_out, $L)", SerializationUtils.class, value);
 				break;
 			case "plaintext":
-				method.addStatement("$T.serializePlaintext(_out, $L)", SerializationUtils.class, value);
+				if ("TupleList".equals(ftype.getUnit()))
+					method.addStatement("$T.serializePlaintext(_out, $L == null? null : $L.toString())",
+							SerializationUtils.class, value, value);				
+				else
+					method.addStatement("$T.serializePlaintext(_out, $L)", SerializationUtils.class, value);
 				break;
 			case "message":
 				method.addStatement("$T.serializeInlineMsg(_out, $L)", SerializationUtils.class, value);
@@ -361,12 +366,15 @@ public class IMCGenerator {
 			case "fp64_t":
 				retrieval = "buf.getDouble()";
 				break;
-
 			case "rawdata":
 				retrieval = "SerializationUtils.deserializeRawdata(buf)";
 				break;
 			case "plaintext":
-				retrieval = "SerializationUtils.deserializePlaintext(buf)";
+				if ("TupleList".equals(ftype.getUnit())) {
+					retrieval = "new TupleList(SerializationUtils.deserializePlaintext(buf))";
+				}
+				else
+					retrieval = "SerializationUtils.deserializePlaintext(buf)";
 				break;
 			case "message":
 				retrieval = "SerializationUtils.deserializeInlineMsg(buf)";
@@ -454,7 +462,12 @@ public class IMCGenerator {
 				builder = FieldSpec.builder(double.class, ftype.getAbbrev(), Modifier.PUBLIC).initializer(value);
 				break;
 			case "plaintext":
-				builder = FieldSpec.builder(String.class, ftype.getAbbrev(), Modifier.PUBLIC).initializer("$S",
+				if (ftype.getUnit() != null && ftype.getUnit().equals("TupleList")) {
+					builder = FieldSpec.builder(TupleList.class, ftype.getAbbrev(), Modifier.PUBLIC).initializer("new TupleList($S)",
+							value.equals("0") ? "" : value);
+				}
+				else
+					builder = FieldSpec.builder(String.class, ftype.getAbbrev(), Modifier.PUBLIC).initializer("$S",
 						value.equals("0") ? "" : value);
 				break;
 			case "rawdata":

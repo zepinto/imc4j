@@ -11,6 +11,7 @@ import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.def.SpeedUnits;
 import pt.lsts.imc.def.ZUnits;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * This maneuver behaves by following a point.
@@ -92,7 +93,7 @@ public class FollowPoint extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 494;
@@ -109,7 +110,7 @@ public class FollowPoint extends Maneuver {
 			_out.writeDouble(lon);
 			_out.writeFloat(z);
 			_out.writeByte((int)(z_units != null? z_units.value() : 0));
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -127,7 +128,7 @@ public class FollowPoint extends Maneuver {
 			lon = buf.getDouble();
 			z = buf.getFloat();
 			z_units = ZUnits.valueOf(buf.get() & 0xFF);
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

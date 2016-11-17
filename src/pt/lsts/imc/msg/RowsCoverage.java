@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
@@ -13,6 +12,7 @@ import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.def.SpeedUnits;
 import pt.lsts.imc.def.ZUnits;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * Rows coverage (i.e: lawn mower type maneuver) but with adaptive cover
@@ -175,7 +175,7 @@ public class RowsCoverage extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 488;
@@ -206,7 +206,7 @@ public class RowsCoverage extends Maneuver {
 				}
 			}
 			_out.writeByte((int)_flags);
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -238,7 +238,7 @@ public class RowsCoverage extends Maneuver {
 					flags.add(FLAGS_op);
 				}
 			}
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

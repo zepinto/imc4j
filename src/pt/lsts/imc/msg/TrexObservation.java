@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * This message is sent to TREX to post timeline observations
@@ -30,7 +31,7 @@ public class TrexObservation extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String attributes = "";
+	public TupleList attributes = new TupleList("");
 
 	public int mgid() {
 		return 651;
@@ -42,7 +43,7 @@ public class TrexObservation extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, timeline);
 			SerializationUtils.serializePlaintext(_out, predicate);
-			SerializationUtils.serializePlaintext(_out, attributes);
+			SerializationUtils.serializePlaintext(_out, attributes == null? null : attributes.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -55,7 +56,7 @@ public class TrexObservation extends Message {
 		try {
 			timeline = SerializationUtils.deserializePlaintext(buf);
 			predicate = SerializationUtils.deserializePlaintext(buf);
-			attributes = SerializationUtils.deserializePlaintext(buf);
+			attributes = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

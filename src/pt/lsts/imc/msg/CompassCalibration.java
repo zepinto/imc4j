@@ -5,13 +5,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.def.SpeedUnits;
 import pt.lsts.imc.def.ZUnits;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * This maneuver is a mix between the Loiter maneuver and the YoYo maneuver.
@@ -146,7 +146,7 @@ public class CompassCalibration extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 475;
@@ -168,7 +168,7 @@ public class CompassCalibration extends Maneuver {
 			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
 			_out.writeFloat(radius);
 			_out.writeByte((int)(direction != null? direction.value() : 0));
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -191,7 +191,7 @@ public class CompassCalibration extends Maneuver {
 			speed_units = SpeedUnits.valueOf(buf.get() & 0xFF);
 			radius = buf.getFloat();
 			direction = DIRECTION.valueOf(buf.get() & 0xFF);
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

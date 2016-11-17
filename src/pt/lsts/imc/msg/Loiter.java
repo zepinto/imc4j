@@ -5,13 +5,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.def.SpeedUnits;
 import pt.lsts.imc.def.ZUnits;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * The Loiter maneuver makes the vehicle circle around a specific
@@ -158,7 +158,7 @@ public class Loiter extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 453;
@@ -181,7 +181,7 @@ public class Loiter extends Maneuver {
 			_out.writeFloat(length);
 			_out.writeDouble(bearing);
 			_out.writeByte((int)(direction != null? direction.value() : 0));
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -205,7 +205,7 @@ public class Loiter extends Maneuver {
 			length = buf.getFloat();
 			bearing = buf.getDouble();
 			direction = DIRECTION.valueOf(buf.get() & 0xFF);
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

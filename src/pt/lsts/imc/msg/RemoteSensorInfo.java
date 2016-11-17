@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * Whenever the CUCS receives a message from one of the existing sensors (through SMS, ZigBee, Acoustic Comms, ...) it disseminates that info recurring to this message.
@@ -60,7 +61,7 @@ public class RemoteSensorInfo extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String data = "";
+	public TupleList data = new TupleList("");
 
 	public int mgid() {
 		return 601;
@@ -76,7 +77,7 @@ public class RemoteSensorInfo extends Message {
 			_out.writeDouble(lon);
 			_out.writeFloat(alt);
 			_out.writeFloat(heading);
-			SerializationUtils.serializePlaintext(_out, data);
+			SerializationUtils.serializePlaintext(_out, data == null? null : data.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -93,7 +94,7 @@ public class RemoteSensorInfo extends Message {
 			lon = buf.getDouble();
 			alt = buf.getFloat();
 			heading = buf.getFloat();
-			data = SerializationUtils.deserializePlaintext(buf);
+			data = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

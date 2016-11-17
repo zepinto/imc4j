@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * A "Formation" is defined by the relative positions of the vehicles
@@ -62,7 +63,7 @@ public class FormationParameters extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 476;
@@ -75,7 +76,7 @@ public class FormationParameters extends Message {
 			SerializationUtils.serializePlaintext(_out, formation_name);
 			_out.writeByte((int)(reference_frame != null? reference_frame.value() : 0));
 			SerializationUtils.serializeMsgList(_out, participants);
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -89,7 +90,7 @@ public class FormationParameters extends Message {
 			formation_name = SerializationUtils.deserializePlaintext(buf);
 			reference_frame = REFERENCE_FRAME.valueOf(buf.get() & 0xFF);
 			participants = SerializationUtils.deserializeMsgList(buf);
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * This message is used for signaling asynchronous events between different (sub) systems.
@@ -31,7 +32,7 @@ public class Event extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String data = "";
+	public TupleList data = new TupleList("");
 
 	public int mgid() {
 		return 660;
@@ -42,7 +43,7 @@ public class Event extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, topic);
-			SerializationUtils.serializePlaintext(_out, data);
+			SerializationUtils.serializePlaintext(_out, data == null? null : data.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -54,7 +55,7 @@ public class Event extends Message {
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
 			topic = SerializationUtils.deserializePlaintext(buf);
-			data = SerializationUtils.deserializePlaintext(buf);
+			data = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

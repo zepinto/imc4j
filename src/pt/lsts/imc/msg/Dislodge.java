@@ -5,11 +5,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * A "Dislodge" is a maneuver ordering the vehicle to attempt a
@@ -55,7 +55,7 @@ public class Dislodge extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 483;
@@ -68,7 +68,7 @@ public class Dislodge extends Maneuver {
 			_out.writeShort(timeout);
 			_out.writeFloat(rpm);
 			_out.writeByte((int)(direction != null? direction.value() : 0));
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -82,7 +82,7 @@ public class Dislodge extends Maneuver {
 			timeout = buf.getShort() & 0xFFFF;
 			rpm = buf.getFloat();
 			direction = DIRECTION.valueOf(buf.get() & 0xFF);
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

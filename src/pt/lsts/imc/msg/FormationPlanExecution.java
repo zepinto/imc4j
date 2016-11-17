@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * A "Formation Plan" is a maneuver specifying a plan for a team of vehicles.
@@ -146,7 +147,7 @@ public class FormationPlanExecution extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 477;
@@ -169,7 +170,7 @@ public class FormationPlanExecution extends Maneuver {
 			_out.writeShort(converg_timeout);
 			_out.writeShort(comms_timeout);
 			_out.writeFloat(turb_lim);
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -193,7 +194,7 @@ public class FormationPlanExecution extends Maneuver {
 			converg_timeout = buf.getShort() & 0xFFFF;
 			comms_timeout = buf.getShort() & 0xFFFF;
 			turb_lim = buf.getFloat();
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

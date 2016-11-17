@@ -4,11 +4,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * Low level maneuver that sends a (heading, roll, speed, ...)
@@ -43,7 +43,7 @@ public class LowLevelControl extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 455;
@@ -55,7 +55,7 @@ public class LowLevelControl extends Maneuver {
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializeInlineMsg(_out, control);
 			_out.writeShort(duration);
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -68,7 +68,7 @@ public class LowLevelControl extends Maneuver {
 		try {
 			control = SerializationUtils.deserializeInlineMsg(buf);
 			duration = buf.getShort() & 0xFFFF;
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

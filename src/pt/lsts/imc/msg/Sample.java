@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -12,6 +11,7 @@ import pt.lsts.imc.def.Boolean;
 import pt.lsts.imc.def.SpeedUnits;
 import pt.lsts.imc.def.ZUnits;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * A "Sample" is a maneuver specifying a movement of the vehicle to a
@@ -124,7 +124,7 @@ public class Sample extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 489;
@@ -144,7 +144,7 @@ public class Sample extends Maneuver {
 			_out.writeByte((int)(syringe0 != null? syringe0.value() : 0));
 			_out.writeByte((int)(syringe1 != null? syringe1.value() : 0));
 			_out.writeByte((int)(syringe2 != null? syringe2.value() : 0));
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -165,7 +165,7 @@ public class Sample extends Maneuver {
 			syringe0 = Boolean.valueOf(buf.get() & 0xFF);
 			syringe1 = Boolean.valueOf(buf.get() & 0xFF);
 			syringe2 = Boolean.valueOf(buf.get() & 0xFF);
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

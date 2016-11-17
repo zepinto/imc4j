@@ -11,6 +11,7 @@ import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 public class PlanStatistics extends Message {
 	public static final int ID_STATIC = 564;
@@ -45,7 +46,7 @@ public class PlanStatistics extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String durations = "";
+	public TupleList durations = new TupleList("");
 
 	/**
 	 * Distances travelled in meters in each maneuver and/or total: “Total=2000,Rows=1800,Elevator=200”
@@ -54,7 +55,7 @@ public class PlanStatistics extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String distances = "";
+	public TupleList distances = new TupleList("");
 
 	/**
 	 * List of components active by plan actions during the plan and time active in seconds: “Sidescan=100,Camera Module=150”
@@ -63,7 +64,7 @@ public class PlanStatistics extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String actions = "";
+	public TupleList actions = new TupleList("");
 
 	/**
 	 * Amount of fuel spent, in battery percentage, by different parcels (if applicable): “Total=35,Hotel=5,Payload=10,Motion=20,IMU=0”
@@ -72,7 +73,7 @@ public class PlanStatistics extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String fuel = "";
+	public TupleList fuel = new TupleList("");
 
 	public int mgid() {
 		return 564;
@@ -91,10 +92,10 @@ public class PlanStatistics extends Message {
 				}
 			}
 			_out.writeByte((int)_properties);
-			SerializationUtils.serializePlaintext(_out, durations);
-			SerializationUtils.serializePlaintext(_out, distances);
-			SerializationUtils.serializePlaintext(_out, actions);
-			SerializationUtils.serializePlaintext(_out, fuel);
+			SerializationUtils.serializePlaintext(_out, durations == null? null : durations.toString());
+			SerializationUtils.serializePlaintext(_out, distances == null? null : distances.toString());
+			SerializationUtils.serializePlaintext(_out, actions == null? null : actions.toString());
+			SerializationUtils.serializePlaintext(_out, fuel == null? null : fuel.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -114,10 +115,10 @@ public class PlanStatistics extends Message {
 					properties.add(PROPERTIES_op);
 				}
 			}
-			durations = SerializationUtils.deserializePlaintext(buf);
-			distances = SerializationUtils.deserializePlaintext(buf);
-			actions = SerializationUtils.deserializePlaintext(buf);
-			fuel = SerializationUtils.deserializePlaintext(buf);
+			durations = new TupleList(SerializationUtils.deserializePlaintext(buf));
+			distances = new TupleList(SerializationUtils.deserializePlaintext(buf));
+			actions = new TupleList(SerializationUtils.deserializePlaintext(buf));
+			fuel = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

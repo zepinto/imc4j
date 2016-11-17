@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * The Custom Maneuver message may be used as specification of a
@@ -46,7 +47,7 @@ public class CustomManeuver extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 465;
@@ -58,7 +59,7 @@ public class CustomManeuver extends Maneuver {
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeShort(timeout);
 			SerializationUtils.serializePlaintext(_out, name);
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -71,7 +72,7 @@ public class CustomManeuver extends Maneuver {
 		try {
 			timeout = buf.getShort() & 0xFFFF;
 			name = SerializationUtils.deserializePlaintext(buf);
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

@@ -5,11 +5,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * This message describes the names and identification numbers of
@@ -34,7 +34,7 @@ public class EntityList extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String list = "";
+	public TupleList list = new TupleList("");
 
 	public int mgid() {
 		return 5;
@@ -45,7 +45,7 @@ public class EntityList extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeByte((int)(op != null? op.value() : 0));
-			SerializationUtils.serializePlaintext(_out, list);
+			SerializationUtils.serializePlaintext(_out, list == null? null : list.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -57,7 +57,7 @@ public class EntityList extends Message {
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
 			op = OP.valueOf(buf.get() & 0xFF);
-			list = SerializationUtils.deserializePlaintext(buf);
+			list = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

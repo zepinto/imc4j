@@ -4,11 +4,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * Report of fuel level.
@@ -47,7 +47,7 @@ public class FuelLevel extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String opmodes = "";
+	public TupleList opmodes = new TupleList("");
 
 	public int mgid() {
 		return 279;
@@ -59,7 +59,7 @@ public class FuelLevel extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeFloat(value);
 			_out.writeFloat(confidence);
-			SerializationUtils.serializePlaintext(_out, opmodes);
+			SerializationUtils.serializePlaintext(_out, opmodes == null? null : opmodes.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -72,7 +72,7 @@ public class FuelLevel extends Message {
 		try {
 			value = buf.getFloat();
 			confidence = buf.getFloat();
-			opmodes = SerializationUtils.deserializePlaintext(buf);
+			opmodes = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

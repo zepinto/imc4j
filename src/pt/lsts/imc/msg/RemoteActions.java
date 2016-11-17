@@ -4,11 +4,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * This message is used to send a periodic update of values for
@@ -25,7 +25,7 @@ public class RemoteActions extends Message {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String actions = "";
+	public TupleList actions = new TupleList("");
 
 	public int mgid() {
 		return 305;
@@ -35,7 +35,7 @@ public class RemoteActions extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			SerializationUtils.serializePlaintext(_out, actions);
+			SerializationUtils.serializePlaintext(_out, actions == null? null : actions.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -46,7 +46,7 @@ public class RemoteActions extends Message {
 
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
-			actions = SerializationUtils.deserializePlaintext(buf);
+			actions = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

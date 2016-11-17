@@ -13,6 +13,7 @@ import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.def.SpeedUnits;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * This maneuver triggers an external controller that will guide the vehicle during a specified duration
@@ -117,7 +118,7 @@ public class AutonomousSection extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 493;
@@ -143,7 +144,7 @@ public class AutonomousSection extends Maneuver {
 			_out.writeDouble(time_limit);
 			SerializationUtils.serializeMsgList(_out, area_limits);
 			SerializationUtils.serializePlaintext(_out, controller);
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -170,7 +171,7 @@ public class AutonomousSection extends Maneuver {
 			time_limit = buf.getDouble();
 			area_limits = SerializationUtils.deserializeMsgList(buf);
 			controller = SerializationUtils.deserializePlaintext(buf);
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);

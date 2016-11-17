@@ -4,13 +4,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
-import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
 import pt.lsts.imc.def.SpeedUnits;
 import pt.lsts.imc.def.ZUnits;
 import pt.lsts.imc.util.SerializationUtils;
+import pt.lsts.imc.util.TupleList;
 
 /**
  * Automatic takeoff for UAVs.
@@ -96,7 +96,7 @@ public class Takeoff extends Maneuver {
 			type = IMCField.TYPE_PLAINTEXT,
 			units = "TupleList"
 	)
-	public String custom = "";
+	public TupleList custom = new TupleList("");
 
 	public int mgid() {
 		return 491;
@@ -113,7 +113,7 @@ public class Takeoff extends Maneuver {
 			_out.writeFloat(speed);
 			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
 			_out.writeFloat(takeoff_pitch);
-			SerializationUtils.serializePlaintext(_out, custom);
+			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -131,7 +131,7 @@ public class Takeoff extends Maneuver {
 			speed = buf.getFloat();
 			speed_units = SpeedUnits.valueOf(buf.get() & 0xFF);
 			takeoff_pitch = buf.getFloat();
-			custom = SerializationUtils.deserializePlaintext(buf);
+			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);
