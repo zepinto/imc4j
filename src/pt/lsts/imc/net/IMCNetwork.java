@@ -26,8 +26,10 @@ import org.glassfish.grizzly.nio.transport.UDPNIOTransport;
 import org.glassfish.grizzly.nio.transport.UDPNIOTransportBuilder;
 
 import com.squareup.otto.Bus;
+import com.squareup.otto.Subscribe;
 import com.squareup.otto.ThreadEnforcer;
 
+import pt.lsts.imc.annotations.Periodic;
 import pt.lsts.imc.msg.Announce;
 import pt.lsts.imc.msg.Message;
 import pt.lsts.imc.util.PeriodicCallbacks;
@@ -157,115 +159,201 @@ public class IMCNetwork extends BaseFilter {
 			udpTransport.shutdownNow();
 		if (tcpTransport != null)
 			tcpTransport.shutdownNow();
-
+		
 		synchronized (instance().listeners) {
-			for (Object o : instance().listeners)
-				unregister(o);
+			for (Object o : instance().listeners) {
+				unregister(o);				
+			}
 			instance().listeners.clear();
 		}
 	}
 
-	/* STATIC METHODS */
-
-	public static void sendUdp(Message msg, InetSocketAddress addr) throws Exception {
-		if (instance().udpTransport == null) {
+	private void _sendTcp(Message msg, InetSocketAddress addr) throws Exception {
+		if (tcpTransport == null) {
+			Socket socket = new Socket(addr.getAddress(), addr.getPort());
+			socket.getOutputStream().write(msg.serialize());
+			socket.close();
+		} else {
+			Connection<?> conn = tcpTransport.connect(addr).get(10, TimeUnit.SECONDS);
+			conn.write(msg);
+			conn.close();
+		}
+	}
+	
+	private void _sendUdp(Message msg, InetSocketAddress addr) throws Exception {
+		if (udpTransport == null) {
 			byte[] data = msg.serialize();
 			DatagramPacket pkt = new DatagramPacket(data, data.length, addr);
 			DatagramSocket dsocket = new DatagramSocket();
 			dsocket.send(pkt);
 			dsocket.close();
 		} else {
-			Connection<?> conn = instance().udpTransport.connect(addr).get(10, TimeUnit.SECONDS);
+			Connection<?> conn = udpTransport.connect(addr).get(10, TimeUnit.SECONDS);
 			conn.write(msg);
 			conn.close();
 		}
 	}
-
-	private static void sendTcp(Message msg, InetSocketAddress addr) throws Exception {
-		if (instance().tcpTransport == null) {
-			Socket socket = new Socket(addr.getAddress(), addr.getPort());
-			socket.getOutputStream().write(msg.serialize());
-			socket.close();
-		} else {
-			Connection<?> conn = instance().tcpTransport.connect(addr).get(10, TimeUnit.SECONDS);
-			conn.write(msg);
-			conn.close();
-		}
-	}
-
-	public static void sendUdp(Message msg, String dst) throws Exception {
-		Integer imcid = instance().peers.resolveSystem(dst);
+	
+	private void _sendUdp(Message msg, String dst) throws Exception {
+		Integer imcid = peers.resolveSystem(dst);
 		if (imcid == null)
 			throw new Exception("Peer is not available");
 
-		InetSocketAddress addr = instance().peers.udpAddress(dst);
+		InetSocketAddress addr = peers.udpAddress(dst);
 		if (addr == null)
 			throw new Exception("Peer is not available over UDP");
 
 		msg.dst = imcid;
-		instance().fillIn(msg);
+		fillIn(msg);
 		sendUdp(msg, addr);
-		instance().bus.post(msg);
+		bus.post(msg);
 	}
 
-	public static void sendTcp(Message msg, String dst) throws Exception {
-		Integer imcid = instance().peers.resolveSystem(dst);
+	private void _sendTcp(Message msg, String dst) throws Exception {
+		Integer imcid = peers.resolveSystem(dst);
 		if (imcid == null)
 			throw new Exception("Peer is not available");
 
-		InetSocketAddress addr = instance().peers.tcpAddress(dst);
+		InetSocketAddress addr = peers.tcpAddress(dst);
 		if (addr == null)
 			throw new Exception("Peer is not available over TCP");
 
 		msg.dst = imcid;
-		instance().fillIn(msg);
+		fillIn(msg);
 		sendTcp(msg, addr);
-		instance().bus.post(msg);
+		bus.post(msg);
 	}
-
-	public static void start() throws Exception {
-		instance()._start();
-	}
-
-	public static void stop() throws Exception {
-		PeriodicCallbacks.stopAll();
-		instance()._stop();
-
-	}
-
-	public static void register(Object pojo) {
-		synchronized (instance().listeners) {
-			if (instance().listeners.add(pojo)) {
-				instance().bus.register(pojo);
+	
+	private void _register(Object pojo) {
+		synchronized (listeners) {
+			if (listeners.add(pojo)) {
+				bus.register(pojo);
 				PeriodicCallbacks.register(pojo);
 			}
 		}
 	}
-
-	public static void unregister(Object pojo) {
-		instance().bus.unregister(pojo);
+	
+	private void _unregister(Object pojo) {
+		bus.unregister(pojo);
 		PeriodicCallbacks.unregister(pojo);
-		synchronized (instance().listeners) {
-			instance().listeners.remove(pojo);
+		synchronized (listeners) {
+			listeners.remove(pojo);
 		}
 	}
-
-	public static void post(Message msg) {
-		instance().bus.post(msg);
+	
+	private void _post(Object message) {
+		bus.post(message);
+	}
+	
+	/**
+	 * Create IMC node and start listening for IMC messages 
+	 */
+	public static void start() throws Exception {
+		instance()._start();
 	}
 
+	/**
+	 * Stop listening for IMC messages
+	 * @throws Exception
+	 */
+	public static void stop() throws Exception {
+		instance()._stop();
+	}
+
+	/**
+	 * Add a recipient for message and periodic events
+	 * @param pojo An object with methods marked with {@linkplain Subscribe} and/or {@linkplain Periodic} 
+	 */
+	public static void register(Object pojo) {
+		instance()._register(pojo);
+	}
+
+	/**
+	 * Remove a previously registered recipient of events
+	 * @param pojo The recipient to be removed
+	 */
+	public static void unregister(Object pojo) {
+		instance()._unregister(pojo);		
+	}
+
+	/**
+	 * Post an event to all recipients of that event type (class)
+	 * @param msg An IMC message 
+	 */
+	public static void post(Message msg) {
+		instance()._post(msg);
+	}
+
+	/**
+	 * Send an IMC message to given UDP address
+	 * @param msg The message to send
+	 * @param addr The UDP endpoint
+	 * @throws Exception In case the endpoint cannot be reached
+	 */
+	public static void sendUdp(Message msg, InetSocketAddress addr) throws Exception {
+		instance()._sendUdp(msg, addr);
+	}
+
+	/**
+	 * Send an IMC message to given TCP address
+	 * @param msg The message to send
+	 * @param addr The TCP endpoint
+	 * @throws Exception In case the endpoint cannot be reached or transmission error
+	 */
+	public static void sendTcp(Message msg, InetSocketAddress addr) throws Exception {
+		instance()._sendTcp(msg, addr);
+	}
+	
+	/**
+	 * Send an IMC message to the given system using UDP
+	 * @param msg The message to send
+	 * @param dst The name of the recipient (as announced)
+	 * @throws Exception In case the system is not known
+	 */
+	public static void sendUdp(Message msg, String dst) throws Exception {
+		instance()._sendUdp(msg, dst);
+	}
+	
+	/**
+	 * Send an IMC message to the given system using TCP
+	 * @param msg The message to send
+	 * @param dst The name of the recipient (as announced)
+	 * @throws Exception In case the system is not known, it cannot be reached or transmission failed
+	 */
+	public static void sendTcp(Message msg, String dst) throws Exception {
+		instance()._sendTcp(msg, dst);
+	}
+	
+	/**
+	 * Resolve the system name that generated the given message
+	 * @param msg An IMC message
+	 * @return The name of the system that generated the message
+	 */
 	public static String sourceName(Message msg) {
 		return instance().peers.resolveSystem(msg.src);
 	}
 
+	/**
+	 * Check if a system has transmitted anything recently
+	 * @param system The name of the system
+	 * @return <code>true</code> if the system sent some message in the last 60 seconds
+	 */
 	public static boolean isVisible(String system) {
 		return instance().peers.isConnected(system);
 	}
 
+	/**
+	 * If set to <code>true</code>, it will start sending heartbeats to all announced systems.
+	 * @param autoconnect Whether to use Auto connect
+	 */
 	public static void setAutoconnect(boolean autoconnect) {
 		instance().beater.setAutoConnect(autoconnect);
 	}
 
+	/**
+	 * Send a message, via UDP, to all connected peers
+	 * @param msg The message to send
+	 */
 	public static void sendToAll(Message msg) {
 		for (String rec : instance().beater.getRecipients()) {
 			try {
@@ -274,12 +362,5 @@ public class IMCNetwork extends BaseFilter {
 				e.printStackTrace();
 			}
 		}
-	}
-
-	public static void main(String[] args) throws Exception {
-		IMCNetwork.start();
-		System.out.println("Press any key to stop the server...");
-		System.in.read();
-		IMCNetwork.stop();
 	}
 }
