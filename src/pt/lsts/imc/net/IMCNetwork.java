@@ -41,7 +41,7 @@ public class IMCNetwork extends BaseFilter {
 	private static IMCNetwork instance = null;
 
 	private Bus bus = new Bus(ThreadEnforcer.ANY);
-	private IMCPeers peers = new IMCPeers();
+	private IMCRegistry peers = new IMCRegistry();
 	private IMCBeater beater = new IMCBeater();
 	private IMCAnnouncer announcer;
 	private HashSet<Object> listeners = new HashSet<>();
@@ -71,7 +71,7 @@ public class IMCNetwork extends BaseFilter {
 		bus.post(msg);
 		return ctx.getStopAction();
 	}
-
+	
 	private void _start() throws Exception {
 		int udpPort = -1;
 		int multicastPort = -1;

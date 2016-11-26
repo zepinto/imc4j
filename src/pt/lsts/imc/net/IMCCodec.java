@@ -15,6 +15,11 @@ import org.glassfish.grizzly.filterchain.AbstractCodecFilter;
 import pt.lsts.imc.msg.Message;
 import pt.lsts.imc.msg.MessageFactory;
 
+/**
+ * This class implements translation between streams of bytes and IMC messages.
+ * @see AbstractCodecFilter 
+ * @author zp
+ */
 public class IMCCodec extends AbstractCodecFilter<Buffer, Message> {
 
 	public IMCCodec() {
