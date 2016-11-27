@@ -11,6 +11,10 @@ import org.glassfish.grizzly.TransformationResult;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.attributes.AttributeStorage;
 import org.glassfish.grizzly.filterchain.AbstractCodecFilter;
+import org.glassfish.grizzly.filterchain.BaseFilter;
+import org.glassfish.grizzly.filterchain.FilterChain;
+import org.glassfish.grizzly.filterchain.FilterChainBuilder;
+import org.glassfish.grizzly.filterchain.TransportFilter;
 
 import pt.lsts.imc.msg.Message;
 import pt.lsts.imc.msg.MessageFactory;
@@ -22,6 +26,16 @@ import pt.lsts.imc.msg.MessageFactory;
  */
 public class IMCCodec extends AbstractCodecFilter<Buffer, Message> {
 
+	public static FilterChain ImcFilter(BaseFilter baseFilter) {
+		FilterChainBuilder filterChainBuilder;
+		filterChainBuilder = FilterChainBuilder.stateless();
+		filterChainBuilder.add(new TransportFilter());
+		filterChainBuilder.add(new IMCCodec());
+		filterChainBuilder.add(baseFilter);
+		return filterChainBuilder.build();		
+	}
+	
+	
 	public IMCCodec() {
 		super(new Decoder(), new Encoder());
 	}

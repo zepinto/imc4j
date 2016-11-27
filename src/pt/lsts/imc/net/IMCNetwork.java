@@ -15,10 +15,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.BaseFilter;
-import org.glassfish.grizzly.filterchain.FilterChainBuilder;
+import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.NextAction;
-import org.glassfish.grizzly.filterchain.TransportFilter;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.nio.transport.UDPNIOConnection;
@@ -36,16 +35,13 @@ import pt.lsts.imc.util.PeriodicCallbacks;
 
 public class IMCNetwork extends BaseFilter {
 
-	private static String SystemName = "IMC4J";
-	private static int ImcId = 0x3333;
 	private static IMCNetwork instance = null;
 
 	private Bus bus = new Bus(ThreadEnforcer.ANY);
-	private IMCRegistry peers = new IMCRegistry();
 	private IMCBeater beater = new IMCBeater();
-	private IMCAnnouncer announcer;
+	private IMCAnnouncer announcer = new IMCAnnouncer();
 	private HashSet<Object> listeners = new HashSet<>();
-	private FilterChainBuilder filterChainBuilder;
+	private FilterChain filterChain;
 	private UDPNIOTransport udpTransport = null;
 	private TCPNIOTransport tcpTransport = null;
 	private UDPNIOConnection udpMulticast = null;
@@ -57,17 +53,14 @@ public class IMCNetwork extends BaseFilter {
 	}
 
 	private IMCNetwork() {
-		filterChainBuilder = FilterChainBuilder.stateless();
-		filterChainBuilder.add(new TransportFilter());
-		filterChainBuilder.add(new IMCCodec());
-		filterChainBuilder.add(this);
+		filterChain = IMCCodec.ImcFilter(this);		
 	}
 
 	@Override
 	public NextAction handleRead(FilterChainContext ctx) throws IOException {
 		Message msg = ctx.getMessage();
 		if (msg instanceof Announce)
-			peers.setAnnounce((Announce) msg, (InetSocketAddress) ctx.getAddress());
+			IMCRegistry.setAnnounce((Announce) msg, (InetSocketAddress) ctx.getAddress());
 		bus.post(msg);
 		return ctx.getStopAction();
 	}
@@ -99,7 +92,6 @@ public class IMCNetwork extends BaseFilter {
 		if (multicastPort == -1)
 			throw new Exception("Could not join multicast group");
 
-		announcer = new IMCAnnouncer(SystemName, ImcId, udpPort);
 		register(beater);
 		register(announcer);
 	}
@@ -107,7 +99,7 @@ public class IMCNetwork extends BaseFilter {
 	private void bindUdp(int port) throws IOException {
 		if (udpTransport == null) {
 			udpTransport = UDPNIOTransportBuilder.newInstance().build();
-			udpTransport.setProcessor(filterChainBuilder.build());
+			udpTransport.setProcessor(filterChain);
 			udpTransport.setReuseAddress(true);
 			udpTransport.configureBlocking(false);
 			udpTransport.start();
@@ -119,7 +111,7 @@ public class IMCNetwork extends BaseFilter {
 	private void bindTcp(int port) throws IOException {
 		if (tcpTransport == null) {
 			tcpTransport = TCPNIOTransportBuilder.newInstance().build();
-			tcpTransport.setProcessor(filterChainBuilder.build());
+			tcpTransport.setProcessor(filterChain);
 			tcpTransport.setReuseAddress(true);
 			tcpTransport.configureBlocking(false);
 			tcpTransport.start();
@@ -131,7 +123,7 @@ public class IMCNetwork extends BaseFilter {
 	private void joinMulticastGroup(String address, int port) throws Exception {
 		if (udpTransport == null) {
 			udpTransport = UDPNIOTransportBuilder.newInstance().build();
-			udpTransport.setProcessor(filterChainBuilder.build());
+			udpTransport.setProcessor(filterChain);
 			udpTransport.setReuseAddress(true);
 			udpTransport.configureBlocking(false);
 			udpTransport.start();
@@ -148,7 +140,7 @@ public class IMCNetwork extends BaseFilter {
 
 	private void fillIn(Message msg) {
 		if (msg.src == 0xFFFF)
-			msg.src = ImcId;
+			msg.src = IMCRegistry.getImcId();
 	}
 
 	private void _stop() throws Exception {
@@ -195,11 +187,11 @@ public class IMCNetwork extends BaseFilter {
 	}
 	
 	private void _sendUdp(Message msg, String dst) throws Exception {
-		Integer imcid = peers.resolveSystem(dst);
+		Integer imcid = IMCRegistry.resolveSystem(dst);
 		if (imcid == null)
 			throw new Exception("Peer is not available");
 
-		InetSocketAddress addr = peers.udpAddress(dst);
+		InetSocketAddress addr = IMCRegistry.udpAddress(dst);
 		if (addr == null)
 			throw new Exception("Peer is not available over UDP");
 
@@ -210,11 +202,11 @@ public class IMCNetwork extends BaseFilter {
 	}
 
 	private void _sendTcp(Message msg, String dst) throws Exception {
-		Integer imcid = peers.resolveSystem(dst);
+		Integer imcid = IMCRegistry.resolveSystem(dst);
 		if (imcid == null)
 			throw new Exception("Peer is not available");
 
-		InetSocketAddress addr = peers.tcpAddress(dst);
+		InetSocketAddress addr = IMCRegistry.tcpAddress(dst);
 		if (addr == null)
 			throw new Exception("Peer is not available over TCP");
 
@@ -330,7 +322,7 @@ public class IMCNetwork extends BaseFilter {
 	 * @return The name of the system that generated the message
 	 */
 	public static String sourceName(Message msg) {
-		return instance().peers.resolveSystem(msg.src);
+		return IMCRegistry.resolveSystem(msg.src);
 	}
 
 	/**
@@ -339,7 +331,7 @@ public class IMCNetwork extends BaseFilter {
 	 * @return <code>true</code> if the system sent some message in the last 60 seconds
 	 */
 	public static boolean isVisible(String system) {
-		return instance().peers.isConnected(system);
+		return IMCRegistry.isConnected(system);
 	}
 
 	/**

@@ -1,39 +1,146 @@
 package pt.lsts.imc.net;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.glassfish.grizzly.filterchain.BaseFilter;
+import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.filterchain.NextAction;
+
+import pt.lsts.imc.def.SystemType;
 import pt.lsts.imc.msg.Announce;
 import pt.lsts.imc.msg.EntityList;
 import pt.lsts.imc.util.TupleList;
 
 /**
- * This class holds a registry of known devices (previously announced)
+ * This class holds a registry of known devices (previously announced),
+ * including local info
  * 
  * @author zp
  */
-public class IMCRegistry {
+public class IMCRegistry extends BaseFilter {
 
+	private static IMCRegistry instance = null;
+	
+	public static synchronized IMCRegistry instance() {
+		if (instance == null)
+			instance = new IMCRegistry();
+		return instance;
+	}
+	
 	private LinkedHashMap<String, Peer> peers = new LinkedHashMap<>();
 	private LinkedHashMap<Integer, String> peerNames = new LinkedHashMap<>();
 	private LinkedHashMap<Integer, TupleList> entities = new LinkedHashMap<>();
-
+	
+	private String sys_name = "IMC4J";
+	private int local_id = 0x3333;
+	private String services = "";
+	private double lat = 0, lon = 0, height = 0;
+	private SystemType sys_type = SystemType.CCU;
+	
 	private static final Pattern pattern_udp = Pattern
 			.compile("imc\\+udp\\:\\/\\/(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\:(\\d+)/");
 	private static final Pattern pattern_tcp = Pattern
 			.compile("imc\\+tcp\\:\\/\\/(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\:(\\d+)/");
 
+	public static Announce buildAnnounce() {
+		IMCRegistry reg = instance();
+		Announce announce = new Announce();
+		announce.sys_name = reg.sys_name;
+		announce.src = reg.local_id;
+		announce.services = reg.services;
+		announce.lat = reg.lat;
+		announce.lon = reg.lon;
+		announce.height = (float)reg.height;
+		announce.sys_type = reg.sys_type;
+		return announce;
+	}
+	
+	public static void setAnnounce(Announce announce, InetSocketAddress address) {
+		instance()._setAnnounce(announce, address);
+	}
+	
+	public static void setEntityList(EntityList list) {
+		instance()._setEntityList(list);
+	}
+	
+	public static int getImcId() {
+		return instance().local_id;
+	}
+	
+	public static String getSysName() {
+		return instance().sys_name;
+	}
+	
+	public static void setImcId(int id) {
+		instance().local_id = id;
+	}
+	
+	public static void setSysName(String name) {
+		instance().sys_name = name;
+	}
+	
+	public static void setSysType(SystemType type) {
+		instance().sys_type = type;
+	}
+	
+	public static void addService(String service) {
+		IMCRegistry registry = instance();
+		if (!registry.services.isEmpty())
+			registry.services += ";";
+		registry.services += service;
+	}
+	
+	public static void setLocation(double lat, double lon, double height) {
+		IMCRegistry registry = instance();
+		registry.lat = lat;
+		registry.lon = lon;
+		registry.height = height;		
+	}
+	
+	public static Collection<String> connectedPeers() {
+		return instance()._peers();
+	}
+	
+	public static boolean isConnected(String name) {
+		return instance()._isConnected(name);
+	}
+
+	public static Integer resolveSystem(String name) {
+		return instance()._resolveSystem(name);
+	}
+
+	public static String resolveSystem(int id) {
+		return instance()._resolveSystem(id);
+	}
+
+	public static InetSocketAddress udpAddress(String name) {
+		return instance()._udpAddress(name);
+	}
+
+	public static InetSocketAddress tcpAddress(String name) {
+		return instance()._tcpAddress(name);
+	}
+
+	public static String resolveEntity(int src, int src_ent) {
+		return instance()._resolveEntity(src, src_ent);
+	}
+	
 	/**
 	 * Set entities received
 	 * 
 	 * @param msg
 	 *            Message with map of entities and ids
 	 */
-	public void setEntityList(EntityList msg) {
+	private void _setEntityList(EntityList msg) {
 		entities.put(msg.src, msg.list);
 	}
 
@@ -45,7 +152,7 @@ public class IMCRegistry {
 	 * @param address
 	 *            The Address where the message was sent from
 	 */
-	public void setAnnounce(Announce announce, InetSocketAddress address) {
+	private void _setAnnounce(Announce announce, InetSocketAddress address) {
 		Peer peer = new Peer(announce, address);
 		synchronized (peers) {
 			peers.put(announce.sys_name, peer);
@@ -63,11 +170,20 @@ public class IMCRegistry {
 	 * @return <code>true</code> if the system has sent announce in the last 60
 	 *         seconds
 	 */
-	public boolean isConnected(String name) {
+	private boolean _isConnected(String name) {
 		synchronized (peers) {
 			updatePeers();
 			return peers.containsKey(name);
 		}
+	}
+	
+	private List<String> _peers() {
+		ArrayList<String> ret = new ArrayList<>();
+		synchronized (peers) {
+			ret.addAll(peers.keySet());
+		}
+		ret.remove(getSysName());
+		return ret;
 	}
 
 	private void updatePeers() {
@@ -89,7 +205,7 @@ public class IMCRegistry {
 	 * @return The IMC ID of the system or <code>null</code> if the system is
 	 *         not connected.
 	 */
-	public Integer resolveSystem(String name) {
+	private Integer _resolveSystem(String name) {
 		Peer p;
 		synchronized (peers) {
 			p = peers.get(name);
@@ -106,7 +222,7 @@ public class IMCRegistry {
 	 * @return The name of the system or <code>null</code> if the system is not
 	 *         connected.
 	 */
-	public String resolveSystem(int id) {
+	private String _resolveSystem(int id) {
 		synchronized (peerNames) {
 			return peerNames.get(id);
 		}
@@ -120,7 +236,7 @@ public class IMCRegistry {
 	 * @return The UDP address of the system or <code>null</code> if the system
 	 *         did not announce UDP.
 	 */
-	public InetSocketAddress udpAddress(String name) {
+	private InetSocketAddress _udpAddress(String name) {
 		Peer p;
 		synchronized (peers) {
 			p = peers.get(name);
@@ -136,7 +252,7 @@ public class IMCRegistry {
 	 * @return The TCP address of the system or <code>null</code> if the system
 	 *         did not announce TCP.
 	 */
-	public InetSocketAddress tcpAddress(String name) {
+	private InetSocketAddress _tcpAddress(String name) {
 		Peer p;
 		synchronized (peers) {
 			p = peers.get(name);
@@ -153,7 +269,7 @@ public class IMCRegistry {
 	 *            The ID of the entity
 	 * @return The name of the entity with given id at the given system
 	 */
-	public String resolveEntity(int src, int src_ent) {
+	private String _resolveEntity(int src, int src_ent) {
 		TupleList list = entities.get(src);
 		if (list == null)
 			return null;
@@ -189,5 +305,10 @@ public class IMCRegistry {
 		long ageMillis() {
 			return System.currentTimeMillis() - timestamp;
 		}
+	}
+	
+	@Override
+	public NextAction handleRead(FilterChainContext ctx) throws IOException {
+		return super.handleRead(ctx);
 	}
 }
