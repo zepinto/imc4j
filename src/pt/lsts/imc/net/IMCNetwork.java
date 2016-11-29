@@ -8,16 +8,14 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
 import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChain;
-import org.glassfish.grizzly.filterchain.FilterChainContext;
-import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.nio.transport.UDPNIOConnection;
@@ -29,17 +27,18 @@ import com.squareup.otto.Subscribe;
 import com.squareup.otto.ThreadEnforcer;
 
 import pt.lsts.imc.annotations.Periodic;
-import pt.lsts.imc.msg.Announce;
 import pt.lsts.imc.msg.Message;
+import pt.lsts.imc.util.NetworkUtils;
 import pt.lsts.imc.util.PeriodicCallbacks;
 
-public class IMCNetwork extends BaseFilter {
+public class IMCNetwork extends AbstractImcConnection {
 
 	private static IMCNetwork instance = null;
 
 	private Bus bus = new Bus(ThreadEnforcer.ANY);
 	private IMCBeater beater = new IMCBeater();
 	private IMCAnnouncer announcer = new IMCAnnouncer();
+	private EntityListRequester entitiesReq = new EntityListRequester();
 	private HashSet<Object> listeners = new HashSet<>();
 	private FilterChain filterChain;
 	private UDPNIOTransport udpTransport = null;
@@ -54,15 +53,6 @@ public class IMCNetwork extends BaseFilter {
 
 	private IMCNetwork() {
 		filterChain = IMCCodec.ImcFilter(this);		
-	}
-
-	@Override
-	public NextAction handleRead(FilterChainContext ctx) throws IOException {
-		Message msg = ctx.getMessage();
-		if (msg instanceof Announce)
-			IMCRegistry.setAnnounce((Announce) msg, (InetSocketAddress) ctx.getAddress());
-		bus.post(msg);
-		return ctx.getStopAction();
 	}
 	
 	private void _start() throws Exception {
@@ -80,6 +70,12 @@ public class IMCNetwork extends BaseFilter {
 		if (udpPort == -1)
 			throw new Exception("Could not bind to any port");
 
+		Collection<String> netInt = NetworkUtils.getNetworkInterfaces();
+		for (String itf : netInt) {
+			IMCRegistry.addService("imc+udp://" + itf + ":" + udpPort + "/");
+			IMCRegistry.addService("imc+tcp://" + itf + ":" + udpPort + "/");
+		}
+
 		for (int port = 30100; port < 30105; port++) {
 			try {
 				joinMulticastGroup("224.0.75.69", port);
@@ -94,6 +90,8 @@ public class IMCNetwork extends BaseFilter {
 
 		register(beater);
 		register(announcer);
+		register(entitiesReq);
+		
 	}
 
 	private void bindUdp(int port) throws IOException {
@@ -197,7 +195,7 @@ public class IMCNetwork extends BaseFilter {
 
 		msg.dst = imcid;
 		fillIn(msg);
-		sendUdp(msg, addr);
+		sendUdp(msg, addr);		
 		bus.post(msg);
 	}
 
@@ -354,5 +352,47 @@ public class IMCNetwork extends BaseFilter {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	/**
+	 * Synchronously receive a message from the network
+	 * 
+	 * @param abbrev
+	 *            The type of message to receive
+	 * @param timeout
+	 *            The maximum time to wait for the message to arrive, in
+	 *            milliseconds
+	 * @return A first received message of that type or <code>null</code> if no
+	 *         such message was received.
+	 */
+	public static Message recv(String abbrev, long timeout) {
+		return instance().poll(abbrev, timeout);
+	}
+	
+	/**
+	 * Synchronously wait for a message coming from another peer
+	 * 
+	 * @param src
+	 *            The name of the peer that should be sending the message
+	 * @param abbrev
+	 *            The type of message to receive
+	 * @param timeout
+	 *            How long to wait for the message
+	 * @return The first received message of given type coming from specified
+	 *         peer or <code>null</code> if the peer did not send that message
+	 *         up to timeout milliseconds.
+	 */
+	public static Message recv(String src, String abbrev, long timeout) {
+		return instance().poll(src, abbrev, timeout);
+	}	
+	
+	@Override
+	public void handleMessage(Message msg) {
+		bus.post(msg);
+	}
+	
+	@Override
+	public void sendMessage(Message msg) {
+		sendToAll(msg);
 	}
 }

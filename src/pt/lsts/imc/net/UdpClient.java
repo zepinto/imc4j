@@ -31,7 +31,7 @@ public class UdpClient extends AbstractImcConnection {
 	
 	
 	@SuppressWarnings("unchecked")
-	public void send(Message msg) {
+	public void sendMessage(Message msg) {
 		if (msg.src == 0xFFFF)
 			msg.src = IMCRegistry.getImcId();
 		
@@ -49,7 +49,7 @@ public class UdpClient extends AbstractImcConnection {
 	public static void main(String[] args) throws Exception {
 		UdpClient conn = new UdpClient("127.0.0.1", 6002, 6001);
 		Thread.sleep(1000);
-		conn.send(new Abort());
+		conn.sendMessage(new Abort());
 		Thread.sleep(1000);
 	}
 }

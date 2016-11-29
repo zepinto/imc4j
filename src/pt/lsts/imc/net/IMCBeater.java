@@ -3,8 +3,6 @@ package pt.lsts.imc.net;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.squareup.otto.Subscribe;
-
 import pt.lsts.imc.annotations.Periodic;
 import pt.lsts.imc.msg.Announce;
 import pt.lsts.imc.msg.Heartbeat;
@@ -48,7 +46,9 @@ public class IMCBeater {
 		if (isAutoConnect())
 			destinations.addAll(IMCRegistry.connectedPeers());
 
-		for (String dst : destinations)
+		
+		
+		for (String dst : destinations) 
 			try {
 				IMCNetwork.sendUdp(new Heartbeat(), dst);
 			} catch (Exception e) {

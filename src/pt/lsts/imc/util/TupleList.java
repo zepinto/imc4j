@@ -41,6 +41,15 @@ public class TupleList {
 			list.put(name, null);
 	}
 	
+	public String keyFor(Object value) {
+		value = ""+value;
+		for (Entry<String, String> e : list.entrySet())
+			if (e.getValue().equals(value))
+				return e.getKey();
+		
+		return null;
+	}
+	
 	public String get(Object key) {
 		return get(""+key);
 	}

@@ -4,7 +4,8 @@ import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 
-import pt.lsts.imc.msg.Abort;
+import pt.lsts.imc.msg.EntityList;
+import pt.lsts.imc.msg.EntityList.OP;
 import pt.lsts.imc.msg.Message;
 
 public class TcpClient extends AbstractImcConnection {
@@ -26,16 +27,20 @@ public class TcpClient extends AbstractImcConnection {
 	}
 	
 	
-	public void send(Message msg) {
+	public void sendMessage(Message msg) {
 		msg.src = IMCRegistry.getImcId();
 		msg.dst = remoteId;
 		connection.write(msg);
 	}
 	
 	public static void main(String[] args) throws Exception {
+		System.out.println(IMCRegistry.getImcId());
 		TcpClient conn = new TcpClient("127.0.0.1", 9999);
-		Thread.sleep(1000);
-		conn.send(new Abort());
-		Thread.sleep(1000);
+		Thread.sleep(100);
+		EntityList q = new EntityList();
+		q.op = OP.OP_QUERY;
+		conn.sendMessage(q);
+		System.out.println(conn.poll("EntityList", 1000));
+			
 	}
 }

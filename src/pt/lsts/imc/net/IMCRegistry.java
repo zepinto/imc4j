@@ -40,11 +40,12 @@ public class IMCRegistry extends BaseFilter {
 	private LinkedHashMap<Integer, String> peerNames = new LinkedHashMap<>();
 	private LinkedHashMap<Integer, TupleList> entities = new LinkedHashMap<>();
 	
-	private String sys_name = "IMC4J";
-	private int local_id = 0x3333;
+	private String sys_name = System.getProperty("IMC_NAME", "IMC4J");
+	private int local_id = Integer.decode(System.getProperty("IMC_ID", "0x3333"));
+	private SystemType sys_type = SystemType.valueOf(System.getProperty("IMC_TYPE", "CCU"));
+	
 	private String services = "";
 	private double lat = 0, lon = 0, height = 0;
-	private SystemType sys_type = SystemType.CCU;
 	
 	private static final Pattern pattern_udp = Pattern
 			.compile("imc\\+udp\\:\\/\\/(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\:(\\d+)/");
@@ -134,6 +135,10 @@ public class IMCRegistry extends BaseFilter {
 		return instance()._resolveEntity(src, src_ent);
 	}
 	
+	public static Integer resolveEntity(String source, String entity) {
+		return instance()._resolveEntity(source, entity);
+	}
+	
 	/**
 	 * Set entities received
 	 * 
@@ -141,7 +146,7 @@ public class IMCRegistry extends BaseFilter {
 	 *            Message with map of entities and ids
 	 */
 	private void _setEntityList(EntityList msg) {
-		entities.put(msg.src, msg.list);
+		entities.put(msg.src, msg.list);		
 	}
 
 	/**
@@ -155,8 +160,9 @@ public class IMCRegistry extends BaseFilter {
 	private void _setAnnounce(Announce announce, InetSocketAddress address) {
 		Peer peer = new Peer(announce, address);
 		synchronized (peers) {
-			peers.put(announce.sys_name, peer);
+			peers.put(announce.sys_name, peer);			
 		}
+		
 		synchronized (peerNames) {
 			peerNames.put(announce.src, announce.sys_name);
 		}
@@ -273,9 +279,31 @@ public class IMCRegistry extends BaseFilter {
 		TupleList list = entities.get(src);
 		if (list == null)
 			return null;
-		return list.get("" + src_ent);
+		
+		return list.keyFor(src_ent);
 	}
+	
+	/**
+	 * Retrieve the id of an entity by name
+	 * 
+	 * @param src
+	 *            The name of the source system
+	 * @param entity
+	 *            The name of the entity to resolve
+	 * @return The id of the entity or <code>null</code> if unresolved.
+	 */
+	private Integer _resolveEntity(String src, String entity) {
+		Integer id = resolveSystem(src);
+		if (id == null)
+			return null;
 
+		TupleList list = entities.get(id);
+		if (list == null)
+			return null;
+
+		return list.getInt(entity);
+	}
+	
 	private static class Peer {
 		int id;
 
