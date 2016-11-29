@@ -1,5 +1,7 @@
 package pt.lsts.imc.msg;
 
+import java.lang.String;
+
 public class MessageFactory {
 	public static final int ID_EntityState = 1;
 
@@ -1440,6 +1442,879 @@ public class MessageFactory {
 			}
 			default: {
 				return null;
+			}
+		}
+	}
+
+	public static Message create(String abbrev) {
+		return create(idOf(abbrev));
+	}
+
+	public static int idOf(String abbrev) {
+		switch(abbrev) {
+			case "EntityState": {
+				return ID_EntityState;
+			}
+			case "QueryEntityState": {
+				return ID_QueryEntityState;
+			}
+			case "EntityInfo": {
+				return ID_EntityInfo;
+			}
+			case "QueryEntityInfo": {
+				return ID_QueryEntityInfo;
+			}
+			case "EntityList": {
+				return ID_EntityList;
+			}
+			case "CpuUsage": {
+				return ID_CpuUsage;
+			}
+			case "TransportBindings": {
+				return ID_TransportBindings;
+			}
+			case "RestartSystem": {
+				return ID_RestartSystem;
+			}
+			case "DevCalibrationControl": {
+				return ID_DevCalibrationControl;
+			}
+			case "DevCalibrationState": {
+				return ID_DevCalibrationState;
+			}
+			case "EntityActivationState": {
+				return ID_EntityActivationState;
+			}
+			case "QueryEntityActivationState": {
+				return ID_QueryEntityActivationState;
+			}
+			case "VehicleOperationalLimits": {
+				return ID_VehicleOperationalLimits;
+			}
+			case "MsgList": {
+				return ID_MsgList;
+			}
+			case "SimulatedState": {
+				return ID_SimulatedState;
+			}
+			case "LeakSimulation": {
+				return ID_LeakSimulation;
+			}
+			case "UASimulation": {
+				return ID_UASimulation;
+			}
+			case "DynamicsSimParam": {
+				return ID_DynamicsSimParam;
+			}
+			case "StorageUsage": {
+				return ID_StorageUsage;
+			}
+			case "CacheControl": {
+				return ID_CacheControl;
+			}
+			case "LoggingControl": {
+				return ID_LoggingControl;
+			}
+			case "LogBookEntry": {
+				return ID_LogBookEntry;
+			}
+			case "LogBookControl": {
+				return ID_LogBookControl;
+			}
+			case "ReplayControl": {
+				return ID_ReplayControl;
+			}
+			case "ClockControl": {
+				return ID_ClockControl;
+			}
+			case "HistoricCTD": {
+				return ID_HistoricCTD;
+			}
+			case "HistoricTelemetry": {
+				return ID_HistoricTelemetry;
+			}
+			case "HistoricSonarData": {
+				return ID_HistoricSonarData;
+			}
+			case "HistoricEvent": {
+				return ID_HistoricEvent;
+			}
+			case "Heartbeat": {
+				return ID_Heartbeat;
+			}
+			case "Announce": {
+				return ID_Announce;
+			}
+			case "AnnounceService": {
+				return ID_AnnounceService;
+			}
+			case "RSSI": {
+				return ID_RSSI;
+			}
+			case "VSWR": {
+				return ID_VSWR;
+			}
+			case "LinkLevel": {
+				return ID_LinkLevel;
+			}
+			case "Sms": {
+				return ID_Sms;
+			}
+			case "SmsTx": {
+				return ID_SmsTx;
+			}
+			case "SmsRx": {
+				return ID_SmsRx;
+			}
+			case "SmsState": {
+				return ID_SmsState;
+			}
+			case "TextMessage": {
+				return ID_TextMessage;
+			}
+			case "IridiumMsgRx": {
+				return ID_IridiumMsgRx;
+			}
+			case "IridiumMsgTx": {
+				return ID_IridiumMsgTx;
+			}
+			case "IridiumTxStatus": {
+				return ID_IridiumTxStatus;
+			}
+			case "GroupMembershipState": {
+				return ID_GroupMembershipState;
+			}
+			case "SystemGroup": {
+				return ID_SystemGroup;
+			}
+			case "LinkLatency": {
+				return ID_LinkLatency;
+			}
+			case "ExtendedRSSI": {
+				return ID_ExtendedRSSI;
+			}
+			case "HistoricData": {
+				return ID_HistoricData;
+			}
+			case "CompressedHistory": {
+				return ID_CompressedHistory;
+			}
+			case "HistoricSample": {
+				return ID_HistoricSample;
+			}
+			case "HistoricDataQuery": {
+				return ID_HistoricDataQuery;
+			}
+			case "RemoteCommand": {
+				return ID_RemoteCommand;
+			}
+			case "LblRange": {
+				return ID_LblRange;
+			}
+			case "LblBeacon": {
+				return ID_LblBeacon;
+			}
+			case "LblConfig": {
+				return ID_LblConfig;
+			}
+			case "AcousticMessage": {
+				return ID_AcousticMessage;
+			}
+			case "AcousticOperation": {
+				return ID_AcousticOperation;
+			}
+			case "AcousticSystemsQuery": {
+				return ID_AcousticSystemsQuery;
+			}
+			case "AcousticSystems": {
+				return ID_AcousticSystems;
+			}
+			case "AcousticLink": {
+				return ID_AcousticLink;
+			}
+			case "Rpm": {
+				return ID_Rpm;
+			}
+			case "Voltage": {
+				return ID_Voltage;
+			}
+			case "Current": {
+				return ID_Current;
+			}
+			case "GpsFix": {
+				return ID_GpsFix;
+			}
+			case "EulerAngles": {
+				return ID_EulerAngles;
+			}
+			case "EulerAnglesDelta": {
+				return ID_EulerAnglesDelta;
+			}
+			case "AngularVelocity": {
+				return ID_AngularVelocity;
+			}
+			case "Acceleration": {
+				return ID_Acceleration;
+			}
+			case "MagneticField": {
+				return ID_MagneticField;
+			}
+			case "GroundVelocity": {
+				return ID_GroundVelocity;
+			}
+			case "WaterVelocity": {
+				return ID_WaterVelocity;
+			}
+			case "VelocityDelta": {
+				return ID_VelocityDelta;
+			}
+			case "Distance": {
+				return ID_Distance;
+			}
+			case "Temperature": {
+				return ID_Temperature;
+			}
+			case "Pressure": {
+				return ID_Pressure;
+			}
+			case "Depth": {
+				return ID_Depth;
+			}
+			case "DepthOffset": {
+				return ID_DepthOffset;
+			}
+			case "SoundSpeed": {
+				return ID_SoundSpeed;
+			}
+			case "WaterDensity": {
+				return ID_WaterDensity;
+			}
+			case "Conductivity": {
+				return ID_Conductivity;
+			}
+			case "Salinity": {
+				return ID_Salinity;
+			}
+			case "WindSpeed": {
+				return ID_WindSpeed;
+			}
+			case "RelativeHumidity": {
+				return ID_RelativeHumidity;
+			}
+			case "DevDataText": {
+				return ID_DevDataText;
+			}
+			case "DevDataBinary": {
+				return ID_DevDataBinary;
+			}
+			case "SonarData": {
+				return ID_SonarData;
+			}
+			case "Pulse": {
+				return ID_Pulse;
+			}
+			case "PulseDetectionControl": {
+				return ID_PulseDetectionControl;
+			}
+			case "FuelLevel": {
+				return ID_FuelLevel;
+			}
+			case "GpsNavData": {
+				return ID_GpsNavData;
+			}
+			case "ServoPosition": {
+				return ID_ServoPosition;
+			}
+			case "DeviceState": {
+				return ID_DeviceState;
+			}
+			case "BeamConfig": {
+				return ID_BeamConfig;
+			}
+			case "DataSanity": {
+				return ID_DataSanity;
+			}
+			case "RhodamineDye": {
+				return ID_RhodamineDye;
+			}
+			case "CrudeOil": {
+				return ID_CrudeOil;
+			}
+			case "FineOil": {
+				return ID_FineOil;
+			}
+			case "Turbidity": {
+				return ID_Turbidity;
+			}
+			case "Chlorophyll": {
+				return ID_Chlorophyll;
+			}
+			case "Fluorescein": {
+				return ID_Fluorescein;
+			}
+			case "Phycocyanin": {
+				return ID_Phycocyanin;
+			}
+			case "Phycoerythrin": {
+				return ID_Phycoerythrin;
+			}
+			case "GpsFixRtk": {
+				return ID_GpsFixRtk;
+			}
+			case "ExternalNavData": {
+				return ID_ExternalNavData;
+			}
+			case "DissolvedOxygen": {
+				return ID_DissolvedOxygen;
+			}
+			case "AirSaturation": {
+				return ID_AirSaturation;
+			}
+			case "Throttle": {
+				return ID_Throttle;
+			}
+			case "PH": {
+				return ID_PH;
+			}
+			case "Redox": {
+				return ID_Redox;
+			}
+			case "CameraZoom": {
+				return ID_CameraZoom;
+			}
+			case "SetThrusterActuation": {
+				return ID_SetThrusterActuation;
+			}
+			case "SetServoPosition": {
+				return ID_SetServoPosition;
+			}
+			case "SetControlSurfaceDeflection": {
+				return ID_SetControlSurfaceDeflection;
+			}
+			case "RemoteActionsRequest": {
+				return ID_RemoteActionsRequest;
+			}
+			case "RemoteActions": {
+				return ID_RemoteActions;
+			}
+			case "ButtonEvent": {
+				return ID_ButtonEvent;
+			}
+			case "LcdControl": {
+				return ID_LcdControl;
+			}
+			case "PowerOperation": {
+				return ID_PowerOperation;
+			}
+			case "PowerChannelControl": {
+				return ID_PowerChannelControl;
+			}
+			case "QueryPowerChannelState": {
+				return ID_QueryPowerChannelState;
+			}
+			case "PowerChannelState": {
+				return ID_PowerChannelState;
+			}
+			case "LedBrightness": {
+				return ID_LedBrightness;
+			}
+			case "QueryLedBrightness": {
+				return ID_QueryLedBrightness;
+			}
+			case "SetLedBrightness": {
+				return ID_SetLedBrightness;
+			}
+			case "SetPWM": {
+				return ID_SetPWM;
+			}
+			case "PWM": {
+				return ID_PWM;
+			}
+			case "EstimatedState": {
+				return ID_EstimatedState;
+			}
+			case "EstimatedStreamVelocity": {
+				return ID_EstimatedStreamVelocity;
+			}
+			case "IndicatedSpeed": {
+				return ID_IndicatedSpeed;
+			}
+			case "TrueSpeed": {
+				return ID_TrueSpeed;
+			}
+			case "NavigationUncertainty": {
+				return ID_NavigationUncertainty;
+			}
+			case "NavigationData": {
+				return ID_NavigationData;
+			}
+			case "GpsFixRejection": {
+				return ID_GpsFixRejection;
+			}
+			case "LblRangeAcceptance": {
+				return ID_LblRangeAcceptance;
+			}
+			case "DvlRejection": {
+				return ID_DvlRejection;
+			}
+			case "LblEstimate": {
+				return ID_LblEstimate;
+			}
+			case "AlignmentState": {
+				return ID_AlignmentState;
+			}
+			case "GroupStreamVelocity": {
+				return ID_GroupStreamVelocity;
+			}
+			case "Airflow": {
+				return ID_Airflow;
+			}
+			case "DesiredHeading": {
+				return ID_DesiredHeading;
+			}
+			case "DesiredZ": {
+				return ID_DesiredZ;
+			}
+			case "DesiredSpeed": {
+				return ID_DesiredSpeed;
+			}
+			case "DesiredRoll": {
+				return ID_DesiredRoll;
+			}
+			case "DesiredPitch": {
+				return ID_DesiredPitch;
+			}
+			case "DesiredVerticalRate": {
+				return ID_DesiredVerticalRate;
+			}
+			case "DesiredPath": {
+				return ID_DesiredPath;
+			}
+			case "DesiredControl": {
+				return ID_DesiredControl;
+			}
+			case "DesiredHeadingRate": {
+				return ID_DesiredHeadingRate;
+			}
+			case "DesiredVelocity": {
+				return ID_DesiredVelocity;
+			}
+			case "PathControlState": {
+				return ID_PathControlState;
+			}
+			case "AllocatedControlTorques": {
+				return ID_AllocatedControlTorques;
+			}
+			case "ControlParcel": {
+				return ID_ControlParcel;
+			}
+			case "Brake": {
+				return ID_Brake;
+			}
+			case "DesiredLinearState": {
+				return ID_DesiredLinearState;
+			}
+			case "DesiredThrottle": {
+				return ID_DesiredThrottle;
+			}
+			case "Goto": {
+				return ID_Goto;
+			}
+			case "PopUp": {
+				return ID_PopUp;
+			}
+			case "Teleoperation": {
+				return ID_Teleoperation;
+			}
+			case "Loiter": {
+				return ID_Loiter;
+			}
+			case "IdleManeuver": {
+				return ID_IdleManeuver;
+			}
+			case "LowLevelControl": {
+				return ID_LowLevelControl;
+			}
+			case "Rows": {
+				return ID_Rows;
+			}
+			case "FollowPath": {
+				return ID_FollowPath;
+			}
+			case "PathPoint": {
+				return ID_PathPoint;
+			}
+			case "YoYo": {
+				return ID_YoYo;
+			}
+			case "TeleoperationDone": {
+				return ID_TeleoperationDone;
+			}
+			case "StationKeeping": {
+				return ID_StationKeeping;
+			}
+			case "Elevator": {
+				return ID_Elevator;
+			}
+			case "FollowTrajectory": {
+				return ID_FollowTrajectory;
+			}
+			case "TrajectoryPoint": {
+				return ID_TrajectoryPoint;
+			}
+			case "CustomManeuver": {
+				return ID_CustomManeuver;
+			}
+			case "VehicleFormation": {
+				return ID_VehicleFormation;
+			}
+			case "VehicleFormationParticipant": {
+				return ID_VehicleFormationParticipant;
+			}
+			case "StopManeuver": {
+				return ID_StopManeuver;
+			}
+			case "RegisterManeuver": {
+				return ID_RegisterManeuver;
+			}
+			case "ManeuverControlState": {
+				return ID_ManeuverControlState;
+			}
+			case "FollowSystem": {
+				return ID_FollowSystem;
+			}
+			case "CommsRelay": {
+				return ID_CommsRelay;
+			}
+			case "CoverArea": {
+				return ID_CoverArea;
+			}
+			case "PolygonVertex": {
+				return ID_PolygonVertex;
+			}
+			case "CompassCalibration": {
+				return ID_CompassCalibration;
+			}
+			case "FormationParameters": {
+				return ID_FormationParameters;
+			}
+			case "FormationPlanExecution": {
+				return ID_FormationPlanExecution;
+			}
+			case "FollowReference": {
+				return ID_FollowReference;
+			}
+			case "Reference": {
+				return ID_Reference;
+			}
+			case "FollowRefState": {
+				return ID_FollowRefState;
+			}
+			case "FormationMonitor": {
+				return ID_FormationMonitor;
+			}
+			case "RelativeState": {
+				return ID_RelativeState;
+			}
+			case "Dislodge": {
+				return ID_Dislodge;
+			}
+			case "Formation": {
+				return ID_Formation;
+			}
+			case "Launch": {
+				return ID_Launch;
+			}
+			case "Drop": {
+				return ID_Drop;
+			}
+			case "ScheduledGoto": {
+				return ID_ScheduledGoto;
+			}
+			case "RowsCoverage": {
+				return ID_RowsCoverage;
+			}
+			case "Sample": {
+				return ID_Sample;
+			}
+			case "ImageTracking": {
+				return ID_ImageTracking;
+			}
+			case "Takeoff": {
+				return ID_Takeoff;
+			}
+			case "Land": {
+				return ID_Land;
+			}
+			case "AutonomousSection": {
+				return ID_AutonomousSection;
+			}
+			case "FollowPoint": {
+				return ID_FollowPoint;
+			}
+			case "VehicleState": {
+				return ID_VehicleState;
+			}
+			case "VehicleCommand": {
+				return ID_VehicleCommand;
+			}
+			case "MonitorEntityState": {
+				return ID_MonitorEntityState;
+			}
+			case "EntityMonitoringState": {
+				return ID_EntityMonitoringState;
+			}
+			case "OperationalLimits": {
+				return ID_OperationalLimits;
+			}
+			case "GetOperationalLimits": {
+				return ID_GetOperationalLimits;
+			}
+			case "Calibration": {
+				return ID_Calibration;
+			}
+			case "ControlLoops": {
+				return ID_ControlLoops;
+			}
+			case "VehicleMedium": {
+				return ID_VehicleMedium;
+			}
+			case "Collision": {
+				return ID_Collision;
+			}
+			case "FormState": {
+				return ID_FormState;
+			}
+			case "AutopilotMode": {
+				return ID_AutopilotMode;
+			}
+			case "FormationState": {
+				return ID_FormationState;
+			}
+			case "ReportControl": {
+				return ID_ReportControl;
+			}
+			case "Abort": {
+				return ID_Abort;
+			}
+			case "PlanSpecification": {
+				return ID_PlanSpecification;
+			}
+			case "PlanManeuver": {
+				return ID_PlanManeuver;
+			}
+			case "PlanTransition": {
+				return ID_PlanTransition;
+			}
+			case "EmergencyControl": {
+				return ID_EmergencyControl;
+			}
+			case "EmergencyControlState": {
+				return ID_EmergencyControlState;
+			}
+			case "PlanDB": {
+				return ID_PlanDB;
+			}
+			case "PlanDBState": {
+				return ID_PlanDBState;
+			}
+			case "PlanDBInformation": {
+				return ID_PlanDBInformation;
+			}
+			case "PlanControl": {
+				return ID_PlanControl;
+			}
+			case "PlanControlState": {
+				return ID_PlanControlState;
+			}
+			case "PlanVariable": {
+				return ID_PlanVariable;
+			}
+			case "PlanGeneration": {
+				return ID_PlanGeneration;
+			}
+			case "LeaderState": {
+				return ID_LeaderState;
+			}
+			case "PlanStatistics": {
+				return ID_PlanStatistics;
+			}
+			case "ReportedState": {
+				return ID_ReportedState;
+			}
+			case "RemoteSensorInfo": {
+				return ID_RemoteSensorInfo;
+			}
+			case "Map": {
+				return ID_Map;
+			}
+			case "MapFeature": {
+				return ID_MapFeature;
+			}
+			case "MapPoint": {
+				return ID_MapPoint;
+			}
+			case "CcuEvent": {
+				return ID_CcuEvent;
+			}
+			case "VehicleLinks": {
+				return ID_VehicleLinks;
+			}
+			case "TrexObservation": {
+				return ID_TrexObservation;
+			}
+			case "TrexCommand": {
+				return ID_TrexCommand;
+			}
+			case "TrexOperation": {
+				return ID_TrexOperation;
+			}
+			case "TrexAttribute": {
+				return ID_TrexAttribute;
+			}
+			case "TrexToken": {
+				return ID_TrexToken;
+			}
+			case "TrexPlan": {
+				return ID_TrexPlan;
+			}
+			case "Event": {
+				return ID_Event;
+			}
+			case "CompressedImage": {
+				return ID_CompressedImage;
+			}
+			case "ImageTxSettings": {
+				return ID_ImageTxSettings;
+			}
+			case "RemoteState": {
+				return ID_RemoteState;
+			}
+			case "Target": {
+				return ID_Target;
+			}
+			case "EntityParameter": {
+				return ID_EntityParameter;
+			}
+			case "EntityParameters": {
+				return ID_EntityParameters;
+			}
+			case "QueryEntityParameters": {
+				return ID_QueryEntityParameters;
+			}
+			case "SetEntityParameters": {
+				return ID_SetEntityParameters;
+			}
+			case "SaveEntityParameters": {
+				return ID_SaveEntityParameters;
+			}
+			case "CreateSession": {
+				return ID_CreateSession;
+			}
+			case "CloseSession": {
+				return ID_CloseSession;
+			}
+			case "SessionSubscription": {
+				return ID_SessionSubscription;
+			}
+			case "SessionKeepAlive": {
+				return ID_SessionKeepAlive;
+			}
+			case "SessionStatus": {
+				return ID_SessionStatus;
+			}
+			case "PushEntityParameters": {
+				return ID_PushEntityParameters;
+			}
+			case "PopEntityParameters": {
+				return ID_PopEntityParameters;
+			}
+			case "IoEvent": {
+				return ID_IoEvent;
+			}
+			case "UamTxFrame": {
+				return ID_UamTxFrame;
+			}
+			case "UamRxFrame": {
+				return ID_UamRxFrame;
+			}
+			case "UamTxStatus": {
+				return ID_UamTxStatus;
+			}
+			case "UamRxRange": {
+				return ID_UamRxRange;
+			}
+			case "FormCtrlParam": {
+				return ID_FormCtrlParam;
+			}
+			case "FormationEval": {
+				return ID_FormationEval;
+			}
+			case "FormationControlParams": {
+				return ID_FormationControlParams;
+			}
+			case "FormationEvaluation": {
+				return ID_FormationEvaluation;
+			}
+			case "MessagePart": {
+				return ID_MessagePart;
+			}
+			case "NeptusBlob": {
+				return ID_NeptusBlob;
+			}
+			case "Aborted": {
+				return ID_Aborted;
+			}
+			case "UsblAngles": {
+				return ID_UsblAngles;
+			}
+			case "UsblPosition": {
+				return ID_UsblPosition;
+			}
+			case "UsblFix": {
+				return ID_UsblFix;
+			}
+			case "ParametersXml": {
+				return ID_ParametersXml;
+			}
+			case "GetParametersXml": {
+				return ID_GetParametersXml;
+			}
+			case "SetImageCoords": {
+				return ID_SetImageCoords;
+			}
+			case "GetImageCoords": {
+				return ID_GetImageCoords;
+			}
+			case "GetWorldCoordinates": {
+				return ID_GetWorldCoordinates;
+			}
+			case "UsblAnglesExtended": {
+				return ID_UsblAnglesExtended;
+			}
+			case "UsblPositionExtended": {
+				return ID_UsblPositionExtended;
+			}
+			case "UsblFixExtended": {
+				return ID_UsblFixExtended;
+			}
+			case "UsblModem": {
+				return ID_UsblModem;
+			}
+			case "UsblConfig": {
+				return ID_UsblConfig;
+			}
+			case "DissolvedOrganicMatter": {
+				return ID_DissolvedOrganicMatter;
+			}
+			case "OpticalBackscatter": {
+				return ID_OpticalBackscatter;
+			}
+			case "Tachograph": {
+				return ID_Tachograph;
+			}
+			default: {
+				return -1;
 			}
 		}
 	}

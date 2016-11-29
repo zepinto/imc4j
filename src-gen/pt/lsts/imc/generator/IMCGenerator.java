@@ -119,6 +119,31 @@ public class IMCGenerator {
 		createId.endControlFlow();
 		createId.endControlFlow();
 		factory.addMethod(createId.build());
+		
+		MethodSpec.Builder createAbbrev = MethodSpec.methodBuilder("create").addParameter(String.class, "abbrev")
+				.addModifiers(Modifier.PUBLIC, Modifier.STATIC).returns(ClassName.get(pkgMsgs, "Message"));
+		createAbbrev.addStatement("return create(idOf(abbrev))");
+		factory.addMethod(createAbbrev.build());
+		
+		MethodSpec.Builder idOf = MethodSpec.methodBuilder("idOf").addParameter(String.class, "abbrev")
+				.addModifiers(Modifier.PUBLIC, Modifier.STATIC).returns(TypeName.INT);
+
+		idOf.beginControlFlow("switch(abbrev)");
+
+		proto.getMessage().forEach(m -> {
+			String name = m.getAbbrev();
+			idOf.beginControlFlow("case $S:", name);
+			idOf.addStatement("return $L", "ID_"+name);
+			idOf.endControlFlow();
+		});
+		idOf.beginControlFlow("default:");
+		idOf.addStatement("return -1");
+		idOf.endControlFlow();
+		idOf.endControlFlow();
+		factory.addMethod(idOf.build());
+		
+		
+		
 
 		return factory.build();
 	}
