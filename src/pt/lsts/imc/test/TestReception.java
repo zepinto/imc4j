@@ -10,7 +10,7 @@ public class TestReception {
 
 	@Subscribe
 	public void on(Message msg) {
-		System.out.println(FormatConversion.asJson(msg));		
+		System.out.println(FormatConversion.asJson(msg));
 	}	
 	
 	public static void main(String[] args) throws Exception {
