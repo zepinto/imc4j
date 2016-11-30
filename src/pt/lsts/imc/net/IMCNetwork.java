@@ -39,11 +39,13 @@ public class IMCNetwork extends AbstractImcConnection {
 	private IMCBeater beater = new IMCBeater();
 	private IMCAnnouncer announcer = new IMCAnnouncer();
 	private EntityListRequester entitiesReq = new EntityListRequester();
+	private IMCState state = new IMCState();
 	private HashSet<Object> listeners = new HashSet<>();
 	private FilterChain filterChain;
 	private UDPNIOTransport udpTransport = null;
 	private TCPNIOTransport tcpTransport = null;
 	private UDPNIOConnection udpMulticast = null;
+	
 
 	private static synchronized IMCNetwork instance() {
 		if (instance == null)
@@ -91,7 +93,7 @@ public class IMCNetwork extends AbstractImcConnection {
 		register(beater);
 		register(announcer);
 		register(entitiesReq);
-		
+		register(state);		
 	}
 
 	private void bindUdp(int port) throws IOException {
@@ -248,6 +250,13 @@ public class IMCNetwork extends AbstractImcConnection {
 	 */
 	public static void stop() throws Exception {
 		instance()._stop();
+	}
+
+	/**
+	 * @return the state
+	 */
+	public static final IMCState state() {
+		return instance().state;
 	}
 
 	/**

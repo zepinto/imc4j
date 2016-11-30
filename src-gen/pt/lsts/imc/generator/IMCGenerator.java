@@ -25,6 +25,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import pt.lsts.imc.annotations.IMCField;
+import pt.lsts.imc.util.FormatConversion;
 import pt.lsts.imc.util.SerializationUtils;
 import pt.lsts.imc.util.TupleList;
 import pt.lsts.imc.xml.FieldType;
@@ -161,6 +162,9 @@ public class IMCGenerator {
 		MethodSpec mgid = MethodSpec.methodBuilder("mgid").addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
 				.addJavadoc("The identification number of the message").returns(TypeName.INT).build();
 		msgBuilder.addMethod(mgid);
+		
+		msgBuilder.addMethod(MethodSpec.methodBuilder("toString").addModifiers(Modifier.PUBLIC, Modifier.FINAL).returns(String.class)
+				.addStatement("return $T.asJson(this)", FormatConversion.class).build());
 
 		MethodSpec serFields = MethodSpec.methodBuilder("serializeFields")
 				.addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC).addJavadoc("Serialize this message's payload")

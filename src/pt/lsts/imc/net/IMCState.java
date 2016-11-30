@@ -48,7 +48,23 @@ public class IMCState {
 		int mgid = MessageFactory.idOf(type.getSimpleName());
 		return (T) last(src, mgid);		
 	}
-	
+
+	public Message ofType(String abbrev) {
+		ArrayList<Message> sameType = new ArrayList<>();
+		int id = MessageFactory.idOf(abbrev);
+
+		synchronized (state) {
+			for (LinkedHashMap<Integer, Message> msgs : state.values()) {
+				Message msg = msgs.get(id);
+				if (msg != null)
+					sameType.add(msg);
+			}
+		}
+
+		sameType.sort(timeComparator);
+		return sameType.isEmpty()? null : sameType.get(0);
+	}
+
 	public Message last(int src, int mgid) {
 		ArrayList<Message> msgs = new ArrayList<>();
 		msgs.addAll(get(src, mgid));
@@ -66,15 +82,20 @@ public class IMCState {
 	}
 	
 	public Message get(String source, String abbrev, String entity) {
-		int src = IMCRegistry.resolveSystem(source);
+		Integer src = IMCRegistry.resolveSystem(source);
 		int mgid = MessageFactory.idOf(abbrev);
-		int ent = IMCRegistry.resolveEntity(source, entity);
+		Integer ent = IMCRegistry.resolveEntity(source, entity);
+		if (src == null || ent == null || mgid < 0)
+			return null;
+
 		return get(src, mgid, ent);
 	}
 
 	public Message get(String source, String abbrev) {
-		int src = IMCRegistry.resolveSystem(source);
+		Integer src = IMCRegistry.resolveSystem(source);
 		int mgid = MessageFactory.idOf(abbrev);
+		if (src == null || mgid < 0)
+			return null;
 		return last(src, mgid);
 	}
 

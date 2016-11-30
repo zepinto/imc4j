@@ -2,9 +2,11 @@ package pt.lsts.imc.msg;
 
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
+import pt.lsts.imc.util.FormatConversion;
 import pt.lsts.imc.util.SerializationUtils;
 
 public abstract class Message {
@@ -78,6 +80,10 @@ public abstract class Message {
 	/**
 	 * The identification number of the message */
 	public abstract int mgid();
+
+	public final String toString() {
+		return FormatConversion.asJson(this);
+	}
 
 	/**
 	 * Serialize this message's payload */

@@ -6,6 +6,7 @@ import pt.lsts.imc.msg.EntityList
 import pt.lsts.imc.msg.EstimatedState
 import pt.lsts.imc.msg.Message
 import pt.lsts.imc.net.IMCNetwork
+import pt.lsts.imc.net.IMCQuery
 import pt.lsts.imc.net.IMCRegistry
 
 /**
@@ -29,12 +30,10 @@ class KotlinTest : IMCActor() {
 
     @Periodic(3.times(1000))
     fun periodic() {
-        println("3 seconds have passed")
-        println(send("lauv-xplore-1", EntityList()))
+        println(IMCQuery.q(EstimatedState::class.java).src("lauv-xplore-1").now())
     }
 }
 
 fun main(args : Array<String>) {
     KotlinTest().run()
 }
-
