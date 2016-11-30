@@ -1,6 +1,7 @@
-package pt.lsts.imc.actors
+package pt.lsts.imc.test
 
 import com.squareup.otto.Subscribe
+import pt.lsts.imc.actors.IMCActor
 import pt.lsts.imc.annotations.Periodic
 import pt.lsts.imc.msg.EntityList
 import pt.lsts.imc.msg.EstimatedState
