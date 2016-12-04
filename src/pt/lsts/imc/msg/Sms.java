@@ -40,6 +40,10 @@ public class Sms extends Message {
 	)
 	public String contents = "";
 
+	public String abbrev() {
+		return "Sms";
+	}
+
 	public int mgid() {
 		return 156;
 	}

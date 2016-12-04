@@ -122,6 +122,10 @@ public class UsblPositionExtended extends Message {
 	)
 	public float accuracy = 0f;
 
+	public String abbrev() {
+		return "UsblPositionExtended";
+	}
+
 	public int mgid() {
 		return 899;
 	}

@@ -81,6 +81,10 @@ public class PlanControl extends Message {
 	)
 	public String info = "";
 
+	public String abbrev() {
+		return "PlanControl";
+	}
+
 	public int mgid() {
 		return 559;
 	}

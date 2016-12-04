@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
@@ -69,6 +70,10 @@ public class DvlRejection extends Message {
 			units = "s"
 	)
 	public float timestep = 0f;
+
+	public String abbrev() {
+		return "DvlRejection";
+	}
 
 	public int mgid() {
 		return 358;

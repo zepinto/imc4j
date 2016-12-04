@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -98,6 +99,10 @@ public class Launch extends Maneuver {
 			units = "TupleList"
 	)
 	public TupleList custom = new TupleList("");
+
+	public String abbrev() {
+		return "Launch";
+	}
 
 	public int mgid() {
 		return 485;

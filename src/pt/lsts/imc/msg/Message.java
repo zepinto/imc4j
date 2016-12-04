@@ -6,6 +6,7 @@ import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
+import pt.lsts.imc.net.IMCRegistry;
 import pt.lsts.imc.util.FormatConversion;
 import pt.lsts.imc.util.SerializationUtils;
 
@@ -80,6 +81,16 @@ public abstract class Message {
 	/**
 	 * The identification number of the message */
 	public abstract int mgid();
+
+	/**
+	 * The name (abbreviation) of the message */
+	public abstract String abbrev();
+
+	/**
+	 * The source name of the message or <code>null</code> if not announced yet */
+	public String src() {
+		return IMCRegistry.resolveSystem(src);
+	}
 
 	public final String toString() {
 		return FormatConversion.asJson(this);

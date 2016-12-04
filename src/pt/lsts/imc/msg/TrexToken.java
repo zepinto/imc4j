@@ -29,6 +29,10 @@ public class TrexToken extends Message {
 	)
 	public ArrayList<TrexAttribute> attributes = new ArrayList<>();
 
+	public String abbrev() {
+		return "TrexToken";
+	}
+
 	public int mgid() {
 		return 657;
 	}

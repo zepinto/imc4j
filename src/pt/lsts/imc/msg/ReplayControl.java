@@ -34,6 +34,10 @@ public class ReplayControl extends Message {
 	)
 	public String file = "";
 
+	public String abbrev() {
+		return "ReplayControl";
+	}
+
 	public int mgid() {
 		return 105;
 	}

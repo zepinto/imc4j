@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import pt.lsts.imc.annotations.FieldType;
@@ -87,6 +88,10 @@ public class SonarData extends Message {
 			type = IMCField.TYPE_RAWDATA
 	)
 	public byte[] data = new byte[0];
+
+	public String abbrev() {
+		return "SonarData";
+	}
 
 	public int mgid() {
 		return 276;

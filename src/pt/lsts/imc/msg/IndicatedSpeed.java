@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -19,6 +20,10 @@ public class IndicatedSpeed extends Message {
 			units = "m/s"
 	)
 	public double value = 0;
+
+	public String abbrev() {
+		return "IndicatedSpeed";
+	}
 
 	public int mgid() {
 		return 352;

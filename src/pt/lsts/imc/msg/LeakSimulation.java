@@ -35,6 +35,10 @@ public class LeakSimulation extends Message {
 	)
 	public String entities = "";
 
+	public String abbrev() {
+		return "LeakSimulation";
+	}
+
 	public int mgid() {
 		return 51;
 	}

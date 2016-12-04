@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -22,6 +23,10 @@ public class DesiredPitch extends ControlCommand {
 			units = "rad"
 	)
 	public double value = 0;
+
+	public String abbrev() {
+		return "DesiredPitch";
+	}
 
 	public int mgid() {
 		return 404;

@@ -30,6 +30,10 @@ public class UamTxStatus extends Message {
 	)
 	public String error = "";
 
+	public String abbrev() {
+		return "UamTxStatus";
+	}
+
 	public int mgid() {
 		return 816;
 	}

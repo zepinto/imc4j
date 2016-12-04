@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import pt.lsts.imc.annotations.FieldType;
@@ -50,6 +51,10 @@ public class Distance extends Message {
 			units = "m"
 	)
 	public float value = 0f;
+
+	public String abbrev() {
+		return "Distance";
+	}
 
 	public int mgid() {
 		return 262;

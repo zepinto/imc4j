@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -25,6 +26,10 @@ public class DevCalibrationControl extends Message {
 			units = "Enumerated"
 	)
 	public OP op = OP.values()[0];
+
+	public String abbrev() {
+		return "DevCalibrationControl";
+	}
 
 	public int mgid() {
 		return 12;

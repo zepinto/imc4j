@@ -32,6 +32,10 @@ public class EmergencyControlState extends Message {
 	)
 	public int comm_level = 0;
 
+	public String abbrev() {
+		return "EmergencyControlState";
+	}
+
 	public int mgid() {
 		return 555;
 	}

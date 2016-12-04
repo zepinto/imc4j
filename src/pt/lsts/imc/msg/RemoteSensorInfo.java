@@ -63,6 +63,10 @@ public class RemoteSensorInfo extends Message {
 	)
 	public TupleList data = new TupleList("");
 
+	public String abbrev() {
+		return "RemoteSensorInfo";
+	}
+
 	public int mgid() {
 		return 601;
 	}

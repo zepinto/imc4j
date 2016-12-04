@@ -24,6 +24,10 @@ public class SetEntityParameters extends Message {
 	)
 	public ArrayList<EntityParameter> params = new ArrayList<>();
 
+	public String abbrev() {
+		return "SetEntityParameters";
+	}
+
 	public int mgid() {
 		return 804;
 	}

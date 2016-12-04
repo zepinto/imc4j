@@ -34,6 +34,10 @@ public class MonitorEntityState extends Message {
 	)
 	public String entities = "";
 
+	public String abbrev() {
+		return "MonitorEntityState";
+	}
+
 	public int mgid() {
 		return 502;
 	}

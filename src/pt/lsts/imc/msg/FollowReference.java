@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -60,6 +61,10 @@ public class FollowReference extends Maneuver {
 			type = IMCField.TYPE_FP32
 	)
 	public float altitude_interval = 0f;
+
+	public String abbrev() {
+		return "FollowReference";
+	}
 
 	public int mgid() {
 		return 478;

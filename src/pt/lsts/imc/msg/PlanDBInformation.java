@@ -64,6 +64,10 @@ public class PlanDBInformation extends Message {
 	)
 	public byte[] md5 = new byte[0];
 
+	public String abbrev() {
+		return "PlanDBInformation";
+	}
+
 	public int mgid() {
 		return 558;
 	}

@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -94,6 +95,10 @@ public class ScheduledGoto extends Maneuver {
 			units = "Enumerated"
 	)
 	public DELAYED delayed = DELAYED.values()[0];
+
+	public String abbrev() {
+		return "ScheduledGoto";
+	}
 
 	public int mgid() {
 		return 487;

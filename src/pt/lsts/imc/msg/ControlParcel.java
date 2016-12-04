@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -45,6 +46,10 @@ public class ControlParcel extends Message {
 			type = IMCField.TYPE_FP32
 	)
 	public float a = 0f;
+
+	public String abbrev() {
+		return "ControlParcel";
+	}
 
 	public int mgid() {
 		return 412;

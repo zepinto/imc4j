@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -72,6 +73,10 @@ public class HistoricSample extends RemoteData {
 			type = IMCField.TYPE_MESSAGE
 	)
 	public Message sample = null;
+
+	public String abbrev() {
+		return "HistoricSample";
+	}
 
 	public int mgid() {
 		return 186;

@@ -24,6 +24,10 @@ public class TrexPlan extends Message {
 	)
 	public ArrayList<TrexToken> tokens = new ArrayList<>();
 
+	public String abbrev() {
+		return "TrexPlan";
+	}
+
 	public int mgid() {
 		return 658;
 	}

@@ -79,6 +79,10 @@ public class PlanDB extends Message {
 	)
 	public String info = "";
 
+	public String abbrev() {
+		return "PlanDB";
+	}
+
 	public int mgid() {
 		return 556;
 	}

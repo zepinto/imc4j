@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -32,6 +33,10 @@ public class DesiredSpeed extends ControlCommand {
 			units = "Enumerated"
 	)
 	public SpeedUnits speed_units = SpeedUnits.values()[0];
+
+	public String abbrev() {
+		return "DesiredSpeed";
+	}
 
 	public int mgid() {
 		return 402;

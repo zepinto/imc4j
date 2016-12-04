@@ -39,6 +39,10 @@ public class PlanVariable extends Message {
 	)
 	public ACCESS access = ACCESS.values()[0];
 
+	public String abbrev() {
+		return "PlanVariable";
+	}
+
 	public int mgid() {
 		return 561;
 	}

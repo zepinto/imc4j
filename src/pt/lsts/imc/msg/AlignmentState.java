@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -23,6 +24,10 @@ public class AlignmentState extends Message {
 			units = "Enumerated"
 	)
 	public STATE state = STATE.values()[0];
+
+	public String abbrev() {
+		return "AlignmentState";
+	}
 
 	public int mgid() {
 		return 361;

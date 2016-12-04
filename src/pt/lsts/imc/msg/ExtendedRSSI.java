@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -33,6 +34,10 @@ public class ExtendedRSSI extends Message {
 			units = "Enumerated"
 	)
 	public RSSIUnits units = RSSIUnits.values()[0];
+
+	public String abbrev() {
+		return "ExtendedRSSI";
+	}
 
 	public int mgid() {
 		return 183;

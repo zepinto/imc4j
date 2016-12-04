@@ -51,6 +51,10 @@ public class PlanManeuver extends Message {
 	)
 	public ArrayList<Message> end_actions = new ArrayList<>();
 
+	public String abbrev() {
+		return "PlanManeuver";
+	}
+
 	public int mgid() {
 		return 552;
 	}

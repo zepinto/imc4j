@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -32,6 +33,10 @@ public class LinkLatency extends Message {
 			type = IMCField.TYPE_UINT16
 	)
 	public int sys_src = 0;
+
+	public String abbrev() {
+		return "LinkLatency";
+	}
 
 	public int mgid() {
 		return 182;

@@ -31,6 +31,10 @@ public class HistoricEvent extends Message {
 	)
 	public TYPE type = TYPE.values()[0];
 
+	public String abbrev() {
+		return "HistoricEvent";
+	}
+
 	public int mgid() {
 		return 110;
 	}

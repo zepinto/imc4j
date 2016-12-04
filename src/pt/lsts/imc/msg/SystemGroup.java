@@ -42,6 +42,10 @@ public class SystemGroup extends Message {
 	)
 	public String GroupList = "";
 
+	public String abbrev() {
+		return "SystemGroup";
+	}
+
 	public int mgid() {
 		return 181;
 	}

@@ -18,6 +18,10 @@ public class SaveEntityParameters extends Message {
 	)
 	public String name = "";
 
+	public String abbrev() {
+		return "SaveEntityParameters";
+	}
+
 	public int mgid() {
 		return 805;
 	}

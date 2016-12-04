@@ -34,6 +34,10 @@ public class LcdControl extends Message {
 	)
 	public String text = "";
 
+	public String abbrev() {
+		return "LcdControl";
+	}
+
 	public int mgid() {
 		return 307;
 	}

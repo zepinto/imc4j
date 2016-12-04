@@ -36,6 +36,10 @@ public class UamRxFrame extends Message {
 	)
 	public byte[] data = new byte[0];
 
+	public String abbrev() {
+		return "UamRxFrame";
+	}
+
 	public int mgid() {
 		return 815;
 	}

@@ -53,6 +53,10 @@ public class AcousticOperation extends Message {
 	)
 	public Message msg = null;
 
+	public String abbrev() {
+		return "AcousticOperation";
+	}
+
 	public int mgid() {
 		return 211;
 	}

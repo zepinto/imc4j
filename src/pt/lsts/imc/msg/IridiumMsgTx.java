@@ -46,6 +46,10 @@ public class IridiumMsgTx extends Message {
 	)
 	public byte[] data = new byte[0];
 
+	public String abbrev() {
+		return "IridiumMsgTx";
+	}
+
 	public int mgid() {
 		return 171;
 	}

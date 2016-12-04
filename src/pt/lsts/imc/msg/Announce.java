@@ -84,6 +84,10 @@ public class Announce extends Message {
 	)
 	public String services = "";
 
+	public String abbrev() {
+		return "Announce";
+	}
+
 	public int mgid() {
 		return 151;
 	}

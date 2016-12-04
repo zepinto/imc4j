@@ -28,6 +28,10 @@ public class QueryEntityParameters extends Message {
 	)
 	public String scope = "";
 
+	public String abbrev() {
+		return "QueryEntityParameters";
+	}
+
 	public int mgid() {
 		return 803;
 	}

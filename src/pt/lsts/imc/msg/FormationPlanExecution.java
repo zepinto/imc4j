@@ -149,6 +149,10 @@ public class FormationPlanExecution extends Maneuver {
 	)
 	public TupleList custom = new TupleList("");
 
+	public String abbrev() {
+		return "FormationPlanExecution";
+	}
+
 	public int mgid() {
 		return 477;
 	}

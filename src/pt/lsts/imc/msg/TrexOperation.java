@@ -39,6 +39,10 @@ public class TrexOperation extends Message {
 	)
 	public TrexToken token = null;
 
+	public String abbrev() {
+		return "TrexOperation";
+	}
+
 	public int mgid() {
 		return 655;
 	}

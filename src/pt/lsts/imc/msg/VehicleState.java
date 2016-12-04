@@ -112,6 +112,10 @@ public class VehicleState extends Message {
 	)
 	public double last_error_time = 0;
 
+	public String abbrev() {
+		return "VehicleState";
+	}
+
 	public int mgid() {
 		return 500;
 	}

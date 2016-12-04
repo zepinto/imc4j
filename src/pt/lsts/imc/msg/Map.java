@@ -33,6 +33,10 @@ public class Map extends Message {
 	)
 	public ArrayList<MapFeature> features = new ArrayList<>();
 
+	public String abbrev() {
+		return "Map";
+	}
+
 	public int mgid() {
 		return 602;
 	}

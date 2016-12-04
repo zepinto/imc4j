@@ -44,6 +44,10 @@ public class PowerChannelControl extends Message {
 	)
 	public double sched_time = 0;
 
+	public String abbrev() {
+		return "PowerChannelControl";
+	}
+
 	public int mgid() {
 		return 309;
 	}

@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
@@ -51,6 +52,10 @@ public class FollowRefState extends Message {
 			units = "Bitfield"
 	)
 	public EnumSet<PROXIMITY> proximity = EnumSet.noneOf(PROXIMITY.class);
+
+	public String abbrev() {
+		return "FollowRefState";
+	}
 
 	public int mgid() {
 		return 480;

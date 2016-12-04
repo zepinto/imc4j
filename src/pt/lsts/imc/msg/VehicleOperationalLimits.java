@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -195,6 +196,10 @@ public class VehicleOperationalLimits extends Message {
 			units = "rpm/s"
 	)
 	public float rpm_rate_max = 0f;
+
+	public String abbrev() {
+		return "VehicleOperationalLimits";
+	}
 
 	public int mgid() {
 		return 16;

@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -87,6 +88,10 @@ public class FormationState extends Message {
 			units = "Enumerated"
 	)
 	public CONVERGMON ConvergMon = CONVERGMON.values()[0];
+
+	public String abbrev() {
+		return "FormationState";
+	}
 
 	public int mgid() {
 		return 512;

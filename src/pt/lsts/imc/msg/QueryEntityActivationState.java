@@ -2,6 +2,7 @@ package pt.lsts.imc.msg;
 
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 
 /**
@@ -10,6 +11,10 @@ import java.nio.ByteBuffer;
  */
 public class QueryEntityActivationState extends Message {
 	public static final int ID_STATIC = 15;
+
+	public String abbrev() {
+		return "QueryEntityActivationState";
+	}
 
 	public int mgid() {
 		return 15;

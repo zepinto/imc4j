@@ -34,6 +34,10 @@ public class Event extends Message {
 	)
 	public TupleList data = new TupleList("");
 
+	public String abbrev() {
+		return "Event";
+	}
+
 	public int mgid() {
 		return 660;
 	}

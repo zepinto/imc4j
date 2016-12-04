@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -34,6 +35,10 @@ public class LblRange extends Message {
 			units = "m"
 	)
 	public float range = 0f;
+
+	public String abbrev() {
+		return "LblRange";
+	}
 
 	public int mgid() {
 		return 200;

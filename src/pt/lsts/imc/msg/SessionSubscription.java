@@ -27,6 +27,10 @@ public class SessionSubscription extends Message {
 	)
 	public String messages = "";
 
+	public String abbrev() {
+		return "SessionSubscription";
+	}
+
 	public int mgid() {
 		return 808;
 	}

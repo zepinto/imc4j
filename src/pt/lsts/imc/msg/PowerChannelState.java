@@ -34,6 +34,10 @@ public class PowerChannelState extends Message {
 	)
 	public STATE state = STATE.values()[0];
 
+	public String abbrev() {
+		return "PowerChannelState";
+	}
+
 	public int mgid() {
 		return 311;
 	}

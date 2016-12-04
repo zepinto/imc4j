@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
@@ -150,6 +151,10 @@ public class GpsFixRtk extends Message {
 			type = IMCField.TYPE_FP32
 	)
 	public float iar_ratio = 0f;
+
+	public String abbrev() {
+		return "GpsFixRtk";
+	}
 
 	public int mgid() {
 		return 293;

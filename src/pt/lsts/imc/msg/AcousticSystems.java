@@ -27,6 +27,10 @@ public class AcousticSystems extends Message {
 	)
 	public String list = "";
 
+	public String abbrev() {
+		return "AcousticSystems";
+	}
+
 	public int mgid() {
 		return 213;
 	}

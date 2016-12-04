@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -22,6 +23,10 @@ public class DevDataBinary extends Message {
 			type = IMCField.TYPE_RAWDATA
 	)
 	public byte[] value = new byte[0];
+
+	public String abbrev() {
+		return "DevDataBinary";
+	}
 
 	public int mgid() {
 		return 274;

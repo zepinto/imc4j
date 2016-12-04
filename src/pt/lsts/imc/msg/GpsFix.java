@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
@@ -158,6 +159,10 @@ public class GpsFix extends Message {
 			units = "m"
 	)
 	public float vacc = 0f;
+
+	public String abbrev() {
+		return "GpsFix";
+	}
 
 	public int mgid() {
 		return 253;

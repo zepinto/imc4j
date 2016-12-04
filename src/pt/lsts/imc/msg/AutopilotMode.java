@@ -34,6 +34,10 @@ public class AutopilotMode extends Message {
 	)
 	public String mode = "";
 
+	public String abbrev() {
+		return "AutopilotMode";
+	}
+
 	public int mgid() {
 		return 511;
 	}

@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -26,6 +27,10 @@ public class CreateSession extends Message {
 			type = IMCField.TYPE_UINT32
 	)
 	public long timeout = 0;
+
+	public String abbrev() {
+		return "CreateSession";
+	}
 
 	public int mgid() {
 		return 806;

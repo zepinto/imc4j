@@ -36,6 +36,10 @@ public class AnnounceService extends Message {
 	)
 	public EnumSet<SERVICE_TYPE> service_type = EnumSet.noneOf(SERVICE_TYPE.class);
 
+	public String abbrev() {
+		return "AnnounceService";
+	}
+
 	public int mgid() {
 		return 152;
 	}

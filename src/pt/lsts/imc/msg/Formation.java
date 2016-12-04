@@ -225,6 +225,10 @@ public class Formation extends Message {
 	)
 	public TupleList custom = new TupleList("");
 
+	public String abbrev() {
+		return "Formation";
+	}
+
 	public int mgid() {
 		return 484;
 	}

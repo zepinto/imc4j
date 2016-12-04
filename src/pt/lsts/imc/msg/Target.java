@@ -84,6 +84,10 @@ public class Target extends Message {
 	)
 	public float sog = 0f;
 
+	public String abbrev() {
+		return "Target";
+	}
+
 	public int mgid() {
 		return 800;
 	}

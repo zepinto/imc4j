@@ -50,6 +50,10 @@ public class AcousticLink extends Message {
 	)
 	public int integrity = 0;
 
+	public String abbrev() {
+		return "AcousticLink";
+	}
+
 	public int mgid() {
 		return 214;
 	}

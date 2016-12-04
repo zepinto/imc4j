@@ -33,6 +33,10 @@ public class IridiumTxStatus extends Message {
 	)
 	public String text = "";
 
+	public String abbrev() {
+		return "IridiumTxStatus";
+	}
+
 	public int mgid() {
 		return 172;
 	}

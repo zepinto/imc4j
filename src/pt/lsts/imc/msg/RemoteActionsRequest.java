@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -39,6 +40,10 @@ public class RemoteActionsRequest extends Message {
 			units = "TupleList"
 	)
 	public TupleList actions = new TupleList("");
+
+	public String abbrev() {
+		return "RemoteActionsRequest";
+	}
 
 	public int mgid() {
 		return 304;

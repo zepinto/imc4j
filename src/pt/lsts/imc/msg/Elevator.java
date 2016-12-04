@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
@@ -140,6 +141,10 @@ public class Elevator extends Maneuver {
 			units = "TupleList"
 	)
 	public TupleList custom = new TupleList("");
+
+	public String abbrev() {
+		return "Elevator";
+	}
 
 	public int mgid() {
 		return 462;

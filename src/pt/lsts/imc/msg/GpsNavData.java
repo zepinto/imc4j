@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -148,6 +149,10 @@ public class GpsNavData extends Message {
 			units = "rad"
 	)
 	public float cacc = 0f;
+
+	public String abbrev() {
+		return "GpsNavData";
+	}
 
 	public int mgid() {
 		return 280;

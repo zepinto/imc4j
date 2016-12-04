@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import pt.lsts.imc.annotations.FieldType;
@@ -33,6 +34,10 @@ public class LblConfig extends Message {
 			type = IMCField.TYPE_MESSAGELIST
 	)
 	public ArrayList<LblBeacon> beacons = new ArrayList<>();
+
+	public String abbrev() {
+		return "LblConfig";
+	}
 
 	public int mgid() {
 		return 203;

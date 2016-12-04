@@ -105,6 +105,10 @@ public class UsblAnglesExtended extends Message {
 	)
 	public float accuracy = 0f;
 
+	public String abbrev() {
+		return "UsblAnglesExtended";
+	}
+
 	public int mgid() {
 		return 898;
 	}

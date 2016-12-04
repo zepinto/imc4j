@@ -25,6 +25,10 @@ public class QueryLedBrightness extends Message {
 	)
 	public String name = "";
 
+	public String abbrev() {
+		return "QueryLedBrightness";
+	}
+
 	public int mgid() {
 		return 313;
 	}

@@ -32,6 +32,10 @@ public class TextMessage extends Message {
 	)
 	public String text = "";
 
+	public String abbrev() {
+		return "TextMessage";
+	}
+
 	public int mgid() {
 		return 160;
 	}

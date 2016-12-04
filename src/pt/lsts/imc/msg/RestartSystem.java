@@ -2,6 +2,7 @@ package pt.lsts.imc.msg;
 
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 
 /**
@@ -9,6 +10,10 @@ import java.nio.ByteBuffer;
  */
 public class RestartSystem extends Message {
 	public static final int ID_STATIC = 9;
+
+	public String abbrev() {
+		return "RestartSystem";
+	}
 
 	public int mgid() {
 		return 9;

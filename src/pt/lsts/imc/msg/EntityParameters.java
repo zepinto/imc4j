@@ -33,6 +33,10 @@ public class EntityParameters extends Message {
 	)
 	public ArrayList<EntityParameter> params = new ArrayList<>();
 
+	public String abbrev() {
+		return "EntityParameters";
+	}
+
 	public int mgid() {
 		return 802;
 	}

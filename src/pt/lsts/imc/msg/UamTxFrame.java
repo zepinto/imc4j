@@ -36,6 +36,10 @@ public class UamTxFrame extends Message {
 	)
 	public byte[] data = new byte[0];
 
+	public String abbrev() {
+		return "UamTxFrame";
+	}
+
 	public int mgid() {
 		return 814;
 	}

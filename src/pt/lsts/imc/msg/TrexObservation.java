@@ -33,6 +33,10 @@ public class TrexObservation extends Message {
 	)
 	public TupleList attributes = new TupleList("");
 
+	public String abbrev() {
+		return "TrexObservation";
+	}
+
 	public int mgid() {
 		return 651;
 	}

@@ -95,6 +95,10 @@ public class FollowPoint extends Maneuver {
 	)
 	public TupleList custom = new TupleList("");
 
+	public String abbrev() {
+		return "FollowPoint";
+	}
+
 	public int mgid() {
 		return 494;
 	}

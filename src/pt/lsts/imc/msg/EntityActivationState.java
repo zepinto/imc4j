@@ -34,6 +34,10 @@ public class EntityActivationState extends Message {
 	)
 	public String error = "";
 
+	public String abbrev() {
+		return "EntityActivationState";
+	}
+
 	public int mgid() {
 		return 14;
 	}

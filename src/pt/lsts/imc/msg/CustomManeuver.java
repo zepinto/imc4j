@@ -49,6 +49,10 @@ public class CustomManeuver extends Maneuver {
 	)
 	public TupleList custom = new TupleList("");
 
+	public String abbrev() {
+		return "CustomManeuver";
+	}
+
 	public int mgid() {
 		return 465;
 	}

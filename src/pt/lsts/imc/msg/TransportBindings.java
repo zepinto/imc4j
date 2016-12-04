@@ -32,6 +32,10 @@ public class TransportBindings extends Message {
 	)
 	public int message_id = 0;
 
+	public String abbrev() {
+		return "TransportBindings";
+	}
+
 	public int mgid() {
 		return 8;
 	}

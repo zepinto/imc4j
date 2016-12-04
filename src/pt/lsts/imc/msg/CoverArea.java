@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import pt.lsts.imc.annotations.FieldType;
@@ -94,6 +95,10 @@ public class CoverArea extends Maneuver {
 			units = "TupleList"
 	)
 	public TupleList custom = new TupleList("");
+
+	public String abbrev() {
+		return "CoverArea";
+	}
 
 	public int mgid() {
 		return 473;

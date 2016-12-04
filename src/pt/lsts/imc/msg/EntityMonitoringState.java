@@ -79,6 +79,10 @@ public class EntityMonitoringState extends Message {
 	)
 	public double last_error_time = 0;
 
+	public String abbrev() {
+		return "EntityMonitoringState";
+	}
+
 	public int mgid() {
 		return 503;
 	}

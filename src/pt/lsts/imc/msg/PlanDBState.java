@@ -77,6 +77,10 @@ public class PlanDBState extends Message {
 	)
 	public ArrayList<PlanDBInformation> plans_info = new ArrayList<>();
 
+	public String abbrev() {
+		return "PlanDBState";
+	}
+
 	public int mgid() {
 		return 557;
 	}

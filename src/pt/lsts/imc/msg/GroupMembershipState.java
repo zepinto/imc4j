@@ -33,6 +33,10 @@ public class GroupMembershipState extends Message {
 	)
 	public long links = 0;
 
+	public String abbrev() {
+		return "GroupMembershipState";
+	}
+
 	public int mgid() {
 		return 180;
 	}

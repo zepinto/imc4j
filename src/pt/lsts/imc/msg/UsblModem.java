@@ -66,6 +66,10 @@ public class UsblModem extends Message {
 	)
 	public ZUnits z_units = ZUnits.values()[0];
 
+	public String abbrev() {
+		return "UsblModem";
+	}
+
 	public int mgid() {
 		return 901;
 	}

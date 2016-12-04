@@ -24,6 +24,10 @@ public class DevDataText extends Message {
 	)
 	public String value = "";
 
+	public String abbrev() {
+		return "DevDataText";
+	}
+
 	public int mgid() {
 		return 273;
 	}

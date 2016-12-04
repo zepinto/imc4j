@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -18,6 +19,10 @@ public class CloseSession extends Message {
 			type = IMCField.TYPE_UINT32
 	)
 	public long sessid = 0;
+
+	public String abbrev() {
+		return "CloseSession";
+	}
 
 	public int mgid() {
 		return 807;

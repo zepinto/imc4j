@@ -51,6 +51,10 @@ public class DevCalibrationState extends Message {
 	)
 	public EnumSet<FLAGS> flags = EnumSet.noneOf(FLAGS.class);
 
+	public String abbrev() {
+		return "DevCalibrationState";
+	}
+
 	public int mgid() {
 		return 13;
 	}

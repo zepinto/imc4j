@@ -195,6 +195,10 @@ public class RelativeState extends Message {
 	)
 	public float virt_err_z = 0f;
 
+	public String abbrev() {
+		return "RelativeState";
+	}
+
 	public int mgid() {
 		return 482;
 	}

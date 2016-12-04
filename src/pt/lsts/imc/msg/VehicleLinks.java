@@ -33,6 +33,10 @@ public class VehicleLinks extends Message {
 	)
 	public ArrayList<Announce> links = new ArrayList<>();
 
+	public String abbrev() {
+		return "VehicleLinks";
+	}
+
 	public int mgid() {
 		return 650;
 	}

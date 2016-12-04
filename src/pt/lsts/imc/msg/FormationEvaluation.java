@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -81,6 +82,10 @@ public class FormationEvaluation extends Message {
 			type = IMCField.TYPE_MESSAGE
 	)
 	public FormationControlParams ControlParams = null;
+
+	public String abbrev() {
+		return "FormationEvaluation";
+	}
 
 	public int mgid() {
 		return 823;

@@ -33,6 +33,10 @@ public class CcuEvent extends Message {
 	)
 	public Message arg = null;
 
+	public String abbrev() {
+		return "CcuEvent";
+	}
+
 	public int mgid() {
 		return 606;
 	}

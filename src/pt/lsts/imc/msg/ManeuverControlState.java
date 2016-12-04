@@ -44,6 +44,10 @@ public class ManeuverControlState extends Message {
 	)
 	public String info = "";
 
+	public String abbrev() {
+		return "ManeuverControlState";
+	}
+
 	public int mgid() {
 		return 470;
 	}

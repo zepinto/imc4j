@@ -60,6 +60,10 @@ public class PlanTransition extends Message {
 	)
 	public ArrayList<Message> actions = new ArrayList<>();
 
+	public String abbrev() {
+		return "PlanTransition";
+	}
+
 	public int mgid() {
 		return 553;
 	}

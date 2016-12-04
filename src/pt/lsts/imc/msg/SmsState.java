@@ -36,6 +36,10 @@ public class SmsState extends Message {
 	)
 	public String error = "";
 
+	public String abbrev() {
+		return "SmsState";
+	}
+
 	public int mgid() {
 		return 159;
 	}

@@ -95,6 +95,10 @@ public class ReportedState extends Message {
 	)
 	public S_TYPE s_type = S_TYPE.values()[0];
 
+	public String abbrev() {
+		return "ReportedState";
+	}
+
 	public int mgid() {
 		return 600;
 	}

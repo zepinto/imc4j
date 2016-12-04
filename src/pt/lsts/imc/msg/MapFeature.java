@@ -67,6 +67,10 @@ public class MapFeature extends Message {
 	)
 	public ArrayList<MapPoint> feature = new ArrayList<>();
 
+	public String abbrev() {
+		return "MapFeature";
+	}
+
 	public int mgid() {
 		return 603;
 	}

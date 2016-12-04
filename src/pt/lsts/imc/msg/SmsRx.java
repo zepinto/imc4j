@@ -32,6 +32,10 @@ public class SmsRx extends Message {
 	)
 	public byte[] data = new byte[0];
 
+	public String abbrev() {
+		return "SmsRx";
+	}
+
 	public int mgid() {
 		return 158;
 	}

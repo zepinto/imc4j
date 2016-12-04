@@ -2,6 +2,7 @@ package pt.lsts.imc.msg;
 
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 
 /**
@@ -9,6 +10,10 @@ import java.nio.ByteBuffer;
  */
 public class Abort extends Message {
 	public static final int ID_STATIC = 550;
+
+	public String abbrev() {
+		return "Abort";
+	}
 
 	public int mgid() {
 		return 550;

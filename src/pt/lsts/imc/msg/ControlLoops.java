@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
@@ -43,6 +44,10 @@ public class ControlLoops extends Message {
 			type = IMCField.TYPE_UINT32
 	)
 	public long scope_ref = 0;
+
+	public String abbrev() {
+		return "ControlLoops";
+	}
 
 	public int mgid() {
 		return 507;

@@ -45,6 +45,10 @@ public class EntityState extends Message {
 	)
 	public String description = "";
 
+	public String abbrev() {
+		return "EntityState";
+	}
+
 	public int mgid() {
 		return 1;
 	}

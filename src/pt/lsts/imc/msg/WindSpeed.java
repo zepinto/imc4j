@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -40,6 +41,10 @@ public class WindSpeed extends Message {
 			units = "m/s"
 	)
 	public float turbulence = 0f;
+
+	public String abbrev() {
+		return "WindSpeed";
+	}
 
 	public int mgid() {
 		return 271;

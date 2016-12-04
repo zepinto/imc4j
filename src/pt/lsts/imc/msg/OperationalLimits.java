@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
@@ -97,6 +98,10 @@ public class OperationalLimits extends Message {
 			units = "m"
 	)
 	public float length = 0f;
+
+	public String abbrev() {
+		return "OperationalLimits";
+	}
 
 	public int mgid() {
 		return 504;

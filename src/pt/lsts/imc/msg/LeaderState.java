@@ -229,6 +229,10 @@ public class LeaderState extends Message {
 	)
 	public float svz = 0f;
 
+	public String abbrev() {
+		return "LeaderState";
+	}
+
 	public int mgid() {
 		return 563;
 	}

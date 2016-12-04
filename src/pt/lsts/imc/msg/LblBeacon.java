@@ -80,6 +80,10 @@ public class LblBeacon extends Message {
 	)
 	public int transponder_delay = 0;
 
+	public String abbrev() {
+		return "LblBeacon";
+	}
+
 	public int mgid() {
 		return 202;
 	}

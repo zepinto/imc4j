@@ -42,6 +42,10 @@ public class CacheControl extends Message {
 	)
 	public Message message = null;
 
+	public String abbrev() {
+		return "CacheControl";
+	}
+
 	public int mgid() {
 		return 101;
 	}

@@ -39,6 +39,10 @@ public class TrexCommand extends Message {
 	)
 	public String goal_xml = "";
 
+	public String abbrev() {
+		return "TrexCommand";
+	}
+
 	public int mgid() {
 		return 652;
 	}

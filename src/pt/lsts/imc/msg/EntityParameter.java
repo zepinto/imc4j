@@ -32,6 +32,10 @@ public class EntityParameter extends Message {
 	)
 	public String value = "";
 
+	public String abbrev() {
+		return "EntityParameter";
+	}
+
 	public int mgid() {
 		return 801;
 	}

@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -43,6 +44,10 @@ public class ExternalNavData extends Message {
 			units = "Enumerated"
 	)
 	public TYPE type = TYPE.values()[0];
+
+	public String abbrev() {
+		return "ExternalNavData";
+	}
 
 	public int mgid() {
 		return 294;

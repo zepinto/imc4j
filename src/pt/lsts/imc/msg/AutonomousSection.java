@@ -120,6 +120,10 @@ public class AutonomousSection extends Maneuver {
 	)
 	public TupleList custom = new TupleList("");
 
+	public String abbrev() {
+		return "AutonomousSection";
+	}
+
 	public int mgid() {
 		return 493;
 	}

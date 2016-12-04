@@ -18,6 +18,10 @@ public class PushEntityParameters extends Message {
 	)
 	public String name = "";
 
+	public String abbrev() {
+		return "PushEntityParameters";
+	}
+
 	public int mgid() {
 		return 811;
 	}

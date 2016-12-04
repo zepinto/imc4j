@@ -65,6 +65,10 @@ public class FormationParameters extends Message {
 	)
 	public TupleList custom = new TupleList("");
 
+	public String abbrev() {
+		return "FormationParameters";
+	}
+
 	public int mgid() {
 		return 476;
 	}

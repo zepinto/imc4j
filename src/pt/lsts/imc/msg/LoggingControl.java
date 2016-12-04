@@ -35,6 +35,10 @@ public class LoggingControl extends Message {
 	)
 	public String name = "";
 
+	public String abbrev() {
+		return "LoggingControl";
+	}
+
 	public int mgid() {
 		return 102;
 	}

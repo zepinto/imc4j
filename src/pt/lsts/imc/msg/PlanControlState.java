@@ -90,6 +90,10 @@ public class PlanControlState extends Message {
 	)
 	public LAST_OUTCOME last_outcome = LAST_OUTCOME.values()[0];
 
+	public String abbrev() {
+		return "PlanControlState";
+	}
+
 	public int mgid() {
 		return 560;
 	}

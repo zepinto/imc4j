@@ -51,6 +51,10 @@ public class LogBookEntry extends Message {
 	)
 	public String text = "";
 
+	public String abbrev() {
+		return "LogBookEntry";
+	}
+
 	public int mgid() {
 		return 103;
 	}

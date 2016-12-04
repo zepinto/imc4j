@@ -25,6 +25,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import pt.lsts.imc.annotations.IMCField;
+import pt.lsts.imc.net.IMCRegistry;
 import pt.lsts.imc.util.FormatConversion;
 import pt.lsts.imc.util.SerializationUtils;
 import pt.lsts.imc.util.TupleList;
@@ -163,6 +164,15 @@ public class IMCGenerator {
 				.addJavadoc("The identification number of the message").returns(TypeName.INT).build();
 		msgBuilder.addMethod(mgid);
 		
+		MethodSpec abbrev = MethodSpec.methodBuilder("abbrev").addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
+				.addJavadoc("The name (abbreviation) of the message").returns(String.class).build();
+		msgBuilder.addMethod(abbrev);
+		
+		MethodSpec src = MethodSpec.methodBuilder("src").addModifiers(Modifier.PUBLIC)
+				.addJavadoc("The source name of the message or <code>null</code> if not announced yet").returns(String.class)
+				.addStatement("return $T.resolveSystem(src)", IMCRegistry.class).build();
+		msgBuilder.addMethod(src);
+				
 		msgBuilder.addMethod(MethodSpec.methodBuilder("toString").addModifiers(Modifier.PUBLIC, Modifier.FINAL).returns(String.class)
 				.addStatement("return $T.asJson(this)", FormatConversion.class).build());
 
@@ -245,6 +255,9 @@ public class IMCGenerator {
 			builder.addJavadoc(cleanJavadoc(mtype.getDescription().getValue()));
 		builder.addField(FieldSpec.builder(TypeName.INT, "ID_STATIC", Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
 				.initializer("$L", mtype.getId()).build());
+		
+		builder.addMethod(MethodSpec.methodBuilder("abbrev").addModifiers(Modifier.PUBLIC).returns(String.class)
+				.addCode("return $S;\n", mtype.getAbbrev()).build());
 
 		builder.addMethod(MethodSpec.methodBuilder("mgid").addModifiers(Modifier.PUBLIC).returns(TypeName.INT)
 				.addCode("return $L;\n", mtype.getId()).build());

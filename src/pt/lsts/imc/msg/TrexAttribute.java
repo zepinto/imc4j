@@ -44,6 +44,10 @@ public class TrexAttribute extends Message {
 	)
 	public String max = "";
 
+	public String abbrev() {
+		return "TrexAttribute";
+	}
+
 	public int mgid() {
 		return 656;
 	}

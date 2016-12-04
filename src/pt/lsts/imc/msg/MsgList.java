@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import pt.lsts.imc.annotations.FieldType;
@@ -17,6 +18,10 @@ public class MsgList extends Message {
 			type = IMCField.TYPE_MESSAGELIST
 	)
 	public ArrayList<Message> msgs = new ArrayList<>();
+
+	public String abbrev() {
+		return "MsgList";
+	}
 
 	public int mgid() {
 		return 20;

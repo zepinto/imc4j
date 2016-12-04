@@ -77,6 +77,10 @@ public class UsblFixExtended extends Message {
 	)
 	public float accuracy = 0f;
 
+	public String abbrev() {
+		return "UsblFixExtended";
+	}
+
 	public int mgid() {
 		return 900;
 	}

@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
@@ -105,6 +106,10 @@ public class DesiredLinearState extends Message {
 			units = "Bitfield"
 	)
 	public EnumSet<FLAGS> flags = EnumSet.noneOf(FLAGS.class);
+
+	public String abbrev() {
+		return "DesiredLinearState";
+	}
 
 	public int mgid() {
 		return 414;

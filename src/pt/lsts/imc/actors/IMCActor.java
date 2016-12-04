@@ -1,16 +1,16 @@
 package pt.lsts.imc.actors;
 
-import com.squareup.otto.Subscribe;
-import pt.lsts.imc.msg.Message;
-import pt.lsts.imc.net.IMCNetwork;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.Future;
+
+import com.squareup.otto.Subscribe;
+
+import pt.lsts.imc.msg.Message;
+import pt.lsts.imc.net.IMCNetwork;
 
 /**
  * Created by zp on 30-11-2016.

@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import pt.lsts.imc.annotations.FieldType;
@@ -44,6 +45,10 @@ public class Reference extends Message {
 			type = IMCField.TYPE_FP32
 	)
 	public float radius = 0f;
+
+	public String abbrev() {
+		return "Reference";
+	}
 
 	public int mgid() {
 		return 479;

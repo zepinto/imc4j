@@ -49,6 +49,10 @@ public class SmsTx extends Message {
 	)
 	public byte[] data = new byte[0];
 
+	public String abbrev() {
+		return "SmsTx";
+	}
+
 	public int mgid() {
 		return 157;
 	}

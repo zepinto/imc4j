@@ -28,6 +28,10 @@ public class UamRxRange extends Message {
 	)
 	public float value = 0f;
 
+	public String abbrev() {
+		return "UamRxRange";
+	}
+
 	public int mgid() {
 		return 817;
 	}

@@ -65,6 +65,10 @@ public class VehicleCommand extends Message {
 	)
 	public String info = "";
 
+	public String abbrev() {
+		return "VehicleCommand";
+	}
+
 	public int mgid() {
 		return 501;
 	}

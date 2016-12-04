@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -22,6 +23,10 @@ public class RegisterManeuver extends Message {
 			type = IMCField.TYPE_UINT16
 	)
 	public int mid = 0;
+
+	public String abbrev() {
+		return "RegisterManeuver";
+	}
 
 	public int mgid() {
 		return 469;

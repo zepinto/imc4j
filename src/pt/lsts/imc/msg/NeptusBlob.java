@@ -23,6 +23,10 @@ public class NeptusBlob extends Message {
 	)
 	public byte[] content = new byte[0];
 
+	public String abbrev() {
+		return "NeptusBlob";
+	}
+
 	public int mgid() {
 		return 888;
 	}

@@ -32,6 +32,10 @@ public class ParametersXml extends Message {
 	)
 	public byte[] config = new byte[0];
 
+	public String abbrev() {
+		return "ParametersXml";
+	}
+
 	public int mgid() {
 		return 893;
 	}

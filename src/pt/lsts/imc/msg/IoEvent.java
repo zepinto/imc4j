@@ -34,6 +34,10 @@ public class IoEvent extends Message {
 	)
 	public String error = "";
 
+	public String abbrev() {
+		return "IoEvent";
+	}
+
 	public int mgid() {
 		return 813;
 	}

@@ -49,6 +49,10 @@ public class PlanGeneration extends Message {
 	)
 	public TupleList params = new TupleList("");
 
+	public String abbrev() {
+		return "PlanGeneration";
+	}
+
 	public int mgid() {
 		return 562;
 	}

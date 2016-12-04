@@ -18,6 +18,10 @@ public class PopEntityParameters extends Message {
 	)
 	public String name = "";
 
+	public String abbrev() {
+		return "PopEntityParameters";
+	}
+
 	public int mgid() {
 		return 812;
 	}

@@ -54,6 +54,10 @@ public class ReportControl extends Message {
 	)
 	public String sys_dst = "";
 
+	public String abbrev() {
+		return "ReportControl";
+	}
+
 	public int mgid() {
 		return 513;
 	}

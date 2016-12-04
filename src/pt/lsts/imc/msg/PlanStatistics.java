@@ -75,6 +75,10 @@ public class PlanStatistics extends Message {
 	)
 	public TupleList fuel = new TupleList("");
 
+	public String abbrev() {
+		return "PlanStatistics";
+	}
+
 	public int mgid() {
 		return 564;
 	}

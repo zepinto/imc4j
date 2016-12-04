@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc.annotations.FieldType;
 import pt.lsts.imc.annotations.IMCField;
@@ -89,6 +90,10 @@ public class CommsRelay extends Maneuver {
 			units = "m"
 	)
 	public float move_threshold = 0f;
+
+	public String abbrev() {
+		return "CommsRelay";
+	}
 
 	public int mgid() {
 		return 472;

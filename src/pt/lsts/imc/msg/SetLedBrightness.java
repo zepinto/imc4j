@@ -34,6 +34,10 @@ public class SetLedBrightness extends Message {
 	)
 	public int value = 0;
 
+	public String abbrev() {
+		return "SetLedBrightness";
+	}
+
 	public int mgid() {
 		return 314;
 	}

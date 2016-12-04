@@ -59,6 +59,10 @@ public class EntityInfo extends Message {
 	)
 	public int deact_time = 0;
 
+	public String abbrev() {
+		return "EntityInfo";
+	}
+
 	public int mgid() {
 		return 3;
 	}
