@@ -32,7 +32,7 @@ public class PojoConfig {
 		setProperties(pojo, asProperties(arguments));
 	}
 	
-	private static Properties asProperties(String[] arguments) throws Exception {
+	public static Properties asProperties(String[] arguments) throws Exception {
 		Properties p = new Properties();
 		for (String arg : arguments) {
 			if (!arg.startsWith("--") && !arg.toUpperCase().startsWith("-D"))
@@ -66,12 +66,14 @@ public class PojoConfig {
 		ArrayList<Field> fields = loadFields(pojo);
 		
 		for (Field f : fields) {
+			f.setAccessible(true);
 			String value = props.getProperty(f.getName());
 			try {
 				if (value != null)
 					setValue(pojo, value, f);
 			}
 			catch (Exception e) {
+				e.printStackTrace();
 				throw new Exception("Value for '"+f.getName()+"' ("+f.getType().getSimpleName()+") is invalid: "+value); 
 			}
 		}		

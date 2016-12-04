@@ -6,11 +6,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Properties;
 
 import com.squareup.otto.Subscribe;
 
 import pt.lsts.imc.msg.Message;
 import pt.lsts.imc.net.IMCNetwork;
+import pt.lsts.imc.util.PojoConfig;
 
 /**
  * Created by zp on 30-11-2016.
@@ -123,14 +125,38 @@ public abstract class IMCActor {
             return false;
         }
     }
-
+    
+    public void init() {
+    	
+    }
+    
+    public void finish() {
+    	
+    }
+    
     public void run() {
-        try {
+    	run(new Properties());
+    }
+    
+    public void run(Properties p) {
+    	
+    	try {
+    		PojoConfig.setProperties(this, p);
+    	}
+    	catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	
+    	init();
+    	
+    	try {
             IMCNetwork.start();
             IMCNetwork.register(this);
         }
         catch (Exception e) {
             e.printStackTrace();
         }
+        
+    	finish();
     }
 }
