@@ -173,6 +173,11 @@ public class IMCGenerator {
 				.addStatement("return $T.resolveSystem(src)", IMCRegistry.class).build();
 		msgBuilder.addMethod(src);
 				
+		MethodSpec src_ent = MethodSpec.methodBuilder("src_ent").addModifiers(Modifier.PUBLIC)
+				.addJavadoc("The name of the entity that generated this message or <code>null</code> if unknown").returns(String.class)
+				.addStatement("return $T.resolveEntity(src, src_ent)", IMCRegistry.class).build();
+		msgBuilder.addMethod(src_ent);
+
 		msgBuilder.addMethod(MethodSpec.methodBuilder("toString").addModifiers(Modifier.PUBLIC, Modifier.FINAL).returns(String.class)
 				.addStatement("return $T.asJson(this)", FormatConversion.class).build());
 

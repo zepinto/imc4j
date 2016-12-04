@@ -92,6 +92,12 @@ public abstract class Message {
 		return IMCRegistry.resolveSystem(src);
 	}
 
+	/**
+	 * The name of the entity that generated this message or <code>null</code> if unknown */
+	public String src_ent() {
+		return IMCRegistry.resolveEntity(src, src_ent);
+	}
+
 	public final String toString() {
 		return FormatConversion.asJson(this);
 	}
