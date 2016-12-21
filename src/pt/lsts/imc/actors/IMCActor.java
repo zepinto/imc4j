@@ -3,13 +3,14 @@ package pt.lsts.imc.actors;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
 
 import com.squareup.otto.Subscribe;
 
+import pt.lsts.imc.annotations.Publish;
 import pt.lsts.imc.msg.Message;
 import pt.lsts.imc.net.IMCNetwork;
 import pt.lsts.imc.util.PojoConfig;
@@ -34,10 +35,7 @@ public abstract class IMCActor {
     }
 
     public String name() {
-        Actor ann = getClass().getAnnotation(Actor.class);
-        if (ann == null || ann.name().isEmpty())
-            return getClass().getSimpleName();
-        return ann.name();
+    	return getClass().getSimpleName();        
     }
 
     public final List<Class<?>> outputs() {
@@ -46,19 +44,23 @@ public abstract class IMCActor {
                 return outputs.get(this);
             }
         }
-        ArrayList<Class<?>> outgoing = new ArrayList<>();
-        Actor ann = getClass().getAnnotation(Actor.class);
-
-        if (ann == null)
-            outgoing.add(Object.class);
-        else
-            Collections.addAll(outgoing, ann.outputs());
-
-        synchronized (outputs) {
-            outputs.put(this, outgoing);
+        HashSet<Class<?>> outgoing = new HashSet<>();
+        
+        for (Method m : getClass().getMethods()) {
+            if ((m.getModifiers() & Modifier.PUBLIC) == 0)
+                continue;
+            if (m.getAnnotation(Publish.class) == null)
+                continue;
+            for (Class<?> c : m.getAnnotation(Publish.class).value())
+            	outgoing.add(c);            
         }
-
-        return outgoing;
+        
+        ArrayList<Class<?>> ret = new ArrayList<>(outgoing);
+        
+        synchronized (outputs) {
+        	outputs.put(this, ret);
+        }
+        return ret;
     }
 
     public final List<Class<?>> inputs() {
