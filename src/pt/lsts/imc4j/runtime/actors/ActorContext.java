@@ -24,6 +24,22 @@ public interface ActorContext {
 	public void send(Message msg, String destination) throws Exception;
 	
 	/**
+	 * Sends the reply to the sender of the request
+	 * @param request The initial request, used to get destination
+	 * @param reply The message to send to the requester
+	 * @throws Exception In case the remote end cannot be reached or it is unknown
+	 */
+	public void reply(Message request, Message reply) throws Exception;
+	
+	/**
+	 * Send message to peer(s) asynchronously
+	 * @param msg The message to send
+	 * @return The number of peers to which this message was sent
+	 * @throws In case this actor cannot send this message type
+	 */
+	public int send(Message msg) throws Exception;
+	
+	/**
 	 * Send a message reliably to destination
 	 * @param msg The message to send
 	 * @param destination Where to send the message

@@ -26,11 +26,15 @@ import org.glassfish.grizzly.nio.transport.UDPNIOTransportBuilder;
 import com.squareup.otto.Bus;
 import com.squareup.otto.ThreadEnforcer;
 
+import pt.lsts.imc4j.actors.EntityListRequester;
+import pt.lsts.imc4j.actors.IMCAnnouncer;
+import pt.lsts.imc4j.actors.IMCBeater;
 import pt.lsts.imc4j.msg.Message;
+import pt.lsts.imc4j.runtime.actors.AbstractActorContext;
 import pt.lsts.imc4j.runtime.actors.ActorContext;
 import pt.lsts.imc4j.util.NetworkUtils;
 
-public class ImcContext extends AbstractActorContext implements ActorContext {
+public class ImcRuntime extends AbstractActorContext implements ActorContext {
 
 	private Bus bus = new Bus(ThreadEnforcer.ANY);
 	private FilterChain filterChain;
@@ -38,7 +42,7 @@ public class ImcContext extends AbstractActorContext implements ActorContext {
 	private TCPNIOTransport tcpTransport = null;
 	private UDPNIOConnection udpMulticast = null;
 
-	public ImcContext() {
+	public ImcRuntime() {
 		filterChain = IMCCodec.ImcFilter(this);
 		new IMCBeater(this);
 		new IMCAnnouncer(this);

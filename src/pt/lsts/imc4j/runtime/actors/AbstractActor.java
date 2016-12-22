@@ -12,7 +12,7 @@ import com.squareup.otto.Subscribe;
 
 import pt.lsts.imc4j.annotations.Publish;
 import pt.lsts.imc4j.msg.Message;
-import pt.lsts.imc4j.net.ImcContext;
+import pt.lsts.imc4j.net.ImcRuntime;
 import pt.lsts.imc4j.util.PojoConfig;
 
 /**
@@ -154,6 +154,17 @@ public abstract class AbstractActor {
         context.post(msg);
     }
 
+    public final void reply(Message request, Message reply) throws Exception {
+        check(reply);
+        context.reply(request, reply);        
+    }
+    
+    
+    public final int send(Message msg) throws Exception {
+        check(msg);
+        return context.send(msg);        
+    }
+    
     public final boolean send(String destination, Message msg) throws Exception {
         check(msg);
         try {
@@ -189,7 +200,7 @@ public abstract class AbstractActor {
     	
     }
     public static void exec(Properties props, Class<?>... actors) throws Exception {
-    	ImcContext context = new ImcContext();
+    	ImcRuntime context = new ImcRuntime();
     	for (Class<?> c : actors) {
     		AbstractActor actor = (AbstractActor) c.getConstructor(ActorContext.class).newInstance(context);
     		actor.init(props);

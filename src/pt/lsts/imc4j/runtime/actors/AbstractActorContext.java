@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.net;
+package pt.lsts.imc4j.runtime.actors;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -18,8 +18,9 @@ import com.squareup.otto.ThreadEnforcer;
 import pt.lsts.imc4j.msg.Announce;
 import pt.lsts.imc4j.msg.EntityList;
 import pt.lsts.imc4j.msg.Message;
-import pt.lsts.imc4j.runtime.actors.AbstractActor;
-import pt.lsts.imc4j.runtime.actors.ActorContext;
+import pt.lsts.imc4j.net.IMCQuery;
+import pt.lsts.imc4j.net.IMCRegistry;
+import pt.lsts.imc4j.net.IMCState;
 import pt.lsts.imc4j.runtime.callbacks.PeriodicScheduler;
 import pt.lsts.imc4j.runtime.clock.ActorClock;
 import pt.lsts.imc4j.runtime.clock.RealTimeClock;
@@ -29,7 +30,6 @@ public abstract class AbstractActorContext extends BaseFilter implements ActorCo
 	private Bus bus = new Bus(ThreadEnforcer.ANY);
 	private HashSet<Object> listeners = new HashSet<>();
 	private IMCRegistry registry = new IMCRegistry();
-	@SuppressWarnings("unused")
 	private RealTimeClock clock = new RealTimeClock();
 	protected ExecutorService executor = Executors.newFixedThreadPool(3);
 	private PeriodicScheduler scheduler = new PeriodicScheduler(bus);
@@ -64,15 +64,29 @@ public abstract class AbstractActorContext extends BaseFilter implements ActorCo
 			msg.src = registry.getImcId();
 	}
 	
-	public void send(Message msg) {
+	public int send(Message msg) throws Exception {
+		int count = 0;
 		for (String peer : registry().peers()) {
 			try {
 				send(msg, peer);
+				count++;
 			}
 			catch (Exception e) {
 				
-			}
+			}			
 		}
+		return count;
+	}
+	
+	public void reply(Message request, Message reply) throws Exception {
+		String name = registry.resolveSystem(request.src);
+		
+		if (name == null)
+			throw new Exception("Requester has not announced yet");
+			
+		reply.dst_ent = request.src_ent;
+		reply.dst = request.src;
+		send(reply, name);
 	}
 
 	@Override
@@ -80,13 +94,8 @@ public abstract class AbstractActorContext extends BaseFilter implements ActorCo
 		Callable<Boolean> callable = new Callable<Boolean>() {
 			@Override
 			public Boolean call() throws Exception {
-				try{
-					send(msg, destination);
-					return true;
-				}
-				catch (Exception e) {
-					return false;
-				}				
+				send(msg, destination);
+				return true;							
 			}
 		};
 		return executor.submit(callable);
@@ -118,7 +127,7 @@ public abstract class AbstractActorContext extends BaseFilter implements ActorCo
 
 	@Override
 	public ActorClock clock() {
-		return clock();
+		return clock;
 	}
 
 	@Override
@@ -169,4 +178,6 @@ public abstract class AbstractActorContext extends BaseFilter implements ActorCo
 	public abstract void onStop() throws Exception;
 	
 	public abstract void send(Message msg, String destination) throws Exception;
+	
+	
 }

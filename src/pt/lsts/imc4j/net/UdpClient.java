@@ -6,6 +6,7 @@ import org.glassfish.grizzly.nio.transport.UDPNIOTransportBuilder;
 import pt.lsts.imc4j.msg.Abort;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.Message;
+import pt.lsts.imc4j.runtime.actors.AbstractActorContext;
 
 public class UdpClient extends AbstractActorContext {
 
@@ -44,15 +45,19 @@ public class UdpClient extends AbstractActorContext {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public void send(Message msg) {
+	public int send(Message msg) throws Exception {
 		fillIn(msg);
 		msg.dst = remoteId;
-		try {
-			udpTransport.connect(host, port).get().write(msg);
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
+		udpTransport.connect(host, port).get().write(msg);
+		return 1;
+	}
+	
+	@Override
+	public void reply(Message request, Message reply) throws Exception {
+		if (request.src == remoteId)
+			send(reply);
+		else
+			super.reply(request, reply);
 	}
 	
 	@Override

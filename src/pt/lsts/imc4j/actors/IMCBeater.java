@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.net;
+package pt.lsts.imc4j.actors;
 
 import java.util.ArrayList;
 import java.util.HashSet;

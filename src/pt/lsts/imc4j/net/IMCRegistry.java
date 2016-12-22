@@ -292,6 +292,12 @@ public class IMCRegistry extends BaseFilter {
 		}
 	}
 	
+	public TupleList getLocalEntities() {
+		synchronized (entities) {
+			return entities.get(local_id);
+		}
+	}
+	
 	private static class Peer {
 		int id;
 

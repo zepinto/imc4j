@@ -4,7 +4,7 @@ import com.squareup.otto.Subscribe;
 
 import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.annotations.Publish;
-import pt.lsts.imc4j.msg.EstimatedState;
+import pt.lsts.imc4j.msg.Abort;
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.runtime.actors.AbstractActor;
 import pt.lsts.imc4j.runtime.actors.ActorContext;
@@ -20,20 +20,19 @@ public class ActorTest extends AbstractActor {
         
 	@Subscribe    
     public void on(Message msg) {
-		System.out.println(Thread.currentThread());
     	System.out.printf("%s from %s\n", msg.abbrev(), systemName(msg.src));
     }
 
-    @Periodic(3000)
-    @Publish(EstimatedState.class)
-    public void periodic() {
-    	System.out.println(Thread.currentThread());
+    @Periodic(5000)
+    @Publish(Abort.class)
+    public void periodic() throws Exception {
         System.out.println("Periodic "+ System.currentTimeMillis());
+        send(new Abort());        
     }
     
     @Override
     public void init() {    	
-    	System.out.println(Thread.currentThread());
+    	
     }
 
     public static void main(String args[]) throws Exception {

@@ -7,6 +7,7 @@ import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import pt.lsts.imc4j.msg.Abort;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.Message;
+import pt.lsts.imc4j.runtime.actors.AbstractActorContext;
 
 public class TcpClient extends AbstractActorContext {
 
@@ -42,10 +43,19 @@ public class TcpClient extends AbstractActorContext {
 	}
 
 	@Override
-	public void send(Message msg) {
+	public int send(Message msg) throws Exception {
 		fillIn(msg);
 		msg.dst = remoteId;
 		connection.write(msg);
+		return 1;
+	}
+	
+	@Override
+	public void reply(Message request, Message reply) throws Exception {
+		if (request.src == remoteId)
+			send(reply);
+		else
+			super.reply(request, reply);
 	}
 
 	@Override
@@ -62,12 +72,12 @@ public class TcpClient extends AbstractActorContext {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		TcpClient conn = new TcpClient("127.0.0.1", 6002);
-		conn.start();
+		TcpClient context = new TcpClient("127.0.0.1", 6002);
+		context.start();
 		while(true) {
-			System.out.println(conn.query(EstimatedState.class).now());
-			Thread.sleep(5000);
-			conn.send(new Abort());
+			context.clock().sleep(5000);
+			System.out.println(context.query(EstimatedState.class).now());
+			context.send(new Abort());
 		}		
 	}
 }

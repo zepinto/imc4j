@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.net;
+package pt.lsts.imc4j.actors;
 
 import java.util.LinkedHashMap;
 
@@ -19,8 +19,11 @@ import pt.lsts.imc4j.runtime.actors.ActorContext;
  */
 public class EntityListRequester extends AbstractActor {
 	
+	private ActorContext context;
+	
 	public EntityListRequester(ActorContext context) {
 		super(context);
+		this.context = context;
 	}
 
 	private LinkedHashMap<String, Long> requested = new LinkedHashMap<>();
@@ -46,4 +49,15 @@ public class EntityListRequester extends AbstractActor {
 			}
 		}
 	}
+	
+	@Subscribe
+	@Publish(EntityList.class)
+	public void on(EntityList request) throws Exception {
+		if (request.op == OP.OP_QUERY && request.dst == systemId()) {
+			EntityList list = new EntityList();
+			list.op = OP.OP_REPORT;
+			list.list = context.registry().getLocalEntities();
+			reply(request, list);
+		}
+	}	
 }
