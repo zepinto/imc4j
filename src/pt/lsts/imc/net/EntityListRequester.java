@@ -4,6 +4,9 @@ import java.util.LinkedHashMap;
 
 import com.squareup.otto.Subscribe;
 
+import pt.lsts.imc.actors.ActorContext;
+import pt.lsts.imc.actors.IMCActor;
+import pt.lsts.imc.annotations.Publish;
 import pt.lsts.imc.msg.Announce;
 import pt.lsts.imc.msg.EntityList;
 import pt.lsts.imc.msg.EntityList.OP;
@@ -14,10 +17,16 @@ import pt.lsts.imc.msg.EntityList.OP;
  * @author zp
  *
  */
-public class EntityListRequester {
+public class EntityListRequester extends IMCActor {
+	
+	public EntityListRequester(ActorContext context) {
+		super(context);
+	}
+
 	private LinkedHashMap<String, Long> requested = new LinkedHashMap<>();
 
 	@Subscribe
+	@Publish(EntityList.class)
 	public void on(Announce announce) {
 		Long lastRequest;
 		synchronized (requested) {
@@ -30,7 +39,7 @@ public class EntityListRequester {
 				}
 				EntityList req = new EntityList();
 				req.op = OP.OP_QUERY;
-				IMCNetwork.sendUdp(req, announce.sys_name);
+				send(announce.sys_name, req);
 				
 			} catch (Exception e) {
 				e.printStackTrace();

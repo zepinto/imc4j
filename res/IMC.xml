@@ -4218,7 +4218,7 @@
     <field name="Value" abbrev="value" type="fp64_t" unit="rad">
       <description>
         The value of the desired heading angle, relative to true
-        north, in radians.
+        north, in rad.
       </description>
     </field>
   </message>
@@ -4524,7 +4524,7 @@
     </description>
     <field name="Value" abbrev="value" type="fp64_t" unit="rad/s">
       <description>
-        The value of the desired heading rate speed in radians per
+        The value of the desired heading rate speed in rad per
         second.
       </description>
     </field>

@@ -12,7 +12,7 @@ import com.squareup.otto.Subscribe;
 
 import pt.lsts.imc.annotations.Publish;
 import pt.lsts.imc.msg.Message;
-import pt.lsts.imc.net.IMCNetwork;
+import pt.lsts.imc.net.ImcContext;
 import pt.lsts.imc.util.PojoConfig;
 
 /**
@@ -20,24 +20,61 @@ import pt.lsts.imc.util.PojoConfig;
  */
 public abstract class IMCActor {
 
-    private static final LinkedHashMap<IMCActor, Integer> entities = new LinkedHashMap<>();
     private static final LinkedHashMap<IMCActor, ArrayList<Class<?>>> inputs = new LinkedHashMap<>();
     private static final LinkedHashMap<IMCActor, ArrayList<Class<?>>> outputs = new LinkedHashMap<>();
     private final LinkedHashMap<Class<?>, Boolean> checks = new LinkedHashMap<>();
-
-    public final int id() {
-        synchronized (entities) {
-            if (!entities.containsKey(this)) {
-                entities.put(this, entities.size()+1);
-            }
-            return entities.get(this);
-        }
+    private final ActorContext context;
+    private int id;
+    
+    public IMCActor(ActorContext context) {
+    	this.context = context;
+    	this.id = context.register(this, entityName());
+    }
+    
+    public final int entityId() {
+        return id;
     }
 
-    public String name() {
+    public String entityName() {
     	return getClass().getSimpleName();        
     }
+    
+    public final int systemId() {
+    	return context.registry().getImcId();
+    }
+    
+    public final String systemName() {
+    	return context.registry().getSysName();
+    }
+    
+    public String systemName(int imcId) {
+    	return context.registry().resolveSystem(imcId);
+    }
 
+    public int systemId(String sysName) {
+    	return context.registry().resolveSystem(sysName);
+    }
+    
+    public int entityId(String sysName, String entityName) {
+    	return context.registry().resolveSystem(sysName);
+    }    
+    
+    public List<String> peers() {
+    	return context.registry().peers();
+    }
+    
+    public void sleep(long millis) throws InterruptedException {
+    	context.clock().sleep(millis);
+    }
+    
+    public void duration(long millis) {
+    	context.clock().duration(millis);
+    }
+    
+    public long curTime() {
+    	return context.clock().curTime();
+    }
+    
     public final List<Class<?>> outputs() {
         synchronized (outputs) {
             if (outputs.containsKey(this)) {
@@ -114,13 +151,13 @@ public abstract class IMCActor {
 
     public final void post(Message msg) throws Exception {
         check(msg);
-        IMCNetwork.post(msg);
+        context.post(msg);
     }
 
     public final boolean send(String destination, Message msg) throws Exception {
         check(msg);
         try {
-            IMCNetwork.sendUdp(msg, destination);
+            context.send(msg, destination);
             return true;
         }
         catch (Exception e) {
@@ -132,16 +169,7 @@ public abstract class IMCActor {
     	
     }
     
-    public void finish() {
-    	
-    }
-    
-    public void run() {
-    	run(new Properties());
-    }
-    
-    public void run(Properties p) {
-    	
+    public void init(Properties p) {
     	try {
     		PojoConfig.setProperties(this, p);
     	}
@@ -150,15 +178,22 @@ public abstract class IMCActor {
     	}
     	
     	init();
+    }
+    
+    public void finish() {
     	
-    	try {
-            IMCNetwork.start();
-            IMCNetwork.register(this);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        
-    	finish();
+    }
+    
+    public static  void exec(Class<?>... actors) throws Exception {
+    	exec(new Properties(), actors);
+    	
+    }
+    public static void exec(Properties props, Class<?>... actors) throws Exception {
+    	ImcContext context = new ImcContext();
+    	for (Class<?> c : actors) {
+    		IMCActor actor = (IMCActor) c.getConstructor(ActorContext.class).newInstance(context);
+    		actor.init(props);
+    		context.start();
+    	}
     }
 }

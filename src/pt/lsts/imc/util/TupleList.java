@@ -75,4 +75,8 @@ public class TupleList {
 			return null;
 		}
 	}
+	
+	public int size() {
+		return list.size();
+	}
 }

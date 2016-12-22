@@ -3,7 +3,10 @@ package pt.lsts.imc.net;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import pt.lsts.imc.actors.ActorContext;
+import pt.lsts.imc.actors.IMCActor;
 import pt.lsts.imc.annotations.Periodic;
+import pt.lsts.imc.annotations.Publish;
 import pt.lsts.imc.msg.Announce;
 import pt.lsts.imc.msg.Heartbeat;
 
@@ -16,7 +19,11 @@ import pt.lsts.imc.msg.Heartbeat;
  * @author zp
  *
  */
-public class IMCBeater {
+public class IMCBeater extends IMCActor {
+
+	public IMCBeater(ActorContext context) {
+		super(context);
+	}
 
 	private HashSet<String> recipients = new HashSet<>();
 	private boolean autoConnect = true;
@@ -38,19 +45,18 @@ public class IMCBeater {
 	}
 
 	@Periodic(1000)
+	@Publish(Heartbeat.class)
 	public void sendHeartbeat() {
 		HashSet<String> destinations = new HashSet<>();
 		synchronized (recipients) {
 			destinations.addAll(recipients);
 		}
 		if (isAutoConnect())
-			destinations.addAll(IMCRegistry.connectedPeers());
-
-		
+			destinations.addAll(peers());
 		
 		for (String dst : destinations) 
 			try {
-				IMCNetwork.sendUdp(new Heartbeat(), dst);
+				send(dst, new Heartbeat());
 			} catch (Exception e) {
 
 			}

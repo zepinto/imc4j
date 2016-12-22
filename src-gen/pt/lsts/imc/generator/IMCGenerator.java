@@ -25,7 +25,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import pt.lsts.imc.annotations.IMCField;
-import pt.lsts.imc.net.IMCRegistry;
+import pt.lsts.imc.net.IMCQuery;
 import pt.lsts.imc.util.FormatConversion;
 import pt.lsts.imc.util.SerializationUtils;
 import pt.lsts.imc.util.TupleList;
@@ -95,6 +95,21 @@ public class IMCGenerator {
 		});
 	}
 
+	static TypeSpec parseState(Messages proto) {
+		TypeSpec.Builder state = TypeSpec.classBuilder(ClassName.get(pkgMsgs, "IMCState"));
+		state.addModifiers(Modifier.PUBLIC);
+		
+		proto.getMessage().forEach(m -> {
+			state.addMethod(MethodSpec.methodBuilder(m.getAbbrev())
+					.addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+					.returns(ParameterizedTypeName.get(ClassName.get(IMCQuery.class),
+							ClassName.bestGuess(m.getAbbrev())))
+					.addStatement("return $T.q($L.class)", IMCQuery.class, m.getAbbrev()).build());
+		});
+
+		return state.build();
+	}
+	
 	static TypeSpec parseFactory(Messages proto) {
 		TypeSpec.Builder factory = TypeSpec.classBuilder(ClassName.get(pkgMsgs, "MessageFactory"));
 		factory.addModifiers(Modifier.PUBLIC);
@@ -168,16 +183,6 @@ public class IMCGenerator {
 				.addJavadoc("The name (abbreviation) of the message").returns(String.class).build();
 		msgBuilder.addMethod(abbrev);
 		
-		MethodSpec src = MethodSpec.methodBuilder("src").addModifiers(Modifier.PUBLIC)
-				.addJavadoc("The source name of the message or <code>null</code> if not announced yet").returns(String.class)
-				.addStatement("return $T.resolveSystem(src)", IMCRegistry.class).build();
-		msgBuilder.addMethod(src);
-				
-		MethodSpec src_ent = MethodSpec.methodBuilder("src_ent").addModifiers(Modifier.PUBLIC)
-				.addJavadoc("The name of the entity that generated this message or <code>null</code> if unknown").returns(String.class)
-				.addStatement("return $T.resolveEntity(src, src_ent)", IMCRegistry.class).build();
-		msgBuilder.addMethod(src_ent);
-
 		msgBuilder.addMethod(MethodSpec.methodBuilder("toString").addModifiers(Modifier.PUBLIC, Modifier.FINAL).returns(String.class)
 				.addStatement("return $T.asJson(this)", FormatConversion.class).build());
 
@@ -683,9 +688,11 @@ public class IMCGenerator {
 
 		JavaFile msgFile = JavaFile.builder(pkgMsgs, parseHeader(proto)).indent("\t").build();
 		JavaFile factoryFile = JavaFile.builder(pkgMsgs, parseFactory(proto)).indent("\t").build();
+		//JavaFile stateFile = JavaFile.builder(pkgMsgs, parseState(proto)).indent("\t").build();
 		try {
 			msgFile.writeTo(new File(outDir));
 			factoryFile.writeTo(new File(outDir));
+			//stateFile.writeTo(new File(outDir));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

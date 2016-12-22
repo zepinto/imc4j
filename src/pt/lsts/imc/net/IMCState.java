@@ -7,18 +7,32 @@ import java.util.LinkedHashMap;
 
 import com.squareup.otto.Subscribe;
 
+import pt.lsts.imc.actors.ActorContext;
+import pt.lsts.imc.actors.IMCActor;
 import pt.lsts.imc.msg.Message;
 import pt.lsts.imc.msg.MessageFactory;
 
-public class IMCState {
+public class IMCState extends IMCActor {
+
+	public IMCState(ActorContext context) {
+		super(context);
+	}
 
 	private LinkedHashMap<Integer, LinkedHashMap<Integer, Message>> state = new LinkedHashMap<>();
 	private TimestampComparator timeComparator = new TimestampComparator();
-
+	
 	private int hash(Message msg) {
 		return (msg.src << 2) | msg.mgid();
 	}
 
+	public <T extends Message> IMCQuery<T> q(Class<T> clazz) {
+		return IMCQuery.q(this, clazz);
+	}
+	
+	public IMCQuery<Message> q(String abbrev) {
+		return IMCQuery.q(this, abbrev);
+	}
+	
 	@Subscribe
 	public void on(Message msg) {
 		int hash = hash(msg);
@@ -82,9 +96,9 @@ public class IMCState {
 	}
 	
 	public Message get(String source, String abbrev, String entity) {
-		Integer src = IMCRegistry.resolveSystem(source);
+		Integer src = systemId(source);
 		int mgid = MessageFactory.idOf(abbrev);
-		Integer ent = IMCRegistry.resolveEntity(source, entity);
+		Integer ent = entityId(source, entity);
 		if (src == null || ent == null || mgid < 0)
 			return null;
 
@@ -92,13 +106,13 @@ public class IMCState {
 	}
 
 	public Message get(String source, String abbrev) {
-		Integer src = IMCRegistry.resolveSystem(source);
+		Integer src = systemId(source);
 		int mgid = MessageFactory.idOf(abbrev);
 		if (src == null || mgid < 0)
 			return null;
 		return last(src, mgid);
 	}
-
+	
 	static class TimestampComparator implements Comparator<Message> {
 		@Override
 		public int compare(Message o1, Message o2) {

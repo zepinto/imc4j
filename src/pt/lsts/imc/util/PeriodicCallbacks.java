@@ -12,6 +12,10 @@ import pt.lsts.imc.annotations.Periodic;
 public class PeriodicCallbacks {
 	private static ScheduledThreadPoolExecutor _exec = null;
 	
+	public static void setTimeMultiplier(double timeMult) {
+		timeMultiplier = timeMult;
+	}
+	
 	private static ScheduledThreadPoolExecutor executor() {
 		if (_exec == null)
 			_exec = new ScheduledThreadPoolExecutor(2);
@@ -19,6 +23,7 @@ public class PeriodicCallbacks {
 	}
 	
 	private static LinkedHashMap<Integer, Vector<ScheduledFuture<?>>> callbacks = new LinkedHashMap<Integer, Vector<ScheduledFuture<?>>>();
+	private static double timeMultiplier = 1.0;
 	
 	public static void stopAll() {
 		executor().shutdown();
@@ -58,8 +63,8 @@ public class PeriodicCallbacks {
 					}
 				};
 
-				long period = method.getAnnotation(Periodic.class)
-						.value();
+				long period = (long) (timeMultiplier * method.getAnnotation(Periodic.class)
+						.value());
 				
 				ScheduledFuture<?> c = executor().scheduleAtFixedRate(callback, period, period, TimeUnit.MILLISECONDS);
 				
