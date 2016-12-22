@@ -60,7 +60,6 @@ public class ImcContext extends BaseFilter implements ActorContext {
 		new IMCAnnouncer(this);
 		new EntityListRequester(this);
 		new IMCState(this);
-				
 	}
 	
 	public void start() throws Exception {
@@ -229,10 +228,7 @@ public class ImcContext extends BaseFilter implements ActorContext {
 		}
 	}
 	
-	public void post(Object message) {
-		bus.post(message);
-	}
-	
+
 	public void handleMessage(Message msg) {
 		bus.post(msg);
 	}
@@ -263,6 +259,7 @@ public class ImcContext extends BaseFilter implements ActorContext {
 	
 	@Override
 	public void post(Message msg) {
+		fillIn(msg);
 		bus.post(msg);
 	}
 
@@ -272,7 +269,7 @@ public class ImcContext extends BaseFilter implements ActorContext {
 			sendUdp(msg, destination);		
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			
 		}
 	}
 

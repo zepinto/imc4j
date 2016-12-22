@@ -42,7 +42,7 @@ public class EntityListRequester extends IMCActor {
 				send(announce.sys_name, req);
 				
 			} catch (Exception e) {
-				e.printStackTrace();
+
 			}
 		}
 	}

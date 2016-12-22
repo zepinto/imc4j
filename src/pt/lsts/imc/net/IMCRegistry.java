@@ -132,6 +132,7 @@ public class IMCRegistry extends BaseFilter {
 	 *            The Address where the message was sent from
 	 */
 	public void setAnnounce(Announce announce, InetSocketAddress address) {
+		
 		Peer peer = new Peer(announce, address);
 		synchronized (peers) {
 			peers.put(announce.sys_name, peer);			

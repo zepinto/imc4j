@@ -19,6 +19,6 @@ public class TestReception extends IMCActor {
 	}	
 	
 	public static void main(String[] args) throws Exception {
-		IMCActor.exec(TestReception.class);
+		IMCActor.exec(TestReception.class, ActorTest.class);
 	}
 }
