@@ -36,11 +36,11 @@ import pt.lsts.imc.actors.ActorClock;
 import pt.lsts.imc.actors.ActorContext;
 import pt.lsts.imc.actors.IMCActor;
 import pt.lsts.imc.actors.RealTimeClock;
+import pt.lsts.imc.callbacks.PeriodicScheduler;
 import pt.lsts.imc.msg.Announce;
 import pt.lsts.imc.msg.EntityList;
 import pt.lsts.imc.msg.Message;
 import pt.lsts.imc.util.NetworkUtils;
-import pt.lsts.imc.util.PeriodicCallbacks;
 
 public class ImcContext extends BaseFilter implements ActorContext {
 
@@ -53,6 +53,7 @@ public class ImcContext extends BaseFilter implements ActorContext {
 	private IMCRegistry registry = new IMCRegistry();
 	private RealTimeClock clock = new RealTimeClock();
 	private ExecutorService executor = Executors.newFixedThreadPool(3);
+	private PeriodicScheduler scheduler = new PeriodicScheduler(bus);
 	
 	public ImcContext() {
 		filterChain = IMCCodec.ImcFilter(this);
@@ -222,7 +223,7 @@ public class ImcContext extends BaseFilter implements ActorContext {
 	
 	public void unregister(Object pojo) {
 		bus.unregister(pojo);
-		PeriodicCallbacks.unregister(pojo);
+		scheduler.unregister(pojo);
 		synchronized (listeners) {
 			listeners.remove(pojo);
 		}
@@ -296,7 +297,7 @@ public class ImcContext extends BaseFilter implements ActorContext {
 		synchronized (listeners) {
 			if (listeners.add(actor)) {
 				bus.register(actor);
-				PeriodicCallbacks.register(actor);
+				scheduler.register(actor);
 			}
 		}
 		return registry.registerLocalEntity(name);
