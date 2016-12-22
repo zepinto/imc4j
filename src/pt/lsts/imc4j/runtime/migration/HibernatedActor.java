@@ -1,11 +1,15 @@
 package pt.lsts.imc4j.runtime.migration;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Properties;
 
+import pt.lsts.imc4j.msg.NeptusBlob;
 import pt.lsts.imc4j.runtime.IMCRuntime;
 import pt.lsts.imc4j.runtime.actors.AbstractActor;
 import pt.lsts.imc4j.runtime.actors.ActorContext;
@@ -24,10 +28,24 @@ public class HibernatedActor implements Serializable {
 		return new MigrationClassLoader(this).get(context);
 	}
 	
-	public HibernatedActor(AbstractActor actor) {
+	public NeptusBlob asBlob() throws Exception {
+		NeptusBlob blob = new NeptusBlob();
+		blob.content_type = "migration/imc4j";
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ObjectOutputStream oos = new ObjectOutputStream(baos);
+		oos.writeObject(this);
+		oos.close();
+		blob.content = baos.toByteArray();
+		return blob;
+	}
+	
+	public static HibernatedActor fromBlob(NeptusBlob blob) throws Exception {
+		ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(blob.content));
+		return (HibernatedActor) ois.readObject();
+	}
+	
+	private void loadSpec() {
 		try {
-			params = PojoConfig.getProperties(actor);
-			className = actor.getClass().getName();
 			String file = className.replaceAll("\\.", "" + File.separatorChar) + ".class";
 			InputStream is = getClass().getClassLoader().getResourceAsStream(file);
 
@@ -45,18 +63,36 @@ public class HibernatedActor implements Serializable {
 			e.printStackTrace();
 		}
 	}
+	
+	public <T extends AbstractActor> HibernatedActor(Class<T> actor) {
+		className = actor.getName();
+		loadSpec();
+	}
+	
+	
+	
+	public HibernatedActor(AbstractActor actor) {
+		try {
+			params = PojoConfig.getProperties(actor);	
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}		
+		className = actor.getClass().getName();
+		loadSpec();
+	}
 
 	public static void main(String[] args) throws Exception {
 		ActorContext context = new IMCRuntime();
-		ActorTest at = new ActorTest(context);
+		//ActorTest at = new ActorTest(context);
 		context.start();
 				
 		Thread.sleep(15000);
 		
 		System.out.println("now doing hibernation...");
-		context.unregister(at);
-		HibernatedActor h = new HibernatedActor(at);
-		
+		//context.unregister(at);
+		//HibernatedActor h = new HibernatedActor(at);
+		HibernatedActor h = new HibernatedActor(ActorTest.class);
 		Thread.sleep(15000);
 		System.out.println("now reviving...");
 		
