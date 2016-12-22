@@ -20,17 +20,20 @@ public class ActorTest extends IMCActor {
         
 	@Subscribe    
     public void on(Message msg) {
+		System.out.println(Thread.currentThread());
     	System.out.printf("%s from %s\n", msg.abbrev(), systemName(msg.src));
     }
 
     @Periodic(3000)
     @Publish(EstimatedState.class)
     public void periodic() {
-        
+    	System.out.println(Thread.currentThread());
+        System.out.println("Periodic "+ System.currentTimeMillis());
     }
     
     @Override
     public void init() {    	
+    	System.out.println(Thread.currentThread());
     }
 
     public static void main(String args[]) throws Exception {
