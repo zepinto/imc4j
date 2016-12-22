@@ -16,13 +16,14 @@ public class PeriodicScheduler {
 	private ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(2);
 	private LinkedHashMap<Integer, Vector<ScheduledFuture<?>>> callbacks = new LinkedHashMap<Integer, Vector<ScheduledFuture<?>>>();
 	private final Bus bus;
-	
+	private PeriodicDispatcher dispatcher = new PeriodicDispatcher();
 	public PeriodicScheduler(Bus bus) {
 		this.bus = bus;
-		bus.register(new PeriodicDispatcher());
+		bus.register(dispatcher);
 	}	
 	
 	public void stopAll() {
+		bus.unregister(dispatcher);
 		exec.shutdown();
 	}
 

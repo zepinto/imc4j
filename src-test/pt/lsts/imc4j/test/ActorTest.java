@@ -6,13 +6,13 @@ import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.annotations.Publish;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.Message;
-import pt.lsts.imc4j.runtime.ActorContext;
-import pt.lsts.imc4j.runtime.IMCActor;
+import pt.lsts.imc4j.runtime.actors.AbstractActor;
+import pt.lsts.imc4j.runtime.actors.ActorContext;
 
 /**
  * Created by zp on 30-11-2016.
  */
-public class ActorTest extends IMCActor {
+public class ActorTest extends AbstractActor {
 
 	public ActorTest(ActorContext context) {
     	super(context);
@@ -37,6 +37,6 @@ public class ActorTest extends IMCActor {
     }
 
     public static void main(String args[]) throws Exception {
-    	IMCActor.exec(ActorTest.class);
+    	AbstractActor.exec(ActorTest.class);
     }
 }

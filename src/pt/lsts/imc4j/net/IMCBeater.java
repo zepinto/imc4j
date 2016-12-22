@@ -7,8 +7,8 @@ import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.annotations.Publish;
 import pt.lsts.imc4j.msg.Announce;
 import pt.lsts.imc4j.msg.Heartbeat;
-import pt.lsts.imc4j.runtime.ActorContext;
-import pt.lsts.imc4j.runtime.IMCActor;
+import pt.lsts.imc4j.runtime.actors.AbstractActor;
+import pt.lsts.imc4j.runtime.actors.ActorContext;
 
 /**
  * This module will send IMC Heartbeats to all peers. A peer can be added by its
@@ -19,7 +19,7 @@ import pt.lsts.imc4j.runtime.IMCActor;
  * @author zp
  *
  */
-public class IMCBeater extends IMCActor {
+public class IMCBeater extends AbstractActor {
 
 	public IMCBeater(ActorContext context) {
 		super(context);

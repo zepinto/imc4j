@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.runtime;
+package pt.lsts.imc4j.runtime.actors;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -18,15 +18,15 @@ import pt.lsts.imc4j.util.PojoConfig;
 /**
  * Created by zp on 30-11-2016.
  */
-public abstract class IMCActor {
+public abstract class AbstractActor {
 
-    private static final LinkedHashMap<IMCActor, ArrayList<Class<?>>> inputs = new LinkedHashMap<>();
-    private static final LinkedHashMap<IMCActor, ArrayList<Class<?>>> outputs = new LinkedHashMap<>();
+    private static final LinkedHashMap<AbstractActor, ArrayList<Class<?>>> inputs = new LinkedHashMap<>();
+    private static final LinkedHashMap<AbstractActor, ArrayList<Class<?>>> outputs = new LinkedHashMap<>();
     private final LinkedHashMap<Class<?>, Boolean> checks = new LinkedHashMap<>();
     private final ActorContext context;
     private int id;
     
-    public IMCActor(ActorContext context) {
+    public AbstractActor(ActorContext context) {
     	this.context = context;
     	this.id = context.register(this, entityName());
     }
@@ -51,11 +51,11 @@ public abstract class IMCActor {
     	return context.registry().resolveSystem(imcId);
     }
 
-    public int systemId(String sysName) {
+    public Integer systemId(String sysName) {
     	return context.registry().resolveSystem(sysName);
     }
     
-    public int entityId(String sysName, String entityName) {
+    public Integer entityId(String sysName, String entityName) {
     	return context.registry().resolveSystem(sysName);
     }    
     
@@ -191,7 +191,7 @@ public abstract class IMCActor {
     public static void exec(Properties props, Class<?>... actors) throws Exception {
     	ImcContext context = new ImcContext();
     	for (Class<?> c : actors) {
-    		IMCActor actor = (IMCActor) c.getConstructor(ActorContext.class).newInstance(context);
+    		AbstractActor actor = (AbstractActor) c.getConstructor(ActorContext.class).newInstance(context);
     		actor.init(props);
     		context.start();
     	}

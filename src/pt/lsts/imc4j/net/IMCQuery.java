@@ -42,9 +42,14 @@ public class IMCQuery<T> {
 	public T now() {
 		if (source == null && entity == null) {
 			return (T) state.ofType(msgName);
-		} else if (source != null && entity == null) {
+		} 
+		else if (source != null && entity == null) {
 			return (T) state.get(source, msgName);
-		} else {
+		}
+		else if (source == null && entity != null) {
+			return (T) state.getFromEntity(entity, msgName);
+		}
+		else {
 			return (T) state.get(source, msgName, entity);
 		}
 	}

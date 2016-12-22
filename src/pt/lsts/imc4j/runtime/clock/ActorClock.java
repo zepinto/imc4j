@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.runtime;
+package pt.lsts.imc4j.runtime.clock;
 
 public interface ActorClock {
 

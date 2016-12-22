@@ -11,18 +11,12 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChain;
-import org.glassfish.grizzly.filterchain.FilterChainContext;
-import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.nio.transport.UDPNIOConnection;
@@ -32,38 +26,26 @@ import org.glassfish.grizzly.nio.transport.UDPNIOTransportBuilder;
 import com.squareup.otto.Bus;
 import com.squareup.otto.ThreadEnforcer;
 
-import pt.lsts.imc4j.msg.Announce;
-import pt.lsts.imc4j.msg.EntityList;
 import pt.lsts.imc4j.msg.Message;
-import pt.lsts.imc4j.runtime.ActorClock;
-import pt.lsts.imc4j.runtime.ActorContext;
-import pt.lsts.imc4j.runtime.IMCActor;
-import pt.lsts.imc4j.runtime.RealTimeClock;
-import pt.lsts.imc4j.runtime.callbacks.PeriodicScheduler;
+import pt.lsts.imc4j.runtime.actors.ActorContext;
 import pt.lsts.imc4j.util.NetworkUtils;
 
-public class ImcContext extends BaseFilter implements ActorContext {
+public class ImcContext extends AbstractActorContext implements ActorContext {
 
 	private Bus bus = new Bus(ThreadEnforcer.ANY);
-	private HashSet<Object> listeners = new HashSet<>();
 	private FilterChain filterChain;
 	private UDPNIOTransport udpTransport = null;
 	private TCPNIOTransport tcpTransport = null;
 	private UDPNIOConnection udpMulticast = null;
-	private IMCRegistry registry = new IMCRegistry();
-	private RealTimeClock clock = new RealTimeClock();
-	private ExecutorService executor = Executors.newFixedThreadPool(3);
-	private PeriodicScheduler scheduler = new PeriodicScheduler(bus);
-	
+
 	public ImcContext() {
 		filterChain = IMCCodec.ImcFilter(this);
 		new IMCBeater(this);
 		new IMCAnnouncer(this);
 		new EntityListRequester(this);
-		new IMCState(this);
 	}
-	
-	public void start() throws Exception {
+
+	public void onStart() throws Exception {
 		int udpPort = -1;
 		int multicastPort = -1;
 		for (int port = 6001; port < 6020; port++) {
@@ -80,8 +62,8 @@ public class ImcContext extends BaseFilter implements ActorContext {
 
 		Collection<String> netInt = NetworkUtils.getNetworkInterfaces();
 		for (String itf : netInt) {
-			registry.addService("imc+udp://" + itf + ":" + udpPort + "/");
-			registry.addService("imc+tcp://" + itf + ":" + udpPort + "/");
+			registry().addService("imc+udp://" + itf + ":" + udpPort + "/");
+			registry().addService("imc+tcp://" + itf + ":" + udpPort + "/");
 		}
 
 		for (int port = 30100; port < 30105; port++) {
@@ -139,26 +121,13 @@ public class ImcContext extends BaseFilter implements ActorContext {
 		}
 	}
 
-	private void fillIn(Message msg) {
-		if (msg.src == 0xFFFF)
-			msg.src = registry.getImcId();
-	}
-
-	public void stop() throws Exception {
-
+	public void onStop() throws Exception {
 		if (udpMulticast != null)
 			udpMulticast.closeSilently();
 		if (udpTransport != null)
 			udpTransport.shutdownNow();
 		if (tcpTransport != null)
 			tcpTransport.shutdownNow();
-		
-		synchronized (listeners) {
-			for (Object o : listeners) {
-				unregister(o);				
-			}
-			listeners.clear();
-		}
 	}
 
 	private void sendTcp(Message msg, InetSocketAddress addr) throws Exception {
@@ -172,7 +141,7 @@ public class ImcContext extends BaseFilter implements ActorContext {
 			conn.close();
 		}
 	}
-	
+
 	private void sendUdp(Message msg, InetSocketAddress addr) throws Exception {
 		if (udpTransport == null) {
 			byte[] data = msg.serialize();
@@ -186,28 +155,28 @@ public class ImcContext extends BaseFilter implements ActorContext {
 			conn.close();
 		}
 	}
-	
+
 	public void sendUdp(Message msg, String dst) throws Exception {
-		Integer imcid = registry.resolveSystem(dst);
+		Integer imcid = registry().resolveSystem(dst);
 		if (imcid == null)
 			throw new Exception("Peer is not available");
 
-		InetSocketAddress addr = registry.udpAddress(dst);
+		InetSocketAddress addr = registry().udpAddress(dst);
 		if (addr == null)
 			throw new Exception("Peer is not available over UDP");
 
 		msg.dst = imcid;
 		fillIn(msg);
-		sendUdp(msg, addr);		
+		sendUdp(msg, addr);
 		bus.post(msg);
 	}
 
 	public void sendTcp(Message msg, String dst) throws Exception {
-		Integer imcid = registry.resolveSystem(dst);
+		Integer imcid = registry().resolveSystem(dst);
 		if (imcid == null)
 			throw new Exception("Peer is not available");
 
-		InetSocketAddress addr = registry.tcpAddress(dst);
+		InetSocketAddress addr = registry().tcpAddress(dst);
 		if (addr == null)
 			throw new Exception("Peer is not available over TCP");
 
@@ -216,102 +185,25 @@ public class ImcContext extends BaseFilter implements ActorContext {
 		sendTcp(msg, addr);
 		bus.post(msg);
 	}
-	
-	public void unregister(IMCActor pojo) {
-		unregister((Object) pojo);
-	}
-	
-	public void unregister(Object pojo) {
-		bus.unregister(pojo);
-		scheduler.unregister(pojo);
-		synchronized (listeners) {
-			listeners.remove(pojo);
-		}
-	}
-	
-
-	public void handleMessage(Message msg) {
-		bus.post(msg);
-	}
-	
-	
-	public void send(Message msg) {
-		for (String peer : registry.peers()) {
-			try {
-				sendUdp(msg, peer);
-			}
-			catch (Exception e) {
-				
-			}
-		}
-	}
-
-	public NextAction handleRead(FilterChainContext ctx) throws IOException {
-		Message msg = ctx.getMessage();
-		if (msg.mgid() == Announce.ID_STATIC)
-			registry.setAnnounce((Announce) msg, (InetSocketAddress) ctx.getAddress());
-		else if (msg.mgid() == EntityList.ID_STATIC)
-			registry.setEntityList((EntityList) msg);
-
-		handleMessage(msg);
-
-		return ctx.getStopAction();
-	}
-	
-	@Override
-	public void post(Message msg) {
-		fillIn(msg);
-		bus.post(msg);
-	}
 
 	@Override
-	public void send(Message msg, String destination) {
-		try{
-			sendUdp(msg, destination);		
-		}
-		catch (Exception e) {
-			
-		}
+	public void send(Message msg, String destination) throws Exception {
+		sendUdp(msg, destination);
 	}
 
 	@Override
 	public Future<Boolean> deliver(Message msg, String destination) {
 		Callable<Boolean> callable = new Callable<Boolean>() {
-			
 			@Override
 			public Boolean call() throws Exception {
-				try{
+				try {
 					sendTcp(msg, destination);
 					return true;
-				}
-				catch (Exception e) {
+				} catch (Exception e) {
 					return false;
-				}				
+				}
 			}
 		};
 		return executor.submit(callable);
 	}
-
-	@Override
-	public int register(IMCActor actor, String name) {
-		synchronized (listeners) {
-			if (listeners.add(actor)) {
-				bus.register(actor);
-				scheduler.register(actor);
-			}
-		}
-		return registry.registerLocalEntity(name);
-	}
-
-	@Override
-	public ActorClock clock() {
-		return clock;
-	}
-
-	@Override
-	public IMCRegistry registry() {
-		return registry;
-	}
-	
-	
 }

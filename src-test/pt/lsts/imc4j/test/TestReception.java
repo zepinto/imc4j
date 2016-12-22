@@ -3,11 +3,11 @@ package pt.lsts.imc4j.test;
 import com.squareup.otto.Subscribe;
 
 import pt.lsts.imc4j.msg.Message;
-import pt.lsts.imc4j.runtime.ActorContext;
-import pt.lsts.imc4j.runtime.IMCActor;
+import pt.lsts.imc4j.runtime.actors.AbstractActor;
+import pt.lsts.imc4j.runtime.actors.ActorContext;
 import pt.lsts.imc4j.util.FormatConversion;
 
-public class TestReception extends IMCActor {
+public class TestReception extends AbstractActor {
 
 	public TestReception(ActorContext context) {
 		super(context);
@@ -19,6 +19,6 @@ public class TestReception extends IMCActor {
 	}	
 	
 	public static void main(String[] args) throws Exception {
-		IMCActor.exec(TestReception.class, ActorTest.class);
+		AbstractActor.exec(TestReception.class, ActorTest.class);
 	}
 }
