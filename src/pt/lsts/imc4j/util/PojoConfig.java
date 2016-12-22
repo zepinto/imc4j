@@ -167,8 +167,10 @@ public class PojoConfig {
 		ArrayList<Field> result = new ArrayList<Field>();
 		
 		for (Field f : pojo.getClass().getDeclaredFields()) {
-			if (f.getAnnotation(Parameter.class) != null)
+			if (f.getAnnotation(Parameter.class) != null) {
+				f.setAccessible(true);
 				result.add(f);
+			}
 		}
 		
 		return result;

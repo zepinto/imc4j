@@ -31,6 +31,16 @@ public abstract class AbstractActor {
     	this.id = context.register(this, entityName());
     }
     
+    public Properties params() {
+    	try {
+    		return PojoConfig.getProperties(this);
+    	}
+    	catch (Exception e) {
+    		e.printStackTrace();
+		}
+    	return new Properties();
+    }
+    
     public final int entityId() {
         return id;
     }
@@ -60,7 +70,7 @@ public abstract class AbstractActor {
     }    
     
     public List<String> peers() {
-    	return context.registry().peers();
+    	return context.peers();
     }
     
     public void sleep(long millis) throws InterruptedException {

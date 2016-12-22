@@ -78,6 +78,7 @@ public class TcpRuntime extends AbstractActorContext {
 		while(true) {
 			context.clock().sleep(5000);
 			System.out.println(context.query(EstimatedState.class).now());
+			System.out.println(context.peers());
 			context.send(new Abort());
 		}		
 	}

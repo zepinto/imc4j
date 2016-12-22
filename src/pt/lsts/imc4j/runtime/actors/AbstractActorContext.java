@@ -3,6 +3,7 @@ package pt.lsts.imc4j.runtime.actors;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -179,5 +180,8 @@ public abstract class AbstractActorContext extends BaseFilter implements ActorCo
 	
 	public abstract void send(Message msg, String destination) throws Exception;
 	
-	
+	@Override
+	public List<String> peers() {
+		return registry().peers();
+	}
 }

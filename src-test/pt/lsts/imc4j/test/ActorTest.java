@@ -2,6 +2,7 @@ package pt.lsts.imc4j.test;
 
 import com.squareup.otto.Subscribe;
 
+import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.annotations.Publish;
 import pt.lsts.imc4j.msg.Abort;
@@ -14,6 +15,9 @@ import pt.lsts.imc4j.runtime.actors.ActorContext;
  */
 public class ActorTest extends AbstractActor {
 
+	@Parameter
+	int counter = 0;
+	
 	public ActorTest(ActorContext context) {
     	super(context);
 	}
@@ -28,6 +32,12 @@ public class ActorTest extends AbstractActor {
     public void periodic() throws Exception {
         System.out.println("Periodic "+ System.currentTimeMillis());
         send(new Abort());        
+        System.out.println(peers());
+    }
+    
+    @Periodic(1000)
+    public void count() {
+    	System.out.println(counter++);
     }
     
     @Override

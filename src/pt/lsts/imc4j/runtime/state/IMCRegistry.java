@@ -159,6 +159,7 @@ public class IMCRegistry extends BaseFilter {
 	}
 	
 	public List<String> peers() {
+		updatePeers();
 		ArrayList<String> ret = new ArrayList<>();
 		synchronized (peers) {
 			ret.addAll(peers.keySet());

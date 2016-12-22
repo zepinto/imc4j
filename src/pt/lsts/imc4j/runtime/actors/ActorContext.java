@@ -1,5 +1,6 @@
 package pt.lsts.imc4j.runtime.actors;
 
+import java.util.List;
 import java.util.concurrent.Future;
 
 import pt.lsts.imc4j.msg.Message;
@@ -74,4 +75,7 @@ public interface ActorContext {
 	public void start();
 	
 	public void stop();
+	
+	public List<String> peers();
+	
 }
