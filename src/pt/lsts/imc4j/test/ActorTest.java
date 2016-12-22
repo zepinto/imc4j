@@ -1,0 +1,42 @@
+package pt.lsts.imc4j.test;
+
+import com.squareup.otto.Subscribe;
+
+import pt.lsts.imc4j.annotations.Periodic;
+import pt.lsts.imc4j.annotations.Publish;
+import pt.lsts.imc4j.msg.EstimatedState;
+import pt.lsts.imc4j.msg.Message;
+import pt.lsts.imc4j.runtime.ActorContext;
+import pt.lsts.imc4j.runtime.IMCActor;
+
+/**
+ * Created by zp on 30-11-2016.
+ */
+public class ActorTest extends IMCActor {
+
+	public ActorTest(ActorContext context) {
+    	super(context);
+	}
+        
+	@Subscribe    
+    public void on(Message msg) {
+		System.out.println(Thread.currentThread());
+    	System.out.printf("%s from %s\n", msg.abbrev(), systemName(msg.src));
+    }
+
+    @Periodic(3000)
+    @Publish(EstimatedState.class)
+    public void periodic() {
+    	System.out.println(Thread.currentThread());
+        System.out.println("Periodic "+ System.currentTimeMillis());
+    }
+    
+    @Override
+    public void init() {    	
+    	System.out.println(Thread.currentThread());
+    }
+
+    public static void main(String args[]) throws Exception {
+    	IMCActor.exec(ActorTest.class);
+    }
+}
