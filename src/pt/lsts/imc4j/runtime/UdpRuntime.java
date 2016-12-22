@@ -36,6 +36,7 @@ public class UdpRuntime extends AbstractActorContext {
 		udpTransport.setReuseAddress(true);
 		udpTransport.bind(this.localport);
 		udpTransport.start();	
+		send(registry().buildAnnounce());
 	}
 
 	@Override

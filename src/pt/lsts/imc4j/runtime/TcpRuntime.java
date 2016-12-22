@@ -35,6 +35,7 @@ public class TcpRuntime extends AbstractActorContext {
 	public void onStart() throws Exception {
 		tcpTransport.start();
 		connection = tcpTransport.connect(host, port).get();
+		send(registry().buildAnnounce());
 	}
 
 	@Override
