@@ -12,7 +12,7 @@ import com.squareup.otto.Subscribe;
 
 import pt.lsts.imc4j.annotations.Publish;
 import pt.lsts.imc4j.msg.Message;
-import pt.lsts.imc4j.net.ImcRuntime;
+import pt.lsts.imc4j.runtime.IMCRuntime;
 import pt.lsts.imc4j.util.PojoConfig;
 
 /**
@@ -200,7 +200,7 @@ public abstract class AbstractActor {
     	
     }
     public static void exec(Properties props, Class<?>... actors) throws Exception {
-    	ImcRuntime context = new ImcRuntime();
+    	IMCRuntime context = new IMCRuntime();
     	for (Class<?> c : actors) {
     		AbstractActor actor = (AbstractActor) c.getConstructor(ActorContext.class).newInstance(context);
     		actor.init(props);

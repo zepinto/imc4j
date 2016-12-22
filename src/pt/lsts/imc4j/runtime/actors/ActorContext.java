@@ -3,9 +3,9 @@ package pt.lsts.imc4j.runtime.actors;
 import java.util.concurrent.Future;
 
 import pt.lsts.imc4j.msg.Message;
-import pt.lsts.imc4j.net.IMCQuery;
-import pt.lsts.imc4j.net.IMCRegistry;
 import pt.lsts.imc4j.runtime.clock.ActorClock;
+import pt.lsts.imc4j.runtime.state.IMCQuery;
+import pt.lsts.imc4j.runtime.state.IMCRegistry;
 
 public interface ActorContext {
 

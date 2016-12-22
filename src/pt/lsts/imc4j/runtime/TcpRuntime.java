@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.net;
+package pt.lsts.imc4j.runtime;
 
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
@@ -9,7 +9,7 @@ import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.runtime.actors.AbstractActorContext;
 
-public class TcpClient extends AbstractActorContext {
+public class TcpRuntime extends AbstractActorContext {
 
 	private Connection<?> connection;
 	private int remoteId = 0xFFFF;
@@ -17,7 +17,7 @@ public class TcpClient extends AbstractActorContext {
 	private String host;
 	private int port;
 	
-	public TcpClient(String host, int port) throws Exception {
+	public TcpRuntime(String host, int port) throws Exception {
 		this.host = host;
 		this.port = port;
 		tcpTransport = TCPNIOTransportBuilder.newInstance().build();
@@ -72,7 +72,7 @@ public class TcpClient extends AbstractActorContext {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		TcpClient context = new TcpClient("127.0.0.1", 6002);
+		TcpRuntime context = new TcpRuntime("127.0.0.1", 6002);
 		context.start();
 		while(true) {
 			context.clock().sleep(5000);

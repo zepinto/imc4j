@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.net;
+package pt.lsts.imc4j.runtime.state;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.net;
+package pt.lsts.imc4j.runtime;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

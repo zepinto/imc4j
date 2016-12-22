@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.net;
+package pt.lsts.imc4j.runtime;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -34,7 +34,7 @@ import pt.lsts.imc4j.runtime.actors.AbstractActorContext;
 import pt.lsts.imc4j.runtime.actors.ActorContext;
 import pt.lsts.imc4j.util.NetworkUtils;
 
-public class ImcRuntime extends AbstractActorContext implements ActorContext {
+public class IMCRuntime extends AbstractActorContext implements ActorContext {
 
 	private Bus bus = new Bus(ThreadEnforcer.ANY);
 	private FilterChain filterChain;
@@ -42,7 +42,7 @@ public class ImcRuntime extends AbstractActorContext implements ActorContext {
 	private TCPNIOTransport tcpTransport = null;
 	private UDPNIOConnection udpMulticast = null;
 
-	public ImcRuntime() {
+	public IMCRuntime() {
 		filterChain = IMCCodec.ImcFilter(this);
 		new IMCBeater(this);
 		new IMCAnnouncer(this);

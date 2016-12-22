@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.net;
+package pt.lsts.imc4j.runtime.state;
 
 import pt.lsts.imc4j.msg.Message;
 

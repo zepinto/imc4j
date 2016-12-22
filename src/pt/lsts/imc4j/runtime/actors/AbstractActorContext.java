@@ -18,12 +18,12 @@ import com.squareup.otto.ThreadEnforcer;
 import pt.lsts.imc4j.msg.Announce;
 import pt.lsts.imc4j.msg.EntityList;
 import pt.lsts.imc4j.msg.Message;
-import pt.lsts.imc4j.net.IMCQuery;
-import pt.lsts.imc4j.net.IMCRegistry;
-import pt.lsts.imc4j.net.IMCState;
 import pt.lsts.imc4j.runtime.callbacks.PeriodicScheduler;
 import pt.lsts.imc4j.runtime.clock.ActorClock;
 import pt.lsts.imc4j.runtime.clock.RealTimeClock;
+import pt.lsts.imc4j.runtime.state.IMCQuery;
+import pt.lsts.imc4j.runtime.state.IMCRegistry;
+import pt.lsts.imc4j.runtime.state.IMCState;
 
 public abstract class AbstractActorContext extends BaseFilter implements ActorContext {
 

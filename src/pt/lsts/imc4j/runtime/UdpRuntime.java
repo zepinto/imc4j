@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.net;
+package pt.lsts.imc4j.runtime;
 
 import org.glassfish.grizzly.nio.transport.UDPNIOTransport;
 import org.glassfish.grizzly.nio.transport.UDPNIOTransportBuilder;
@@ -8,7 +8,7 @@ import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.runtime.actors.AbstractActorContext;
 
-public class UdpClient extends AbstractActorContext {
+public class UdpRuntime extends AbstractActorContext {
 
 	private int remoteId = 0xFFFF;
 	private UDPNIOTransport udpTransport;
@@ -16,7 +16,7 @@ public class UdpClient extends AbstractActorContext {
 	private int port;
 	private int localport;
 	
-	public UdpClient(String host, int remoteport, int localport) throws Exception {
+	public UdpRuntime(String host, int remoteport, int localport) throws Exception {
 		this.host = host;
 		this.port = remoteport;
 		this.localport = localport;		
@@ -71,7 +71,7 @@ public class UdpClient extends AbstractActorContext {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		UdpClient conn = new UdpClient("127.0.0.1", 6002, 6001);
+		UdpRuntime conn = new UdpRuntime("127.0.0.1", 6002, 6001);
 		conn.start();
 		while(true) {
 			System.out.println(conn.query(EstimatedState.class).now());

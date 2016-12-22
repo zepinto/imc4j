@@ -25,7 +25,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import pt.lsts.imc4j.annotations.IMCField;
-import pt.lsts.imc4j.net.IMCQuery;
+import pt.lsts.imc4j.runtime.state.IMCQuery;
 import pt.lsts.imc4j.util.FormatConversion;
 import pt.lsts.imc4j.util.SerializationUtils;
 import pt.lsts.imc4j.util.TupleList;
