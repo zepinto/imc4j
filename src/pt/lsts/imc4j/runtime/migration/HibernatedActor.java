@@ -84,19 +84,21 @@ public class HibernatedActor implements Serializable {
 
 	public static void main(String[] args) throws Exception {
 		ActorContext context = new IMCRuntime();
-		//ActorTest at = new ActorTest(context);
+		ActorTest at = new ActorTest(context);
 		context.start();
 				
 		Thread.sleep(15000);
 		
 		System.out.println("now doing hibernation...");
-		//context.unregister(at);
-		//HibernatedActor h = new HibernatedActor(at);
-		HibernatedActor h = new HibernatedActor(ActorTest.class);
-		Thread.sleep(15000);
-		System.out.println("now reviving...");
+		context.unregister(at);
+		HibernatedActor h = new HibernatedActor(at);
 		
-		h.wakeUp(context);
+		NeptusBlob blob = h.asBlob();
+		HibernatedActor h2 = HibernatedActor.fromBlob(blob);
+		
+		Thread.sleep(15000);
+		System.out.println("now reviving...");		
+		h2.wakeUp(context);
 	}
 
 }

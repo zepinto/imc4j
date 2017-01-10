@@ -24,20 +24,18 @@ public class ActorTest extends AbstractActor {
         
 	@Subscribe    
     public void on(Message msg) {
-    	System.out.printf("%s from %s\n", msg.abbrev(), systemName(msg.src));
+    	//System.out.printf("%s from %s\n", msg.abbrev(), systemName(msg.src));
     }
 
     @Periodic(5000)
     @Publish(Abort.class)
     public void periodic() throws Exception {
-        System.out.println("Periodic "+ System.currentTimeMillis());
-        send(new Abort());        
-        System.out.println(peers());
+        System.out.println("Peers: "+peers());
     }
     
     @Periodic(1000)
     public void count() {
-    	System.out.println(counter++);
+    	System.out.println(++counter);
     }
     
     @Override
