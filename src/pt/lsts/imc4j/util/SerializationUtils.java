@@ -3,6 +3,7 @@ package pt.lsts.imc4j.util;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -58,6 +59,41 @@ public class SerializationUtils {
 		m.dst = buf.getShort() & 0xFFFF;
 		m.dst_ent = buf.get() & 0xFF;
 		m.deserializeFields(buf);
+		return m;
+	}
+	
+	public static Message deserializeMessage(InputStream input) throws Exception {
+		if (input.available() < 20) {
+			return null;
+		}
+		byte[] header = new byte[20];
+		input.read(header);		
+		
+		ByteBuffer buf = ByteBuffer.wrap(header);
+		short s = buf.getShort();
+		if (s != Message.SYNC_WORD) {
+			if (s == Short.reverseBytes(Message.SYNC_WORD))
+				buf.order(ByteOrder.LITTLE_ENDIAN);			
+			else
+				throw new Exception("Invalid Synchronization number: "+String.format("%X", s));
+		}
+		int mgid = buf.getShort() & 0xFFFF;
+		Message m = MessageFactory.create(mgid);
+		if (m == null)
+			return null;
+		
+		//size
+		short size = buf.getShort();
+		m.timestamp = buf.getDouble();
+		m.src = buf.getShort() & 0xFFFF;
+		m.src_ent = buf.get() & 0xFF;
+		m.dst = buf.getShort() & 0xFFFF;
+		m.dst_ent = buf.get() & 0xFF;
+		byte[] remaining = new byte[size+2];
+		input.read(remaining);
+		ByteBuffer payload = ByteBuffer.wrap(remaining);
+		payload.order(buf.order());
+		m.deserializeFields(payload);
 		return m;
 	}
 	
