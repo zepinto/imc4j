@@ -23,6 +23,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.WildcardTypeName;
 
 import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.util.FormatConversion;
@@ -158,9 +159,32 @@ public class IMCGenerator {
 		idOf.endControlFlow();
 		factory.addMethod(idOf.build());
 		
+		WildcardTypeName wtn = WildcardTypeName.subtypeOf(ClassName.get("pt.lsts.imc4j.msg", "Message"));
+		ParameterizedTypeName ptn = ParameterizedTypeName.get(ClassName.get(Class.class), wtn);
 		
-		
+		MethodSpec.Builder classOf = MethodSpec.methodBuilder("classOf").addParameter(Integer.class, "mgid")
+				.addModifiers(Modifier.PUBLIC, Modifier.STATIC).returns(ptn);
 
+		classOf.beginControlFlow("switch(mgid)");
+
+		proto.getMessage().forEach(m -> {
+			String name = m.getAbbrev();
+			classOf.beginControlFlow("case $L:", "ID_"+name);
+			classOf.addStatement("return $L", name+".class");
+			classOf.endControlFlow();
+		});
+		classOf.beginControlFlow("default:");
+		classOf.addStatement("return Message.class");
+		classOf.endControlFlow();
+		classOf.endControlFlow();
+		factory.addMethod(classOf.build());
+		
+		MethodSpec.Builder classOfString = MethodSpec.methodBuilder("classOf").addParameter(String.class, "abbrev")
+				.addModifiers(Modifier.PUBLIC, Modifier.STATIC).returns(ptn);
+
+		classOfString.addStatement("return classOf(idOf(abbrev))");
+		factory.addMethod(classOfString.build());
+		
 		return factory.build();
 	}
 
