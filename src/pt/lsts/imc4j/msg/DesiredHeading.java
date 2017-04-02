@@ -17,7 +17,7 @@ public class DesiredHeading extends ControlCommand {
 
 	/**
 	 * The value of the desired heading angle, relative to true
-	 * north, in rad.
+	 * north, in radians.
 	 */
 	@FieldType(
 			type = IMCField.TYPE_FP64,

@@ -14,7 +14,69 @@ import pt.lsts.imc4j.util.SerializationUtils;
 
 /**
  * This message contains the data acquired by a single sonar
- * measurement.
+ * measurement. The following describes the format used to
+ * fill the data field used in this message. (Byte order is
+ * little endian.)
+ * **Sidescan:**
+ *
+ * +------+-------------------+-----------+
+ * | Data | Name              | Type      |
+ * +======+===================+===========+
+ * | A    | Ranges data       |   uintX_t |
+ * +------+-------------------+-----------+
+ * .. figure:: ../images/imc_sidescan.png
+ * * The type *uintX_t* will depend on the number of bits per unit, and it should be a multiple of 8.
+ * * Furthermore, for now, 32 bits is the highest value of bits per unit supported.
+ * **Multibeam:**
+ *
+ * +------+--------+-------------------------+---------+----------------------------------------------------------------------+
+ * | Index| Section| Name                    | Type    | Comments                                                             |
+ * +======+========+=========================+=========+======================================================================+
+ * | 1    | H1     | Number of points        | uint16_t| Number of data points                                                |
+ * +------+--------+-------------------------+---------+----------------------------------------------------------------------+
+ * | 2    | H2     | Start angle             | fp32_t  | In radians                                                           |
+ * +------+--------+-------------------------+---------+----------------------------------------------------------------------+
+ * | 3    | H3     | Flags                   | uint8_t | Refer to next table                                                  |
+ * +------+--------+-------------------------+---------+----------------------------------------------------------------------+
+ * | 4    | H4 ?   | Angle scale factor      | fp32_t  | Used for angle steps in radians                                      |
+ * +------+--------+-------------------------+---------+----------------------------------------------------------------------+
+ * | 5    | H5 ?   | Intensities scale factor| fp32_t  |                                                                      |
+ * +------+--------+-------------------------+---------+----------------------------------------------------------------------+
+ * | 6    | D1 ?   | Angle steps[H1]         | uint16_t| Values in radians                                                    |
+ * +------+--------+-------------------------+---------+----------------------------------------------------------------------+
+ * | 7    | D2     | Ranges[H1]              | uintX_t | Ranges data points (scale factor from common field "Scaling Factor") |
+ * +------+--------+-------------------------+---------+----------------------------------------------------------------------+
+ * | 8    | D3 ?   | Intensities[H1]         | uintX_t | Intensities data points                                              |
+ * +------+--------+-------------------------+---------+----------------------------------------------------------------------+
+ * +--------+------------------+-----+
+ * | Section| Flag Label       | Bit |
+ * +========+==================+=====+
+ * | H4.1   | Intensities flag | 0   |
+ * +--------+------------------+-----+
+ * | H4.2   | Angle step flag  | 1   |
+ * +--------+------------------+-----+
+ *
+ * .. figure:: ../images/imc_multibeam.png
+ * *Notes:*
+ * * Each angle at step *i* can be calculated is defined by:
+ * .. code-block:: python
+ * angle[i] = H2_start_angle + (32-bit sum of D1_angle_step[0] through D1_angle_step[i]) * H4_scaling_factor
+ *
+ * * If bit H4.1 is not set then sections H5 and D3 won't exist.
+ * * If bit H4.2 is not set then sections H4 and D1 won't exist. In case this bit is set, then the angle steps is read from field "Beam Width" from "Beam Configuration".
+ * * The type *uintX_t* will depend on the number of bits per unit, and it should be a multiple of 8.
+ * * Furthermore, for now, 32 bits is the highest value of bits per unit supported.
+ *
+ * *How to write ranges and intensities data:*
+ * .. code-block:: python
+ * :linenos:
+ *
+ * data_unit = (Integer) (data_value / scale_factor);
+ * bytes_per_unit = bits_per_unit / 8;
+ * LOOP: i = 0, until i = bytes_per_unit
+ * byte[i] = (data_unit >> 8 * i) & 0xFF);
+ * write(byte);
+ * **Common:**
  */
 public class SonarData extends Message {
 	public static final int ID_STATIC = 276;
@@ -56,7 +118,7 @@ public class SonarData extends Message {
 	public int max_range = 0;
 
 	/**
-	 * Size of the data unit.
+	 * Size of the data unit. (Should be multiple of 8)
 	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT8,

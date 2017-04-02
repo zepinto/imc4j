@@ -16,7 +16,7 @@ public class DesiredHeadingRate extends Message {
 	public static final int ID_STATIC = 408;
 
 	/**
-	 * The value of the desired heading rate speed in rad per
+	 * The value of the desired heading rate speed in radians per
 	 * second.
 	 */
 	@FieldType(

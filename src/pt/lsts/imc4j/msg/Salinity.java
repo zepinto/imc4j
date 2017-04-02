@@ -19,8 +19,7 @@ public class Salinity extends Message {
 	 * The value of the salinity as measured by the sensor.
 	 */
 	@FieldType(
-			type = IMCField.TYPE_FP32,
-			units = "PSU"
+			type = IMCField.TYPE_FP32
 	)
 	public float value = 0f;
 

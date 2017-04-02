@@ -25,7 +25,6 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import pt.lsts.imc4j.annotations.IMCField;
-import pt.lsts.imc4j.runtime.state.IMCQuery;
 import pt.lsts.imc4j.util.FormatConversion;
 import pt.lsts.imc4j.util.SerializationUtils;
 import pt.lsts.imc4j.util.TupleList;
@@ -95,21 +94,21 @@ public class IMCGenerator {
 		});
 	}
 
-	static TypeSpec parseState(Messages proto) {
-		TypeSpec.Builder state = TypeSpec.classBuilder(ClassName.get(pkgMsgs, "IMCState"));
-		state.addModifiers(Modifier.PUBLIC);
-		
-		proto.getMessage().forEach(m -> {
-			state.addMethod(MethodSpec.methodBuilder(m.getAbbrev())
-					.addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
-					.returns(ParameterizedTypeName.get(ClassName.get(IMCQuery.class),
-							ClassName.bestGuess(m.getAbbrev())))
-					.addStatement("return $T.q($L.class)", IMCQuery.class, m.getAbbrev()).build());
-		});
-
-		return state.build();
-	}
-	
+//	static TypeSpec parseState(Messages proto) {
+//		TypeSpec.Builder state = TypeSpec.classBuilder(ClassName.get(pkgMsgs, "IMCState"));
+//		state.addModifiers(Modifier.PUBLIC);
+//		
+//		proto.getMessage().forEach(m -> {
+//			state.addMethod(MethodSpec.methodBuilder(m.getAbbrev())
+//					.addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+//					.returns(ParameterizedTypeName.get(ClassName.get(IMCQuery.class),
+//							ClassName.bestGuess(m.getAbbrev())))
+//					.addStatement("return $T.q($L.class)", IMCQuery.class, m.getAbbrev()).build());
+//		});
+//
+//		return state.build();
+//	}
+//	
 	static TypeSpec parseFactory(Messages proto) {
 		TypeSpec.Builder factory = TypeSpec.classBuilder(ClassName.get(pkgMsgs, "MessageFactory"));
 		factory.addModifiers(Modifier.PUBLIC);

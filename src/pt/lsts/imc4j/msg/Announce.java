@@ -74,7 +74,7 @@ public class Announce extends Message {
 	public float height = 0f;
 
 	/**
-	 * Semicolon separated list of URLs. Examples of such URLs are
+	 * Semicolon separated list of URLs. Examples of such URLs are:
 	 * - *imc+udp://192.168.106.34:6002/*
 	 * - *dune://0.0.0.0/uid/1294925553839635/*
 	 * - *http://192.168.106.34/dune/*.

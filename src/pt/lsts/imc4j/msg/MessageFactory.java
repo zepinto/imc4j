@@ -577,6 +577,8 @@ public class MessageFactory {
 
 	public static final int ID_Tachograph = 905;
 
+	public static final int ID_ApmStatus = 906;
+
 	public static Message create(int mgid) {
 		switch(mgid) {
 			case ID_EntityState: {
@@ -1439,6 +1441,9 @@ public class MessageFactory {
 			}
 			case ID_Tachograph: {
 				return new Tachograph();
+			}
+			case ID_ApmStatus: {
+				return new ApmStatus();
 			}
 			default: {
 				return null;
@@ -2312,6 +2317,9 @@ public class MessageFactory {
 			}
 			case "Tachograph": {
 				return ID_Tachograph;
+			}
+			case "ApmStatus": {
+				return ID_ApmStatus;
 			}
 			default: {
 				return -1;
