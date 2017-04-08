@@ -104,9 +104,6 @@ public class TcpClient extends Thread {
 				e.printStackTrace();
 			}
 		}
-		
-		System.out.println(m);
-
 	}
 
 	private void dispatch(Message m) {

@@ -1,12 +1,15 @@
 package pt.lsts.backseat;
 
-import java.util.EnumSet;
 import java.util.LinkedHashMap;
 
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.backseat.TcpClient;
+import pt.lsts.imc4j.def.SpeedUnits;
+import pt.lsts.imc4j.def.ZUnits;
 import pt.lsts.imc4j.msg.Abort;
+import pt.lsts.imc4j.msg.DesiredSpeed;
+import pt.lsts.imc4j.msg.DesiredZ;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.FollowReference;
 import pt.lsts.imc4j.msg.Message;
@@ -19,6 +22,7 @@ import pt.lsts.imc4j.msg.PlanControlState.STATE;
 import pt.lsts.imc4j.msg.PlanManeuver;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.Reference;
+import pt.lsts.imc4j.msg.Reference.FLAGS;
 import pt.lsts.imc4j.msg.VehicleState;
 import pt.lsts.imc4j.msg.VehicleState.OP_MODE;
 
@@ -28,7 +32,73 @@ public abstract class BackSeatDriver extends TcpClient {
 	protected long startCommandTime = 0;
 	protected boolean executing = false, finished = false;
 	protected static final String PLAN_NAME = "back_seat";
-
+	private Reference reference = new Reference();
+	
+	public void setLocation(double latDegs, double lonDegs) {
+		reference.lat = Math.toRadians(latDegs);
+		reference.lon = Math.toRadians(lonDegs);
+		reference.flags.add(FLAGS.FLAG_LOCATION);
+		reference.flags.add(FLAGS.FLAG_START_POINT);
+	}
+	
+	public void setDepth(double depth) {
+		setZ(depth, ZUnits.DEPTH);
+	}
+	
+	public void setAltitude(double alt) {
+		setZ(alt, ZUnits.ALTITUDE);
+	}
+	
+	public void setZ(double value, ZUnits units) {
+		DesiredZ z = new DesiredZ();
+		z.value = (float) value;
+		z.z_units = units;
+		reference.z = z;
+		reference.flags.add(FLAGS.FLAG_Z);
+	}
+	
+	public void setLoiterRadius(double radius) {
+		reference.radius = (float)radius;
+		reference.flags.add(FLAGS.FLAG_RADIUS);
+	}
+	
+	public void end() {
+		reference.flags.add(FLAGS.FLAG_MANDONE);
+		finished = true;
+	}
+	
+	public void setSpeed(double value, SpeedUnits units) {
+		DesiredSpeed speed = new DesiredSpeed();
+		speed.value = (float) value;
+		speed.speed_units = units;
+		reference.speed = speed;
+		reference.flags.add(FLAGS.FLAG_SPEED);
+	}
+	
+	
+	public boolean arrivedXY() {
+		FollowRefState refState = get(FollowRefState.class);
+		if (refState == null || refState.reference == null)
+			return false;
+		
+		if (refState.reference.lat != reference.lat || refState.reference.lon != reference.lon)
+			return false;
+		
+		return refState.proximity.contains(FollowRefState.PROXIMITY.PROX_XY_NEAR);
+	}
+	
+	public boolean arrivedZ() {
+		FollowRefState refState = get(FollowRefState.class);
+		if (refState == null || refState.reference == null || refState.reference.z == null)
+			return false;
+		if (refState.reference.z.z_units != reference.z.z_units || refState.reference.z.value != reference.z.value)
+			return false;
+		return refState.proximity.contains(FollowRefState.PROXIMITY.PROX_Z_NEAR);
+	}	
+	
+	
+	
+	
 	@Consume
 	protected void on(VehicleState msg) {
 		if (msg.src == remoteSrc) {
@@ -106,21 +176,16 @@ public abstract class BackSeatDriver extends TcpClient {
 
 		if (finished)
 			System.exit(0);
-
 		
 		if (executing) {
 			FollowRefState curState = get(FollowRefState.class);
 			if (curState == null)
 				return;
 
-			Reference ref = drive(curState);
-			if (ref == null) {
-				finished = true;
-				ref = new Reference();
-				ref.flags = EnumSet.of(Reference.FLAGS.FLAG_MANDONE);
-			}
+			update(curState);
+			
 			try {
-				send(ref);
+				send(reference);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -135,7 +200,7 @@ public abstract class BackSeatDriver extends TcpClient {
 		}
 	}
 
-	public abstract Reference drive(FollowRefState fref);
+	public abstract void update(FollowRefState fref);
 	
 	public BackSeatDriver() {
 		super();
