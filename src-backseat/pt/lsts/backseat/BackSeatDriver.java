@@ -1,6 +1,9 @@
 package pt.lsts.backseat;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.TimeZone;
 
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Periodic;
@@ -205,6 +208,12 @@ public abstract class BackSeatDriver extends TcpClient {
 	public BackSeatDriver() {
 		super();
 		register(this);
+	}
+	
+	SimpleDateFormat sdf = new SimpleDateFormat("[YYYY-MM-dd HH:mm:ss.SS] ");
+	public void print(String text) {
+		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+		System.out.println(sdf.format(new Date()) + text);
 	}
 
 }
