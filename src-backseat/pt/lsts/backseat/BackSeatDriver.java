@@ -1,7 +1,9 @@
 package pt.lsts.backseat;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.TimeZone;
 
@@ -15,6 +17,7 @@ import pt.lsts.imc4j.msg.DesiredSpeed;
 import pt.lsts.imc4j.msg.DesiredZ;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.FollowReference;
+import pt.lsts.imc4j.msg.LogBookEntry;
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.msg.MessageFactory;
 import pt.lsts.imc4j.msg.PlanControl;
@@ -25,6 +28,7 @@ import pt.lsts.imc4j.msg.PlanControlState.STATE;
 import pt.lsts.imc4j.msg.PlanManeuver;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.Reference;
+import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.msg.Reference.FLAGS;
 import pt.lsts.imc4j.msg.VehicleState;
 import pt.lsts.imc4j.msg.VehicleState.OP_MODE;
@@ -212,8 +216,34 @@ public abstract class BackSeatDriver extends TcpClient {
 	
 	SimpleDateFormat sdf = new SimpleDateFormat("[YYYY-MM-dd HH:mm:ss.SS] ");
 	public void print(String text) {
+		
+		LogBookEntry lbe = new LogBookEntry();
+		lbe.text = text;
+		lbe.htime = System.currentTimeMillis() / 1000.0;
+		lbe.src = localSrc;
+		lbe.type = LogBookEntry.TYPE.LBET_INFO;
+		lbe.context = "Back Seat Driver";
+		try {
+			send(lbe);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 		System.out.println(sdf.format(new Date()) + text);
+	}
+	
+	public void sendReport(EnumSet<ReportControl.COMM_INTERFACE> interfaces) {
+		ReportControl req = new ReportControl();
+		req.src = localSrc;
+		req.op = ReportControl.OP.OP_REQUEST_REPORT;
+		req.comm_interface = interfaces;
+		try {
+			send(req);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
 
 }

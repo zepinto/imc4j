@@ -94,7 +94,7 @@ public class TcpClient extends Thread {
 	public void send(Message m) throws IOException {
 		m.dst = remoteSrc;
 		m.src = localSrc;
-		
+		m.timestamp = System.currentTimeMillis()/1000.0;
 		
 		synchronized (socket) {
 			try {

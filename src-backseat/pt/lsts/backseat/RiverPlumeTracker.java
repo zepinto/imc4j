@@ -1,36 +1,40 @@
 package pt.lsts.backseat;
 
 import java.lang.reflect.Field;
+import java.util.EnumSet;
 
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
+import pt.lsts.imc4j.msg.ReportControl;
+import pt.lsts.imc4j.msg.VehicleMedium;
+import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.util.PojoConfig;
 import pt.lsts.imc4j.util.WGS84Utilities;
 
 public class RiverPlumeTracker extends FSMController {
 
 	@Parameter(description = "Latitude, in degrees, of river mouth")
-	double river_lat = 41.185467;
+	double river_lat = 41.145289;
 
 	@Parameter(description = "Longitude, in degrees, of river mouth")
-	double river_lon = -8.705522;
+	double river_lon = -8.675311;
 
 	@Parameter(description = "Maximum depth, in meters, for yoyo profiles")
 	double min_depth = 0;
 
 	@Parameter(description = "Minimum depth, in meters, for yoyo profiles")
-	double max_depth = 10;
+	double max_depth = 5;
 
 	@Parameter(description = "Speed, in m/s, to travel at during yoyo profiles")
 	double yoyo_speed = 1.3;
 
 	@Parameter(description = "Number of yoyos to perform on each side of the plume")
-	int yoyo_count = 3;
+	int yoyo_count = 5;
 
 	@Parameter(description = "Start angle, in degrees")
-	double start_ang = -155;
+	double start_ang = -180;
 
 	@Parameter(description = "End angle, in degrees")
 	double end_ang = -45;
@@ -39,13 +43,16 @@ public class RiverPlumeTracker extends FSMController {
 	double angle_inc = 10;
 
 	@Parameter(description = "Maximum distance from river mouth")
-	double max_dist = 1000;
+	double max_dist = 1500;
+
+	@Parameter(description = "Distance of simulated plume")
+	double plume_dist = 1000;
 
 	@Parameter(description = "Maximum distance from river mouth")
-	double min_dist = 200;
+	double min_dist = 500;
 
 	@Parameter(description = "Depth to use for the vertical profiles (0 for no elevator)")
-	double elev_depth = 15;
+	double elev_depth = 0;
 
 	@Parameter(description = "Seconds to idle at each vertex")
 	int wait_secs = 60;
@@ -55,7 +62,7 @@ public class RiverPlumeTracker extends FSMController {
 
 	@Parameter(description = "DUNE Host Port (TCP)")
 	int host_port = 6003;
-
+	
 	int num_yoyos;
 	double angle;
 	int count_secs;
@@ -71,13 +78,12 @@ public class RiverPlumeTracker extends FSMController {
 
 	public boolean isInsidePlume() {
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
-		boolean inside = WGS84Utilities.distance(pos[0], pos[1], river_lat, river_lon) < 300;
+		boolean inside = WGS84Utilities.distance(pos[0], pos[1], river_lat, river_lon) < plume_dist;
 		print("insidePlume? " + inside);
 		return inside;
 	}
 
 	public FSMState go_out(FollowRefState ref) {
-		angle += angle_inc;
 		if (angle >= end_ang) {
 			print("Finished!");
 			return null;
@@ -148,13 +154,18 @@ public class RiverPlumeTracker extends FSMController {
 
 	public FSMState elev_down(FollowRefState ref) {
 		if (arrivedZ()) {
-			setDepth(0);
 			return this::wait;
 		}
 		return this::elev_down;
 	}
 
-	public FSMState wait(FollowRefState ref) {
+	public FSMState communicate(FollowRefState ref) {
+		if (count_secs == 10) {
+			print("Sending position report");
+			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
+			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
+			sendReport(itfs);
+		}
 		if (count_secs >= wait_secs) {
 			going_in = !going_in;
 
@@ -164,11 +175,24 @@ public class RiverPlumeTracker extends FSMController {
 				return this::go_out;
 		} else {
 			count_secs++;
-			return this::wait;
+			return this::communicate;
 		}
+		
+	}
+	
+	public FSMState wait(FollowRefState ref) {
+		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+		setLocation(pos[0], pos[1]);
+		setDepth(0);
+		
+		if (get(VehicleMedium.class).medium == MEDIUM.VM_WATER)
+			return this::communicate; 
+		else
+			return this::wait;
 	}
 
 	public FSMState go_in(FollowRefState ref) {
+		angle += angle_inc;
 		num_yoyos = 0;
 		double angRads = Math.toRadians(angle);
 		double offsetX = Math.cos(angRads) * min_dist;
@@ -189,8 +213,9 @@ public class RiverPlumeTracker extends FSMController {
 		for (Field f : tracker.getClass().getDeclaredFields()) {
 			Parameter p = f.getAnnotation(Parameter.class);
 			if (p != null) {
-				System.out.print("  " + f.getName() + "\t= " + f.get(tracker));
-				System.out.println("\t#" + p.description());
+				System.out.println("#" + p.description());
+				System.out.println(f.getName() + "=" + f.get(tracker));
+				System.out.println();
 			}
 		}
 		System.out.println();
