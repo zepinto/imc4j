@@ -1,13 +1,18 @@
 package pt.lsts.backseat;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.OptionalDouble;
+
+import com.squareup.otto.Subscribe;
 
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.ReportControl;
+import pt.lsts.imc4j.msg.Salinity;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.util.PojoConfig;
@@ -42,14 +47,23 @@ public class RiverPlumeTracker extends FSMController {
 	@Parameter(description = "Variation, in degrees, between survey angles")
 	double angle_inc = 10;
 
+	@Parameter(description = "Minimum distance from river mouth")
+	double min_dist = 500;
+
 	@Parameter(description = "Maximum distance from river mouth")
 	double max_dist = 1500;
 
+	@Parameter(description = "Salinity Threshold")
+	double salinity = 35.0;
+	
+	@Parameter(description = "Number of salinity values to average")
+	int salinity_count = 5;
+	
+	@Parameter(description = "Use Simulated Plume")
+	boolean simulated_plume = true;
+	
 	@Parameter(description = "Distance of simulated plume")
-	double plume_dist = 1000;
-
-	@Parameter(description = "Maximum distance from river mouth")
-	double min_dist = 500;
+	double plume_dist = 1000;	
 
 	@Parameter(description = "Depth to use for the vertical profiles (0 for no elevator)")
 	double elev_depth = 0;
@@ -67,7 +81,8 @@ public class RiverPlumeTracker extends FSMController {
 	double angle;
 	int count_secs;
 	boolean going_in;
-
+	ArrayList<Salinity> salinity_data = new ArrayList<>();	
+	
 	public RiverPlumeTracker() {
 		state = this::go_out;
 	}
@@ -75,11 +90,36 @@ public class RiverPlumeTracker extends FSMController {
 	public void init() {
 		angle = start_ang;
 	}
+	
+	@Subscribe
+	public void on(Salinity salinity) {
+		synchronized (salinity_data) {
+			if (salinity_data.size() >= salinity_count)
+				salinity_data.remove(0);
+			salinity_data.add(salinity);
+		}		
+	}
 
 	public boolean isInsidePlume() {
+		if (simulated_plume)
+			return insideSimulatedPlume();		
+		else {
+			OptionalDouble val;
+			synchronized (salinity_data) {
+				val = salinity_data.stream().mapToDouble(s -> s.value).average();
+			}
+			boolean inside = false;
+			if (val.isPresent())
+				inside = val.getAsDouble() < salinity;
+			System.out.println("Measured salinity: "+val+", inside plume: "+inside);
+			return inside;
+		}
+	}
+	
+	public boolean insideSimulatedPlume() {
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		boolean inside = WGS84Utilities.distance(pos[0], pos[1], river_lat, river_lon) < plume_dist;
-		print("insidePlume? " + inside);
+		print("Inside Simulated Plume? " + inside);
 		return inside;
 	}
 
