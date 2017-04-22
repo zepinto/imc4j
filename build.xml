@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="drip" name="Create Runnable Jar for Project imc4j">
+    <property name="dir.buildfile" value="."/>
+    <property name="dir.workspace" value="${dir.buildfile}/.."/>
+    <property name="dir.jarfile" value="${dir.buildfile}/dist"/>
+    <target name="drip">
+        <jar destfile="${dir.jarfile}/Drip.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Main-Class" value="pt.lsts.backseat.RiverPlumeTracker"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="${dir.buildfile}/bin"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+        </jar>
+    </target>
+</project>
