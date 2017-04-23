@@ -2,11 +2,11 @@ package pt.lsts.backseat;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.OptionalDouble;
 
-import com.squareup.otto.Subscribe;
-
+import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.msg.EstimatedState;
@@ -18,7 +18,7 @@ import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.util.PojoConfig;
 import pt.lsts.imc4j.util.WGS84Utilities;
 
-public class RiverPlumeTracker extends FSMController {
+public class RiverPlumeTracker extends TimedFSM {
 
 	@Parameter(description = "Latitude, in degrees, of river mouth")
 	double river_lat = 41.145289;
@@ -32,8 +32,11 @@ public class RiverPlumeTracker extends FSMController {
 	@Parameter(description = "Minimum depth, in meters, for yoyo profiles")
 	double max_depth = 5;
 
-	@Parameter(description = "Speed, in m/s, to travel at during yoyo profiles")
-	double yoyo_speed = 1.3;
+	@Parameter(description = "Speed to travel at during yoyo profiles")
+	double yoyo_speed = 1300;
+	
+	@Parameter(description = "Speed units to use (RPM, m/s)")
+	String speed_units = "RPM";
 
 	@Parameter(description = "Number of yoyos to perform on each side of the plume")
 	int yoyo_count = 5;
@@ -54,19 +57,16 @@ public class RiverPlumeTracker extends FSMController {
 	double max_dist = 1500;
 
 	@Parameter(description = "Salinity Threshold")
-	double salinity = 35.0;
+	double salinity = 30.0;
 	
 	@Parameter(description = "Number of salinity values to average")
-	int salinity_count = 5;
+	int salinity_count = 2;
 	
 	@Parameter(description = "Use Simulated Plume")
 	boolean simulated_plume = true;
 	
 	@Parameter(description = "Distance of simulated plume")
 	double plume_dist = 1000;	
-
-	@Parameter(description = "Depth to use for the vertical profiles (0 for no elevator)")
-	double elev_depth = 0;
 
 	@Parameter(description = "Seconds to idle at each vertex")
 	int wait_secs = 60;
@@ -77,11 +77,21 @@ public class RiverPlumeTracker extends FSMController {
 	@Parameter(description = "DUNE Host Port (TCP)")
 	int host_port = 6003;
 	
+	@Parameter(description = "Minutes before termination")
+	int mins_timeout = 60;
+	
+	@Parameter(description = "DUNE plan to execute right after termination")
+	String end_plan = "rendezvous";
+	
+	@Parameter(description = "Maximum time underwater")
+	int mins_underwater = 15;
+	
 	int num_yoyos;
 	double angle;
 	int count_secs;
 	boolean going_in;
 	ArrayList<Salinity> salinity_data = new ArrayList<>();	
+	int secs_underwater = 0;
 	
 	public RiverPlumeTracker() {
 		state = this::go_out;
@@ -89,15 +99,23 @@ public class RiverPlumeTracker extends FSMController {
 
 	public void init() {
 		angle = start_ang;
+		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
+		if (!end_plan.isEmpty()) {
+			endPlan = end_plan;
+			System.out.println("Will terminate by "+deadline+" and execute '"+end_plan+"'");
+		}
+		else
+			System.out.println("Will terminate by "+deadline);
+		
 	}
 	
-	@Subscribe
+	@Consume
 	public void on(Salinity salinity) {
 		synchronized (salinity_data) {
 			if (salinity_data.size() >= salinity_count)
 				salinity_data.remove(0);
 			salinity_data.add(salinity);
-		}		
+		}
 	}
 
 	public boolean isInsidePlume() {
@@ -136,20 +154,23 @@ public class RiverPlumeTracker extends FSMController {
 		double[] pos = WGS84Utilities.WGS84displace(river_lat, river_lon, 0, offsetX, offsetY, 0);
 		setLocation(pos[0], pos[1]);
 		setDepth(max_depth);
-		setSpeed(yoyo_speed, SpeedUnits.METERS_PS);
+		if (speed_units.equalsIgnoreCase("rpm"))
+			setSpeed(yoyo_speed, SpeedUnits.RPM);
+		else
+			setSpeed(yoyo_speed, SpeedUnits.METERS_PS);
+		
 		return this::descend;
 	}
 
 	public FSMState descend(FollowRefState ref) {
 		setDepth(max_depth);
-
+		if (isUnderwater())
+			secs_underwater++;
+		
 		if (arrivedXY()) {
 			print("Missed the plume!");
 			going_in = !going_in;
-			if (going_in)
-				return this::go_in;
-			else
-				return this::go_out;
+			return this::wait;
 		}
 		if (arrivedZ())
 			return this::ascend;
@@ -159,13 +180,18 @@ public class RiverPlumeTracker extends FSMController {
 
 	public FSMState ascend(FollowRefState ref) {
 		setDepth(min_depth);
-
+		if (isUnderwater())
+			secs_underwater++;
+		
+		if (secs_underwater / 60 >= mins_underwater) {
+			print("Periodic surface");
+			return this::wait;
+		}
+		
 		if (arrivedXY()) {
 			print("Missed the plume!");
-			if (going_in)
-				return this::go_out;
-			else
-				return this::go_in;
+			going_in = !going_in;
+			return this::wait;
 		}
 		if (arrivedZ()) {
 			boolean inside = isInsidePlume();
@@ -174,10 +200,8 @@ public class RiverPlumeTracker extends FSMController {
 				print("numYoyos: " + num_yoyos);
 				if (num_yoyos == yoyo_count) {
 					count_secs = 0;
-					if (elev_depth == 0)
-						return this::wait;
-					else
-						return this::elevator;
+					going_in = !going_in;
+					return this::wait;					
 				}
 			}
 			return this::descend;
@@ -185,29 +209,15 @@ public class RiverPlumeTracker extends FSMController {
 			return this::ascend;
 	}
 
-	public FSMState elevator(FollowRefState ref) {
-		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
-		setLocation(pos[0], pos[1]);
-		setDepth(elev_depth);
-		return this::elev_down;
-	}
-
-	public FSMState elev_down(FollowRefState ref) {
-		if (arrivedZ()) {
-			return this::wait;
-		}
-		return this::elev_down;
-	}
-
 	public FSMState communicate(FollowRefState ref) {
-		if (count_secs == 10) {
+		if (count_secs == 20) {
 			print("Sending position report");
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
 		}
 		if (count_secs >= wait_secs) {
-			going_in = !going_in;
+			
 
 			if (going_in)
 				return this::go_in;
@@ -216,8 +226,7 @@ public class RiverPlumeTracker extends FSMController {
 		} else {
 			count_secs++;
 			return this::communicate;
-		}
-		
+		}		
 	}
 	
 	public FSMState wait(FollowRefState ref) {
@@ -225,8 +234,11 @@ public class RiverPlumeTracker extends FSMController {
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
 		
-		if (get(VehicleMedium.class).medium == MEDIUM.VM_WATER)
+		// arrived at surface
+		if (get(VehicleMedium.class).medium == MEDIUM.VM_WATER) {
+			secs_underwater = 0;
 			return this::communicate; 
+		}
 		else
 			return this::wait;
 	}
@@ -241,10 +253,13 @@ public class RiverPlumeTracker extends FSMController {
 		setLocation(pos[0], pos[1]);
 		num_yoyos = 0;
 		setDepth(max_depth);
-		setSpeed(yoyo_speed, SpeedUnits.METERS_PS);
+		if (speed_units.equalsIgnoreCase("rpm"))
+			setSpeed(yoyo_speed, SpeedUnits.RPM);
+		else
+			setSpeed(yoyo_speed, SpeedUnits.METERS_PS);		
 		return this::descend;
 	}
-
+	
 	public static void main(String[] args) throws Exception {
 		RiverPlumeTracker tracker = PojoConfig.create(RiverPlumeTracker.class, args);
 		tracker.init();
