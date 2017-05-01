@@ -1,10 +1,15 @@
 package pt.lsts.backseat;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.OptionalDouble;
+import java.util.Properties;
 
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Parameter;
@@ -265,16 +270,40 @@ public class RiverPlumeTracker extends TimedFSM {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		RiverPlumeTracker tracker = PojoConfig.create(RiverPlumeTracker.class, args);
+		
+		if (args.length != 1) {
+			System.err.println("Usage: java -jar Drip.jar <FILE>");
+			System.exit(1);
+		}
+		
+		File file = new File(args[0]);
+		if (!file.exists()) {
+			BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+			RiverPlumeTracker tmp = new RiverPlumeTracker();
+			writer.write("#River Plume Tracker Settings\n\n");
+			for (Field f : tmp.getClass().getDeclaredFields()) {
+				Parameter p = f.getAnnotation(Parameter.class);
+				if (p != null) {
+					writer.write("#" + p.description()+"\n");
+					writer.write(f.getName() + "=" + f.get(tmp)+"\n\n");					
+				}
+			}
+			System.out.println("Wrote default properties to "+file.getName());
+			writer.close();
+			System.exit(0);			
+		}
+		
+		Properties props = new Properties();
+		props.load(new FileInputStream(file));
+				
+		RiverPlumeTracker tracker = PojoConfig.create(RiverPlumeTracker.class, props);
 		tracker.init();
 
 		System.out.println("River Plume Tracker started with settings:");
 		for (Field f : tracker.getClass().getDeclaredFields()) {
 			Parameter p = f.getAnnotation(Parameter.class);
 			if (p != null) {
-				System.out.println("#" + p.description());
 				System.out.println(f.getName() + "=" + f.get(tracker));
-				System.out.println();
 			}
 		}
 		System.out.println();
