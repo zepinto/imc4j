@@ -3,7 +3,23 @@
     <property name="dir.buildfile" value="."/>
     <property name="dir.workspace" value="${dir.buildfile}/.."/>
     <property name="dir.jarfile" value="${dir.buildfile}/dist"/>
-    <target name="drip">
+	<property name="compile-encoding" value="UTF-8" />
+	
+	<path id="classpath.dependencies">
+	    <pathelement location="lib/minimal-json-0.9.4.jar" />
+	  </path>
+	
+	<target name="compile">
+	    <mkdir dir="bin"/>
+	    <delete dir="bin"/>
+	    <mkdir dir="bin"/>
+	        
+	    <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+	    	<classpath refid="classpath.dependencies"/>
+	    </javac>
+	  </target>
+	
+    <target name="drip" depends="compile">
         <jar destfile="${dir.jarfile}/Drip.jar" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="pt.lsts.backseat.RiverPlumeTracker"/>
