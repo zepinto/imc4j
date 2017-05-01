@@ -44,8 +44,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	protected String endPlan = null;
 	protected static final String PLAN_NAME = "back_seat";
 	private Reference reference = new Reference();
-	
-	
+		
 	public void setLocation(double latDegs, double lonDegs) {
 		reference.lat = Math.toRadians(latDegs);
 		reference.lon = Math.toRadians(lonDegs);
@@ -254,6 +253,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	public BackSeatDriver() {
 		super();
 		register(this);
+		setUncaughtExceptionHandler(this);
 	}
 	
 	SimpleDateFormat sdf = new SimpleDateFormat("[YYYY-MM-dd HH:mm:ss.SS] ");
@@ -262,7 +262,7 @@ public abstract class BackSeatDriver extends TcpClient {
 		LogBookEntry lbe = new LogBookEntry();
 		lbe.text = text;
 		lbe.htime = System.currentTimeMillis() / 1000.0;
-		lbe.src = localSrc;
+		lbe.src = remoteSrc;
 		lbe.type = LogBookEntry.TYPE.LBET_INFO;
 		lbe.context = "Back Seat Driver";
 		try {
@@ -287,5 +287,4 @@ public abstract class BackSeatDriver extends TcpClient {
 		}
 		
 	}
-
 }

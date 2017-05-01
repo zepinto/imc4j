@@ -129,7 +129,7 @@ public class RiverPlumeTracker extends TimedFSM {
 			boolean inside = false;
 			if (val.isPresent())
 				inside = val.getAsDouble() < salinity;
-			System.out.println("Measured salinity: "+val+", inside plume: "+inside);
+			print("Measured salinity: "+val+", inside plume: "+inside);
 			return inside;
 		}
 	}
@@ -146,7 +146,7 @@ public class RiverPlumeTracker extends TimedFSM {
 			print("Finished!");
 			return null;
 		}
-		print("Angle: " + angle);
+		print("Going out. Angle: " + angle);
 		num_yoyos = 0;
 		double angRads = Math.toRadians(angle);
 		double offsetX = Math.cos(angRads) * max_dist;
@@ -172,8 +172,10 @@ public class RiverPlumeTracker extends TimedFSM {
 			going_in = !going_in;
 			return this::wait;
 		}
-		if (arrivedZ())
+		if (arrivedZ()) {
+			print("Now ascending.");
 			return this::ascend;
+		}
 		else
 			return this::descend;
 	}
@@ -193,7 +195,7 @@ public class RiverPlumeTracker extends TimedFSM {
 			going_in = !going_in;
 			return this::wait;
 		}
-		if (arrivedZ()) {
+		if (min_depth > 0 && arrivedZ() || !isUnderwater()) {
 			boolean inside = isInsidePlume();
 			if ((inside && going_in) || (!inside && !going_in)) {
 				num_yoyos++;
@@ -201,9 +203,11 @@ public class RiverPlumeTracker extends TimedFSM {
 				if (num_yoyos == yoyo_count) {
 					count_secs = 0;
 					going_in = !going_in;
+					print("Found the plume, now going at the surface.");
 					return this::wait;					
 				}
 			}
+			print("Now descending.");
 			return this::descend;
 		} else
 			return this::ascend;
@@ -217,8 +221,6 @@ public class RiverPlumeTracker extends TimedFSM {
 			sendReport(itfs);
 		}
 		if (count_secs >= wait_secs) {
-			
-
 			if (going_in)
 				return this::go_in;
 			else
@@ -236,6 +238,7 @@ public class RiverPlumeTracker extends TimedFSM {
 		
 		// arrived at surface
 		if (get(VehicleMedium.class).medium == MEDIUM.VM_WATER) {
+			print("Now at surface, sending report.");
 			secs_underwater = 0;
 			return this::communicate; 
 		}
@@ -245,6 +248,7 @@ public class RiverPlumeTracker extends TimedFSM {
 
 	public FSMState go_in(FollowRefState ref) {
 		angle += angle_inc;
+		print("Going in. Angle: " + angle);
 		num_yoyos = 0;
 		double angRads = Math.toRadians(angle);
 		double offsetX = Math.cos(angRads) * min_dist;

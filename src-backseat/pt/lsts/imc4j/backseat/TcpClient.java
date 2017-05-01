@@ -42,7 +42,7 @@ import pt.lsts.imc4j.util.SerializationUtils;
  * @author zp
  *
  */
-public class TcpClient extends Thread {
+public class TcpClient extends Thread implements Thread.UncaughtExceptionHandler {
 
 	private Socket socket = null;
 	private HashSet<ImcConsumer> consumers = new HashSet<ImcConsumer>();
@@ -132,6 +132,11 @@ public class TcpClient extends Thread {
 
 		if (c != null)
 			consumers.remove(c);
+	}
+	
+	@Override
+	public void uncaughtException(Thread t, Throwable e) {
+		System.err.println("Uncaught exception of type "+e.getClass().getSimpleName()+": "+e);
 	}
 
 	public static void main(String[] args) throws Exception {
