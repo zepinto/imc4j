@@ -252,8 +252,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	
 	public BackSeatDriver() {
 		super();
-		register(this);
-		setUncaughtExceptionHandler(this);
+		register(this);		
 	}
 	
 	SimpleDateFormat sdf = new SimpleDateFormat("[YYYY-MM-dd HH:mm:ss.SS] ");

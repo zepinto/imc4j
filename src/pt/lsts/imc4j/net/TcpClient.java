@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashSet;
 
-import pt.lsts.imc4j.msg.Abort;
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.util.ImcConsumer;
 import pt.lsts.imc4j.util.PeriodicCallbacks;
@@ -16,7 +15,7 @@ import pt.lsts.imc4j.util.SerializationUtils;
  * @author zp
  *
  */
-public class TcpClient extends Thread implements Thread.UncaughtExceptionHandler {
+public class TcpClient extends Thread {
 
 	private Socket socket = null;
 	private HashSet<ImcConsumer> consumers = new HashSet<ImcConsumer>();
@@ -106,19 +105,5 @@ public class TcpClient extends Thread implements Thread.UncaughtExceptionHandler
 
 		if (c != null)
 			consumers.remove(c);
-	}
-	
-	@Override
-	public void uncaughtException(Thread t, Throwable e) {
-		System.err.println("Uncaught exception of type "+e.getClass().getSimpleName()+": "+e);
-	}
-
-	public static void main(String[] args) throws Exception {
-		TcpClient client = new TcpClient();
-		client.connect("127.0.0.1", 6002);
-		client.start();
-		Thread.sleep(5000);
-		client.send(new Abort());
-		client.interrupt();
 	}
 }
