@@ -9,24 +9,38 @@
 	    <pathelement location="lib/minimal-json-0.9.4.jar" />
 	  </path>
 	
-	<target name="compile">
-	    <mkdir dir="bin"/>
-	    <delete dir="bin"/>
-	    <mkdir dir="bin"/>
-	        
-	    <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
-	    	<classpath refid="classpath.dependencies"/>
-	    </javac>
+	<target name="compile-backseat">
+	   
 	  </target>
 	
-    <target name="drip" depends="compile">
-        <jar destfile="${dir.jarfile}/Drip.jar" filesetmanifest="mergewithoutmain">
+	<target name="jar">
+		<mkdir dir="bin"/>
+			<delete dir="bin"/>
+		<mkdir dir="bin"/>
+		<javac encoding="${compile-encoding}" srcdir="src"  destdir="bin" includes="**/*.java" fork="false">
+			<classpath refid="classpath.dependencies"/>
+		</javac>
+		<jar destfile="${dir.jarfile}/imc4j.jar">
+			<fileset dir="${dir.buildfile}/bin"/>
+		    <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+		</jar>
+	</target>
+	
+    <target name="drip">
+    	 <mkdir dir="bin"/>
+		 <delete dir="bin"/>
+    	 <mkdir dir="bin"/>
+    	        
+    	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+    	  	<classpath refid="classpath.dependencies"/>
+    	 </javac>
+         <jar destfile="${dir.jarfile}/Drip.jar" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="pt.lsts.backseat.RiverPlumeTracker"/>
                 <attribute name="Class-Path" value="."/>
             </manifest>
             <fileset dir="${dir.buildfile}/bin"/>
             <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
-        </jar>
+         </jar>
     </target>
 </project>

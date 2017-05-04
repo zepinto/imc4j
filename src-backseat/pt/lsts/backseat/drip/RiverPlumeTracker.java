@@ -1,4 +1,4 @@
-package pt.lsts.backseat;
+package pt.lsts.backseat.drip;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -11,6 +11,7 @@ import java.util.EnumSet;
 import java.util.OptionalDouble;
 import java.util.Properties;
 
+import pt.lsts.backseat.TimedFSM;
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SpeedUnits;

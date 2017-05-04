@@ -1,4 +1,4 @@
-package pt.lsts.imc4j.backseat;
+package pt.lsts.imc4j.util;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
