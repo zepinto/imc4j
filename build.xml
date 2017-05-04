@@ -36,7 +36,7 @@
     	 </javac>
          <jar destfile="${dir.jarfile}/Drip.jar" filesetmanifest="mergewithoutmain">
             <manifest>
-                <attribute name="Main-Class" value="pt.lsts.backseat.RiverPlumeTracker"/>
+                <attribute name="Main-Class" value="pt.lsts.backseat.drip.RiverPlumeTracker"/>
                 <attribute name="Class-Path" value="."/>
             </manifest>
             <fileset dir="${dir.buildfile}/bin"/>
