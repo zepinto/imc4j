@@ -5,6 +5,7 @@
 	<classpathentry kind="src" path="src-backseat"/>
 	<classpathentry kind="src" path="src-gen"/>
 	<classpathentry kind="src" path="src-test"/>
+	<classpathentry kind="src" path="src-sim"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="lib" path="lib/javapoet-1.8.0.jar"/>
 	<classpathentry kind="lib" path="lib/grizzly-core-2.3.28.jar"/>
@@ -12,5 +13,7 @@
 	<classpathentry kind="lib" path="lib/minimal-json-0.9.4.jar"/>
 	<classpathentry kind="lib" path="lib/kotlin-reflect.jar"/>
 	<classpathentry kind="lib" path="lib/kotlin-runtime.jar"/>
+	<classpathentry kind="lib" path="lib/overpasser-0.2.2.jar"/>
+	<classpathentry kind="lib" path="lib/choco-solver-4.0.4-with-dependencies.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
