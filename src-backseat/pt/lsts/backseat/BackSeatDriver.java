@@ -255,35 +255,5 @@ public abstract class BackSeatDriver extends TcpClient {
 		register(this);		
 	}
 	
-	SimpleDateFormat sdf = new SimpleDateFormat("[YYYY-MM-dd HH:mm:ss.SS] ");
-	public void print(String text) {
-		
-		LogBookEntry lbe = new LogBookEntry();
-		lbe.text = text;
-		lbe.htime = System.currentTimeMillis() / 1000.0;
-		lbe.src = remoteSrc;
-		lbe.type = LogBookEntry.TYPE.LBET_INFO;
-		lbe.context = "Back Seat Driver";
-		try {
-			send(lbe);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		System.out.println(sdf.format(new Date()) + text);
-	}
-	
-	public void sendReport(EnumSet<ReportControl.COMM_INTERFACE> interfaces) {
-		ReportControl req = new ReportControl();
-		req.src = localSrc;
-		req.op = ReportControl.OP.OP_REQUEST_REPORT;
-		req.comm_interface = interfaces;
-		try {
-			send(req);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-	}
+
 }

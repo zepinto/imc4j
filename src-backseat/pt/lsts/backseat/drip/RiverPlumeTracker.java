@@ -33,10 +33,10 @@ public class RiverPlumeTracker extends TimedFSM {
 	double river_lon = -8.675311;
 
 	@Parameter(description = "Maximum depth, in meters, for yoyo profiles")
-	double min_depth = 0;
+	double min_depth = 0.5;
 
 	@Parameter(description = "Minimum depth, in meters, for yoyo profiles")
-	double max_depth = 5;
+	double max_depth = 5.5;
 
 	@Parameter(description = "Speed to travel at during yoyo profiles")
 	double yoyo_speed = 1300;
@@ -57,10 +57,10 @@ public class RiverPlumeTracker extends TimedFSM {
 	double angle_inc = 10;
 
 	@Parameter(description = "Minimum distance from river mouth")
-	double min_dist = 500;
+	double min_dist = 200;
 
 	@Parameter(description = "Maximum distance from river mouth")
-	double max_dist = 1500;
+	double max_dist = 3000;
 
 	@Parameter(description = "Salinity Threshold")
 	double salinity = 30.0;
@@ -69,7 +69,7 @@ public class RiverPlumeTracker extends TimedFSM {
 	int salinity_count = 2;
 	
 	@Parameter(description = "Use Simulated Plume")
-	boolean simulated_plume = true;
+	boolean simulated_plume = false;
 	
 	@Parameter(description = "Distance of simulated plume")
 	double plume_dist = 1000;	

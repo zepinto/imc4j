@@ -4,9 +4,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.TimeZone;
 
+import pt.lsts.imc4j.msg.LogBookEntry;
 import pt.lsts.imc4j.msg.Message;
+import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.util.ImcConsumer;
 import pt.lsts.imc4j.util.PeriodicCallbacks;
 import pt.lsts.imc4j.util.SerializationUtils;
@@ -19,7 +25,7 @@ public class TcpClient extends Thread {
 
 	private Socket socket = null;
 	private HashSet<ImcConsumer> consumers = new HashSet<ImcConsumer>();
-	private boolean connected = false;
+	protected boolean connected = false;
 	private InputStream input;
 	private OutputStream output;
 	public int remoteSrc = 0;
@@ -31,7 +37,6 @@ public class TcpClient extends Thread {
 		this.input = socket.getInputStream();
 		this.output = socket.getOutputStream();
 		start();
-
 	}
 
 	@Override
@@ -41,8 +46,12 @@ public class TcpClient extends Thread {
 				try {
 					while (input.available() >= 22) {
 						Message m = SerializationUtils.deserializeMessage(input);
-						if (m != null)
+
+						if (m != null) {
+							if (remoteSrc == 0)
+								remoteSrc = m.src;
 							dispatch(m);
+						}
 					}
 				} catch (Exception e) {
 					try {
@@ -79,13 +88,9 @@ public class TcpClient extends Thread {
 		}
 	}
 
-	private void dispatch(Message m) {
-		if (remoteSrc == 0)
-			remoteSrc = m.src;
-		
+	protected void dispatch(Message m) {
 		for (ImcConsumer consumer : consumers)
-			consumer.onMessage(m);
-		
+			consumer.onMessage(m);		
 	}
 
 	public synchronized void register(Object pojo) {
@@ -105,5 +110,37 @@ public class TcpClient extends Thread {
 
 		if (c != null)
 			consumers.remove(c);
+	}
+	
+	SimpleDateFormat sdf = new SimpleDateFormat("[YYYY-MM-dd HH:mm:ss.SS] ");
+	public void print(String text) {
+		
+		LogBookEntry lbe = new LogBookEntry();
+		lbe.text = text;
+		lbe.htime = System.currentTimeMillis() / 1000.0;
+		lbe.src = remoteSrc;
+		lbe.type = LogBookEntry.TYPE.LBET_INFO;
+		lbe.context = "Back Seat Driver";
+		try {
+			send(lbe);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+		System.out.println(sdf.format(new Date()) + text);
+	}
+	
+	public void sendReport(EnumSet<ReportControl.COMM_INTERFACE> interfaces) {
+		ReportControl req = new ReportControl();
+		req.src = localSrc;
+		req.op = ReportControl.OP.OP_REQUEST_REPORT;
+		req.comm_interface = interfaces;
+		try {
+			send(req);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
 }
