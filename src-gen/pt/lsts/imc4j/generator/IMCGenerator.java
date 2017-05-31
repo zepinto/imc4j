@@ -25,6 +25,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import pt.lsts.imc4j.annotations.IMCField;
+import pt.lsts.imc4j.util.AbstractMessage;
 import pt.lsts.imc4j.util.FormatConversion;
 import pt.lsts.imc4j.util.SerializationUtils;
 import pt.lsts.imc4j.util.TupleList;
@@ -164,7 +165,7 @@ public class IMCGenerator {
 	static TypeSpec parseHeader(Messages proto) {
 		TypeSpec.Builder msgBuilder = TypeSpec.classBuilder(ClassName.get(pkgMsgs, "Message"));
 		msgBuilder.addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC);
-
+		msgBuilder.superclass(ClassName.get(AbstractMessage.class));
 		parseFieldEnums(msgBuilder, proto.getHeader().getField());
 
 		MethodSpec size = MethodSpec.methodBuilder("size").addModifiers(Modifier.PUBLIC).returns(TypeName.INT)

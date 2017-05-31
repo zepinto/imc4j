@@ -6,10 +6,11 @@ import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
+import pt.lsts.imc4j.util.AbstractMessage;
 import pt.lsts.imc4j.util.FormatConversion;
 import pt.lsts.imc4j.util.SerializationUtils;
 
-public abstract class Message {
+public abstract class Message extends AbstractMessage {
 	public static final short SYNC_WORD = (short)0xFE54;
 
 	/**
