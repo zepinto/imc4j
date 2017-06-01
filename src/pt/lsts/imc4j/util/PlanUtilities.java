@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Vector;
 
+import pt.lsts.imc4j.def.SpeedUnits;
+import pt.lsts.imc4j.def.ZUnits;
 import pt.lsts.imc4j.msg.CommsRelay;
 import pt.lsts.imc4j.msg.CompassCalibration;
 import pt.lsts.imc4j.msg.Elevator;
@@ -542,6 +544,43 @@ public class PlanUtilities {
 		spec.transitions = ptrans;
 
 		return spec;
+	}
+	
+	/**
+	 * Creates a plan containing a FollowPath maneuver that goes through all provided waypoints
+	 * @param plan_id The id of the plan to be created
+	 * @param speed The speed to use for the plan (in m/s)
+	 * @param altitude The altitude to use for the plan (in m). For values <= 0, DEPTH will be used instead.
+	 * @param latitudes The latitude coordinates, in degrees.
+	 * @param longitudes The longitude coordinates, in degrees.
+	 * @return The corresponding PlanSpecification message
+	 */
+	public static PlanSpecification createPlan(String plan_id, float speed, float altitude, double[] latitudes, double longitudes[]) {
+		FollowPath man = new FollowPath();
+		man.speed = speed;
+		man.speed_units = SpeedUnits.METERS_PS;
+		if (altitude > 0) {
+			man.z = altitude;
+			man.z_units = ZUnits.ALTITUDE;
+		}
+		else {
+			man.z = -altitude;
+			man.z_units = ZUnits.DEPTH;
+		}
+		
+		man.lat = Math.toRadians(latitudes[0]);
+		man.lon = Math.toRadians(longitudes[0]);
+		
+		for (int i = 1; i < latitudes.length; i++) {
+			PathPoint point = new PathPoint();
+			point.z = 0;
+			double[] offsets = WGS84Utilities.WGS84displacement(latitudes[0], longitudes[0], 0, latitudes[i], longitudes[i], 0);
+			point.x = (float) offsets[0];
+			point.y = (float) offsets[1];
+			man.points.add(point);
+		}
+		
+		return createPlan(plan_id, man);		
 	}
 	
 	/**
