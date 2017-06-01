@@ -579,6 +579,14 @@ public class MessageFactory {
 
 	public static final int ID_ApmStatus = 906;
 
+	public static final int ID_SadcReadings = 907;
+
+	public static final int ID_TemporalPlan = 910;
+
+	public static final int ID_TemporalAction = 911;
+
+	public static final int ID_TemporalPlanStatus = 912;
+
 	public static Message create(int mgid) {
 		switch(mgid) {
 			case ID_EntityState: {
@@ -1444,6 +1452,18 @@ public class MessageFactory {
 			}
 			case ID_ApmStatus: {
 				return new ApmStatus();
+			}
+			case ID_SadcReadings: {
+				return new SadcReadings();
+			}
+			case ID_TemporalPlan: {
+				return new TemporalPlan();
+			}
+			case ID_TemporalAction: {
+				return new TemporalAction();
+			}
+			case ID_TemporalPlanStatus: {
+				return new TemporalPlanStatus();
 			}
 			default: {
 				return null;
@@ -2320,6 +2340,18 @@ public class MessageFactory {
 			}
 			case "ApmStatus": {
 				return ID_ApmStatus;
+			}
+			case "SadcReadings": {
+				return ID_SadcReadings;
+			}
+			case "TemporalPlan": {
+				return ID_TemporalPlan;
+			}
+			case "TemporalAction": {
+				return ID_TemporalAction;
+			}
+			case "TemporalPlanStatus": {
+				return ID_TemporalPlanStatus;
 			}
 			default: {
 				return -1;
