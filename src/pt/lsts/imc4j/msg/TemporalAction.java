@@ -18,7 +18,15 @@ public class TemporalAction extends Message {
 	public static final int ID_STATIC = 911;
 
 	/**
-	 * The system to which this action is addressed.
+	 * Unique actio identifier.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_PLAINTEXT
+	)
+	public String action_id = "";
+
+	/**
+	 * The system to which this action is addressed (IMC ID).
 	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT16
@@ -70,6 +78,7 @@ public class TemporalAction extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
+			SerializationUtils.serializePlaintext(_out, action_id);
 			_out.writeShort(system_id);
 			_out.writeByte((int)(status != null? status.value() : 0));
 			_out.writeDouble(start_time);
@@ -85,6 +94,7 @@ public class TemporalAction extends Message {
 
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
+			action_id = SerializationUtils.deserializePlaintext(buf);
 			system_id = buf.getShort() & 0xFFFF;
 			status = STATUS.valueOf(buf.get() & 0xFF);
 			start_time = buf.getDouble();
