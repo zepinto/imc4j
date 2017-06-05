@@ -18,7 +18,15 @@ public class TemporalPlanStatus extends Message {
 	public static final int ID_STATIC = 912;
 
 	/**
-	 * List of action states (without inline specifications).
+	 * The unique identifier for this plan.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_PLAINTEXT
+	)
+	public String plan_id = "";
+
+	/**
+	 * List of action states (without its inline plan specifications).
 	 */
 	@FieldType(
 			type = IMCField.TYPE_MESSAGELIST
@@ -37,6 +45,7 @@ public class TemporalPlanStatus extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
+			SerializationUtils.serializePlaintext(_out, plan_id);
 			SerializationUtils.serializeMsgList(_out, actions);
 			return _data.toByteArray();
 		}
@@ -48,6 +57,7 @@ public class TemporalPlanStatus extends Message {
 
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
+			plan_id = SerializationUtils.deserializePlaintext(buf);
 			actions = SerializationUtils.deserializeMsgList(buf);
 		}
 		catch (Exception e) {

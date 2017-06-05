@@ -17,31 +17,46 @@ import pt.lsts.imc4j.util.SerializationUtils;
 public class TemporalAction extends Message {
 	public static final int ID_STATIC = 911;
 
-	@FieldType(
-			type = IMCField.TYPE_FP64
-	)
-	public double start_time = 0;
-
-	@FieldType(
-			type = IMCField.TYPE_FP64
-	)
-	public double duration = 0;
-
-	@FieldType(
-			type = IMCField.TYPE_MESSAGE
-	)
-	public PlanSpecification action = null;
-
+	/**
+	 * The system to which this action is addressed.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT16
 	)
 	public int system_id = 0;
 
+	/**
+	 * The status of execution for the task.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT8,
 			units = "Enumerated"
 	)
 	public STATUS status = STATUS.values()[0];
+
+	/**
+	 * Time, in seconds since Jan 1st 1970, when this task should start.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_FP64
+	)
+	public double start_time = 0;
+
+	/**
+	 * Time, in seconds, for how long this task is estimated to run.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_FP64
+	)
+	public double duration = 0;
+
+	/**
+	 * The action to be executed, represented as an IMC plan specification
+	 */
+	@FieldType(
+			type = IMCField.TYPE_MESSAGE
+	)
+	public PlanSpecification action = null;
 
 	public String abbrev() {
 		return "TemporalAction";
@@ -55,11 +70,11 @@ public class TemporalAction extends Message {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
+			_out.writeShort(system_id);
+			_out.writeByte((int)(status != null? status.value() : 0));
 			_out.writeDouble(start_time);
 			_out.writeDouble(duration);
 			SerializationUtils.serializeInlineMsg(_out, action);
-			_out.writeShort(system_id);
-			_out.writeByte((int)(status != null? status.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -70,11 +85,11 @@ public class TemporalAction extends Message {
 
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
+			system_id = buf.getShort() & 0xFFFF;
+			status = STATUS.valueOf(buf.get() & 0xFF);
 			start_time = buf.getDouble();
 			duration = buf.getDouble();
 			action = SerializationUtils.deserializeInlineMsg(buf);
-			system_id = buf.getShort() & 0xFFFF;
-			status = STATUS.valueOf(buf.get() & 0xFF);
 		}
 		catch (Exception e) {
 			throw new IOException(e);
@@ -82,6 +97,8 @@ public class TemporalAction extends Message {
 	}
 
 	public enum STATUS {
+		ASTAT_UKNOWN(0l),
+
 		ASTAT_IGNORED(1l),
 
 		ASTAT_SCHEDULED(2l),
