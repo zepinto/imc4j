@@ -1,7 +1,9 @@
 package pt.lsts.imc4j.util;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -50,9 +52,18 @@ public class FormatConversion {
 				continue;
 			try {
 				if (type.units().equals("Enumerated")) {
-					String val = obj.getString(f.getName(),""+f.get(msg));
-					Object set = f.getType().getMethod("valueOf", String.class).invoke(null, val);
-					f.set(msg, set);
+					
+					JsonValue val = obj.get(f.getName());
+					
+					if (val.isNumber()) {
+						Object set = f.getType().getMethod("valueOf", long.class).invoke(null, val.asLong());
+						f.set(msg, set);
+					}
+					else {
+						Object set = f.getType().getMethod("valueOf", String.class).invoke(null, val.asString());
+						f.set(msg, set);
+					}
+					
 					continue;
 				}
 				else if (type.units().equals("Bitfield")) {
@@ -217,5 +228,4 @@ public class FormatConversion {
 		}
 		return set;
 	}
-
 }
