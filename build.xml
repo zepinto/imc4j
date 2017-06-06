@@ -1,46 +1,64 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project default="drip" name="Create Runnable Jar for Project imc4j">
-    <property name="dir.buildfile" value="."/>
-    <property name="dir.workspace" value="${dir.buildfile}/.."/>
-    <property name="dir.jarfile" value="${dir.buildfile}/dist"/>
-	<property name="compile-encoding" value="UTF-8" />
-	
-	<path id="classpath.dependencies">
-	    <pathelement location="lib/minimal-json-0.9.4.jar" />
-	  </path>
-	
-	<target name="compile-backseat">
-	   
-	  </target>
-	
-	<target name="jar">
-		<mkdir dir="bin"/>
-			<delete dir="bin"/>
-		<mkdir dir="bin"/>
-		<javac encoding="${compile-encoding}" srcdir="src"  destdir="bin" includes="**/*.java" fork="false">
-			<classpath refid="classpath.dependencies"/>
-		</javac>
-		<jar destfile="${dir.jarfile}/imc4j.jar">
-			<fileset dir="${dir.buildfile}/bin"/>
-		    <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
-		</jar>
-	</target>
-	
-    <target name="drip">
-    	 <mkdir dir="bin"/>
-		 <delete dir="bin"/>
-    	 <mkdir dir="bin"/>
-    	        
-    	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
-    	  	<classpath refid="classpath.dependencies"/>
-    	 </javac>
-         <jar destfile="${dir.jarfile}/Drip.jar" filesetmanifest="mergewithoutmain">
-            <manifest>
-                <attribute name="Main-Class" value="pt.lsts.backseat.drip.RiverPlumeTracker"/>
-                <attribute name="Class-Path" value="."/>
-            </manifest>
-            <fileset dir="${dir.buildfile}/bin"/>
-            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
-         </jar>
-    </target>
+  <property name="dir.buildfile" value="."/>
+  <property name="dir.workspace" value="${dir.buildfile}/.."/>
+  <property name="dir.jarfile" value="${dir.buildfile}/dist"/>
+  <property name="compile-encoding" value="UTF-8" />
+  
+  <path id="classpath.dependencies">
+    <pathelement location="lib/minimal-json-0.9.4.jar" />
+  </path>
+  
+  <target name="compile-backseat">
+    
+  </target>
+  
+  <target name="jar">
+    <mkdir dir="bin"/>
+    <delete dir="bin"/>
+    <mkdir dir="bin"/>
+    <javac encoding="${compile-encoding}" srcdir="src"  destdir="bin" includes="**/*.java" fork="false">
+      <classpath refid="classpath.dependencies"/>
+    </javac>
+    <jar destfile="${dir.jarfile}/imc4j.jar">
+      <fileset dir="${dir.buildfile}/bin"/>
+      <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+    </jar>
+  </target>
+  
+  <target name="drip">
+    <mkdir dir="bin"/>
+    <delete dir="bin"/>
+    <mkdir dir="bin"/>
+    
+    <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+      <classpath refid="classpath.dependencies"/>
+    </javac>
+    <jar destfile="${dir.jarfile}/Drip.jar" filesetmanifest="mergewithoutmain">
+      <manifest>
+        <attribute name="Main-Class" value="pt.lsts.backseat.drip.RiverPlumeTracker"/>
+        <attribute name="Class-Path" value="."/>
+      </manifest>
+      <fileset dir="${dir.buildfile}/bin"/>
+      <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+    </jar>
+  </target>
+
+  <target name="mvplanner">
+    <mkdir dir="bin"/>
+    <delete dir="bin"/>
+    <mkdir dir="bin"/>
+    
+    <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+      <classpath refid="classpath.dependencies"/>
+    </javac>
+    <jar destfile="${dir.jarfile}/MvPlanner.jar" filesetmanifest="mergewithoutmain">
+      <manifest>
+        <attribute name="Main-Class" value="pt.lsts.autonomy.MvPlannerExecutive"/>
+        <attribute name="Class-Path" value="."/>
+      </manifest>
+      <fileset dir="${dir.buildfile}/bin"/>
+      <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+    </jar>
+  </target>
 </project>
