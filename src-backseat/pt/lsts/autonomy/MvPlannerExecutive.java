@@ -3,10 +3,7 @@ package pt.lsts.autonomy;
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SystemType;
-import pt.lsts.imc4j.msg.Announce;
-import pt.lsts.imc4j.msg.PlanControlState;
-import pt.lsts.imc4j.msg.TemporalAction;
-import pt.lsts.imc4j.msg.TemporalPlan;
+import pt.lsts.imc4j.msg.*;
 import pt.lsts.imc4j.util.FormatConversion;
 import pt.lsts.imc4j.util.PojoConfig;
 
@@ -131,6 +128,24 @@ public class MvPlannerExecutive extends MissionExecutive {
 
         // allocate task
         currAction = toExecute.poll();
+
+        PlanControl pc = new PlanControl();
+        pc.plan_id = currAction.action_id;
+        pc.arg = currAction.action;
+        pc.op = PlanControl.OP.PC_START;
+        pc.type = PlanControl.TYPE.PC_REQUEST;
+
+        try {
+            send(pc);
+            log("Executing action with id " + currAction.action.plan_id);
+        } catch (IOException e) {
+            e.printStackTrace();
+
+            currAction = null;
+            log("Failed to send " + currAction.action.plan_id);
+            return this::idle;
+        }
+
         TemporalAction action = new TemporalAction();
         action.action_id = currAction.action_id;
         action.system_id = currAction.system_id;
