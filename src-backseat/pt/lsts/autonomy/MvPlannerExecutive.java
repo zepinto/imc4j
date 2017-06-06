@@ -2,6 +2,7 @@ package pt.lsts.autonomy;
 
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Parameter;
+import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.def.SystemType;
 import pt.lsts.imc4j.msg.*;
 import pt.lsts.imc4j.util.FormatConversion;
@@ -19,7 +20,7 @@ import java.util.*;
  */
 public class MvPlannerExecutive extends MissionExecutive {
     @Parameter
-    public String host = "127.0.0.1";
+    public String host = "10.0.10.80";
 
     @Parameter
     public int port = 6003;
@@ -39,12 +40,18 @@ public class MvPlannerExecutive extends MissionExecutive {
     /** Current being executed  **/
     private TemporalAction currAction = null;
 
+    private TemporalPlanStatus status = null;
+
     public MvPlannerExecutive() throws ParseException {
         this.state = this::init;
     }
 
     @Consume
     public void on(TemporalPlan msg) {
+        synchronized (status) {
+            status = new TemporalPlanStatus();
+        }
+
         currPlan = msg;
 
         log("Got a new plan with " + currPlan.actions.size() + " actions");
@@ -63,18 +70,19 @@ public class MvPlannerExecutive extends MissionExecutive {
             Announce msg = get(Announce.class);
 
             if(msg == null || msg.sys_type != SystemType.UUV) {
-		log("Waiting for host id");
-		return this::init;
-	    }
+                log("Waiting for host id");
+                return this::init;
+            }
 
             systemId = msg.src;
             log("Running in " + msg.sys_name + " with id " + systemId);
+            dispatch(new TemporalPlanStatus());
         }
 
         if(currPlan == null) {
-	    log("Waiting for a temporal plan...");
-	    return this::init;
-	}
+            log("Waiting for a temporal plan...");
+            return this::init;
+        }
 
         return this::idle;
     }
@@ -87,12 +95,6 @@ public class MvPlannerExecutive extends MissionExecutive {
         log("idle ");
         if(currPlan == null)
             return this::idle;
-
-        if(!handledActions.isEmpty()) {
-            Announce msg = get(Announce.class);
-            if(msg != null && msg.sys_type != SystemType.CCU)
-                return this::communicate;
-        }
 
         long currTime = System.currentTimeMillis();
         double nextActionTime = currPlan.actions.get(0).start_time;
@@ -171,16 +173,21 @@ public class MvPlannerExecutive extends MissionExecutive {
         return this::monitor;
     }
 
-    /**
-     * Communicate with a Neptus console the current status
-     * of the TemporalPlan
-     * */
-    private synchronized State communicate() {
+    @Periodic(value = 10000)
+    private void communicate() {
         log("Communicating");
-        handledActions.forEach(a -> dispatch(a));
-        handledActions.clear();
 
-        return this::idle;
+        if(status == null)
+            status = new TemporalPlanStatus();
+
+        synchronized (status) {
+            if (currPlan != null) {
+                status.plan_id = currPlan.plan_id;
+                status.actions = new ArrayList<>(handledActions);
+            }
+
+            dispatch(status);
+        }
     }
 
     private void log(String msg) {
@@ -190,33 +197,33 @@ public class MvPlannerExecutive extends MissionExecutive {
     public static void main(String[] args) throws Exception {
         MvPlannerExecutive exec;
 
-        if(args.length > 0 && args[0].equals("--test")) {
-            System.out.println("Testing....");
-            String[] subset = Arrays.copyOfRange(args, 1, args.length);
-            exec = PojoConfig.create(MvPlannerExecutive.class, subset);
-            exec.connect(exec.host, exec.port);
+        // if(args.length > 0 && args[0].equals("--test")) {
+        //     System.out.println("Testing....");
+        //     String[] subset = Arrays.copyOfRange(args, 1, args.length);
+        //     exec = PojoConfig.create(MvPlannerExecutive.class, subset);
+        //     exec.connect(exec.host, exec.port);
 
-            File f = new File("/home/tsm/data.json");
-            try {
-                List<String> content = Files.readAllLines(f.toPath(), Charset.defaultCharset());
-                StringBuilder sb = new StringBuilder();
+        //     File f = new File("/home/tsm/data.json");
+        //     try {
+        //         List<String> content = Files.readAllLines(f.toPath(), Charset.defaultCharset());
+        //         StringBuilder sb = new StringBuilder();
 
-                content.forEach(l -> sb.append(l + "\n"));
+        //         content.forEach(l -> sb.append(l + "\n"));
 
-                Thread.sleep(10000);
-                System.out.println("Sending temporal plan");
-                exec.on((TemporalPlan) FormatConversion.fromJson(sb.toString()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
+        //         Thread.sleep(10000);
+        //         System.out.println("Sending temporal plan");
+        //         exec.on((TemporalPlan) FormatConversion.fromJson(sb.toString()));
+        //     } catch (IOException e) {
+        //         e.printStackTrace();
+        //     } catch (ParseException e) {
+        //         e.printStackTrace();
+        //     }
 
-        }
-        else {
-            exec = PojoConfig.create(MvPlannerExecutive.class, args);
-            exec.connect(exec.host, exec.port);
-        }
+        // }
+        // else {
+        exec = PojoConfig.create(MvPlannerExecutive.class, args);
+        exec.connect(exec.host, exec.port);
+        //}
 
         exec.join();
     }
