@@ -116,10 +116,9 @@ public class MvPlannerExecutive extends MissionExecutive {
         if(currPlan == null || currAction != null || toExecute.isEmpty())
             return this::idle;
 
-        if(Calendar.getInstance().get(Calendar.MILLISECOND) >=  currPlan.actions.get(0).start_time)
+        if(System.currentTimeMillis() >=  currPlan.actions.get(0).start_time)
             return this::exec;
 
-        log("Going idle");
         return this::idle;
     }
 
