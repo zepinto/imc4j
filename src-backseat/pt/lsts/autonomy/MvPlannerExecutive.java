@@ -40,68 +40,39 @@ public class MvPlannerExecutive extends MissionExecutive {
     private TemporalAction currAction = null;
 
     public MvPlannerExecutive() throws ParseException {
-        this.state = this::idle;
+        this.state = this::init;
     }
 
     @Consume
-    protected void on(Announce msg) {
-        if(systemId == -1 && msg.sys_type == SystemType.UUV && msg.sys_name.contains("lauv-seacon-1")) {
-            systemId = msg.src;
-            log("Running in " + msg.sys_name + " with id " + systemId);
-            return;
-        }
-
-        // if ccu then disseminate handledActions
-        if(msg.sys_type != SystemType.CCU || handledActions.isEmpty() || currAction != null)
-            return;
-
-        this.state = this::communicate;
-    }
-
-    @Consume
-    protected void on(PlanControlState msg) {
-        if(currAction == null)
-            return;
-
-        if(msg.src != currAction.system_id || msg.plan_id != currAction.action_id)
-            return;
-
-        boolean success = false;
-        boolean failed = false;
-        if (msg.state == PlanControlState.STATE.PCS_READY || msg.state == PlanControlState.STATE.PCS_BLOCKED) {
-            success = msg.last_outcome == PlanControlState.LAST_OUTCOME.LPO_SUCCESS;
-            failed = !success;
-        }
-        else if (msg.state == PlanControlState.STATE.PCS_READY)
-            if (msg.plan_progress == 100)
-                success = true;
-
-        if(success) {
-            log("Finished " + currAction.action_id + " with success");
-            handledActions.peek().status = TemporalAction.STATUS.ASTAT_FINISHED;
-            currAction = null;
-
-            this.state = this::idle;
-        }
-        else if(failed) {
-            log("Failed " + currAction.action_id);
-            handledActions.peek().status = TemporalAction.STATUS.ASTAT_FAILED;
-            currAction = null;
-
-            this.state = this::idle;
-        }
-    }
-
-    @Consume
-    protected void on(TemporalPlan msg) {
-        log("Got a new plan with " + msg.actions.size() + " actions");
+    public void on(TemporalPlan msg) {
         currPlan = msg;
 
-        // collect tasks for this system
-        // sort them by start time
+        log("Got a new plan with " + currPlan.actions.size() + " actions");
+
+        toExecute.clear();
         currPlan.actions.stream()
                 .filter(a -> a.system_id == systemId)
                 .forEach(a -> toExecute.add(a));
+
+        log("To execute: " + toExecute.size() + " actions");
+    }
+
+    private State init() {
+        log("init");
+        if(systemId == -1) {
+            Announce msg = get(Announce.class);
+
+            if(msg == null || msg.sys_type != SystemType.UUV)
+                return this::init;
+
+            systemId = msg.src;
+            log("Running in " + msg.sys_name + " with id " + systemId);
+        }
+
+        if(currPlan == null)
+            return this::init;
+
+        return this::idle;
     }
 
     /**
@@ -109,11 +80,20 @@ public class MvPlannerExecutive extends MissionExecutive {
      * for appropriate time to run a TemporalAction
      * */
     private State idle() {
-        // nothing to do
-        if(currPlan == null || currAction != null || toExecute.isEmpty())
+        log("idle ");
+        if(currPlan == null)
             return this::idle;
 
-        if(System.currentTimeMillis() >=  currPlan.actions.get(0).start_time)
+        if(!handledActions.isEmpty()) {
+            Announce msg = get(Announce.class);
+            if(msg != null && msg.sys_type != SystemType.CCU)
+                return this::communicate;
+        }
+
+        long currTime = System.currentTimeMillis();
+        double nextActionTime = currPlan.actions.get(0).start_time;
+        log("Next action in: " + ((nextActionTime - currTime) / 1000) + "s");
+        if(currTime >=  nextActionTime)
             return this::exec;
 
         return this::idle;
@@ -123,11 +103,9 @@ public class MvPlannerExecutive extends MissionExecutive {
      * Execute a TemporalAction
      * */
     private State exec() {
-        if(currAction != null)
-            return this::exec;
-
+        log("exec");
         // allocate task
-        currAction = toExecute.poll();
+        currAction = toExecute.peek();
 
         PlanControl pc = new PlanControl();
         pc.plan_id = currAction.action_id;
@@ -137,25 +115,56 @@ public class MvPlannerExecutive extends MissionExecutive {
 
         try {
             send(pc);
-            log("Executing action with id " + currAction.action.plan_id);
         } catch (IOException e) {
             e.printStackTrace();
 
             currAction = null;
-            log("Failed to send " + currAction.action.plan_id);
-            return this::idle;
+            log("Failed to send " + currAction.action.plan_id + " trying again...");
+            return this::exec;
         }
 
+        log("Executing action with id " + currAction.action.plan_id);
+        toExecute.poll();
         TemporalAction action = new TemporalAction();
         action.action_id = currAction.action_id;
         action.system_id = currAction.system_id;
         action.status = TemporalAction.STATUS.ASTAT_SCHEDULED;
 
         handledActions.push(action);
-        dispatch(currAction.action);
 
-        log("Executing action with id " + currAction.action.plan_id);
-        return this::exec;
+        return this::monitor;
+    }
+
+    protected State monitor() {
+        PlanControlState msg = get(PlanControlState.class);
+        if(msg == null || msg.src != currAction.system_id  || !msg.plan_id.contains(currAction.action_id))
+            return this::monitor;
+
+        boolean success = false;
+        boolean failed = false;
+        if (msg.state == PlanControlState.STATE.PCS_READY || msg.state == PlanControlState.STATE.PCS_BLOCKED) {
+            success = msg.last_outcome == PlanControlState.LAST_OUTCOME.LPO_SUCCESS;
+            failed = !success;
+        }
+        else if (msg.state == PlanControlState.STATE.PCS_READY && msg.plan_progress == 100)
+            success = true;
+
+        if(success) {
+            log("Finished " + currAction.action_id + " with success");
+            handledActions.peek().status = TemporalAction.STATUS.ASTAT_FINISHED;
+            currAction = null;
+
+            return this::idle;
+        }
+        else if(failed) {
+            log("Failed " + currAction.action_id);
+            handledActions.peek().status = TemporalAction.STATUS.ASTAT_FAILED;
+            currAction = null;
+
+            return this::idle;
+        }
+
+        return this::monitor;
     }
 
     /**
@@ -165,24 +174,46 @@ public class MvPlannerExecutive extends MissionExecutive {
     private synchronized State communicate() {
         log("Communicating");
         handledActions.forEach(a -> dispatch(a));
+        handledActions.clear();
 
         return this::idle;
     }
 
     private void log(String msg) {
-        System.out.println("[MvPlannerExecutive]: " + msg + "\n");
-    }
-
-    private class TemporalActionComparator implements Comparator<Object> {
-        public int compare(Object o1, Object o2) {
-            return Double.compare(((TemporalAction) o1).start_time,
-                    ((TemporalAction) o2).start_time);
-        }
+        print("[MvPlannerExecutive]: " + msg);
     }
 
     public static void main(String[] args) throws Exception {
-        MvPlannerExecutive exec = PojoConfig.create(MvPlannerExecutive.class, args);
-        exec.connect(exec.host, exec.port);
+        MvPlannerExecutive exec;
+
+        if(args.length > 0 && args[0].equals("--test")) {
+            System.out.println("Testing....");
+            String[] subset = Arrays.copyOfRange(args, 1, args.length);
+            exec = PojoConfig.create(MvPlannerExecutive.class, subset);
+            exec.connect(exec.host, exec.port);
+
+            File f = new File("/home/tsm/data.json");
+            try {
+                List<String> content = Files.readAllLines(f.toPath(), Charset.defaultCharset());
+                StringBuilder sb = new StringBuilder();
+
+                content.forEach(l -> sb.append(l + "\n"));
+
+                Thread.sleep(10000);
+                System.out.println("Sending temporal plan");
+                exec.on((TemporalPlan) FormatConversion.fromJson(sb.toString()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+        }
+        else {
+            exec = PojoConfig.create(MvPlannerExecutive.class, args);
+            exec.connect(exec.host, exec.port);
+        }
+
         exec.join();
     }
 }
