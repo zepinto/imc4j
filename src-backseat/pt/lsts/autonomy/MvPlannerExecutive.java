@@ -62,15 +62,19 @@ public class MvPlannerExecutive extends MissionExecutive {
         if(systemId == -1) {
             Announce msg = get(Announce.class);
 
-            if(msg == null || msg.sys_type != SystemType.UUV)
-                return this::init;
+            if(msg == null || msg.sys_type != SystemType.UUV) {
+		log("Waiting for host id");
+		return this::init;
+	    }
 
             systemId = msg.src;
             log("Running in " + msg.sys_name + " with id " + systemId);
         }
 
-        if(currPlan == null)
-            return this::init;
+        if(currPlan == null) {
+	    log("Waiting for a temporal plan...");
+	    return this::init;
+	}
 
         return this::idle;
     }
