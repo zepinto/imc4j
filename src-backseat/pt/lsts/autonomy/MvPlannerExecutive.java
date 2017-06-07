@@ -54,33 +54,33 @@ public class MvPlannerExecutive extends MissionExecutive {
 
         currPlan = msg;
 
-        log("Got a new plan with " + currPlan.actions.size() + " actions");
+        print("Got a new plan with " + currPlan.actions.size() + " actions");
 
         toExecute.clear();
         currPlan.actions.stream()
                 .filter(a -> a.system_id == systemId)
                 .forEach(a -> toExecute.add(a));
 
-        log("To execute: " + toExecute.size() + " actions");
+        print("To execute: " + toExecute.size() + " actions");
     }
 
     private State init() {
-        log("init");
+        print("init");
         if(systemId == -1) {
             Announce msg = get(Announce.class);
 
             if(msg == null || msg.sys_type != SystemType.UUV) {
-                log("Waiting for host id");
+                print("Waiting for host id");
                 return this::init;
             }
 
             systemId = msg.src;
-            log("Running in " + msg.sys_name + " with id " + systemId);
+            print("Running in " + msg.sys_name + " with id " + systemId);
             dispatch(new TemporalPlanStatus());
         }
 
         if(currPlan == null) {
-            log("Waiting for a temporal plan...");
+            print("Waiting for a temporal plan...");
             return this::init;
         }
 
@@ -92,13 +92,13 @@ public class MvPlannerExecutive extends MissionExecutive {
      * for appropriate time to run a TemporalAction
      * */
     private State idle() {
-        log("idle ");
+        print("idle ");
         if(currPlan == null)
             return this::idle;
 
         long currTime = System.currentTimeMillis();
         double nextActionTime = currPlan.actions.get(0).start_time;
-        log("Next action in: " + ((nextActionTime - currTime) / 1000) + "s");
+        print("Next action in: " + ((nextActionTime - currTime) / 1000) + "s");
         if(currTime >=  nextActionTime)
             return this::exec;
 
@@ -109,8 +109,11 @@ public class MvPlannerExecutive extends MissionExecutive {
      * Execute a TemporalAction
      * */
     private State exec() {
-        log("exec");
-        // allocate task
+        print("exec");
+
+        if(toExecute.isEmpty())
+            return this::idle;
+
         currAction = toExecute.peek();
 
         PlanControl pc = new PlanControl();
@@ -125,11 +128,11 @@ public class MvPlannerExecutive extends MissionExecutive {
             e.printStackTrace();
 
             currAction = null;
-            log("Failed to send " + currAction.action.plan_id + " trying again...");
+            print("Failed to send " + currAction.action.plan_id + " trying again...");
             return this::exec;
         }
 
-        log("Executing action with id " + currAction.action.plan_id);
+        print("Executing action with id " + currAction.action.plan_id);
         toExecute.poll();
         TemporalAction action = new TemporalAction();
         action.action_id = currAction.action_id;
@@ -156,14 +159,14 @@ public class MvPlannerExecutive extends MissionExecutive {
             success = true;
 
         if(success) {
-            log("Finished " + currAction.action_id + " with success");
+            print("Finished " + currAction.action_id + " with success");
             handledActions.peek().status = TemporalAction.STATUS.ASTAT_FINISHED;
             currAction = null;
 
             return this::idle;
         }
         else if(failed) {
-            log("Failed " + currAction.action_id);
+            print("Failed " + currAction.action_id);
             handledActions.peek().status = TemporalAction.STATUS.ASTAT_FAILED;
             currAction = null;
 
@@ -173,9 +176,9 @@ public class MvPlannerExecutive extends MissionExecutive {
         return this::monitor;
     }
 
-    @Periodic(value = 10000)
+    @Periodic(10000)
     private void communicate() {
-        log("Communicating");
+        print("Communicating");
 
         if(status == null)
             status = new TemporalPlanStatus();
@@ -186,12 +189,12 @@ public class MvPlannerExecutive extends MissionExecutive {
                 status.actions = new ArrayList<>(handledActions);
             }
 
-            dispatch(status);
+            try {
+                send(status);
+            } catch (IOException e) {
+                print("Failed to communicate...");
+            }
         }
-    }
-
-    private void log(String msg) {
-        print(msg);
     }
 
     public static void main(String[] args) throws Exception {
