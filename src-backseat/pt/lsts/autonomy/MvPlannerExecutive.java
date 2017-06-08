@@ -20,7 +20,7 @@ import java.util.*;
  */
 public class MvPlannerExecutive extends MissionExecutive {
     @Parameter
-    public String host = "10.0.10.80";
+    public String host = "127.0.0.1";
 
     @Parameter
     public int port = 6003;
@@ -92,13 +92,14 @@ public class MvPlannerExecutive extends MissionExecutive {
      * for appropriate time to run a TemporalAction
      * */
     private State idle() {
-        print("idle ");
-        if(currPlan == null)
+        log("idle ");
+        if(currPlan == null || toExecute.isEmpty())
             return this::idle;
 
         long currTime = System.currentTimeMillis();
-        double nextActionTime = currPlan.actions.get(0).start_time;
-        print("Next action in: " + ((nextActionTime - currTime) / 1000) + "s");
+        double nextActionTime = toExecute.peek().start_time;
+        log("Next action in: " + ((nextActionTime - currTime) / 1000) + "s");
+
         if(currTime >=  nextActionTime)
             return this::exec;
 
@@ -133,7 +134,9 @@ public class MvPlannerExecutive extends MissionExecutive {
         }
 
         print("Executing action with id " + currAction.action.plan_id);
+
         toExecute.poll();
+        log("Executing action with id " + currAction.action.plan_id);
         TemporalAction action = new TemporalAction();
         action.action_id = currAction.action_id;
         action.system_id = currAction.system_id;
@@ -200,33 +203,33 @@ public class MvPlannerExecutive extends MissionExecutive {
     public static void main(String[] args) throws Exception {
         MvPlannerExecutive exec;
 
-        // if(args.length > 0 && args[0].equals("--test")) {
-        //     System.out.println("Testing....");
-        //     String[] subset = Arrays.copyOfRange(args, 1, args.length);
-        //     exec = PojoConfig.create(MvPlannerExecutive.class, subset);
-        //     exec.connect(exec.host, exec.port);
+        if(args.length > 0 && args[0].equals("--test")) {
+            System.out.println("Testing....");
+            String[] subset = Arrays.copyOfRange(args, 1, args.length);
+            exec = PojoConfig.create(MvPlannerExecutive.class, subset);
+            exec.connect(exec.host, exec.port);
 
-        //     File f = new File("/home/tsm/data.json");
-        //     try {
-        //         List<String> content = Files.readAllLines(f.toPath(), Charset.defaultCharset());
-        //         StringBuilder sb = new StringBuilder();
+            File f = new File("/home/tsm/data.json");
+            try {
+                List<String> content = Files.readAllLines(f.toPath(), Charset.defaultCharset());
+                StringBuilder sb = new StringBuilder();
 
-        //         content.forEach(l -> sb.append(l + "\n"));
+                content.forEach(l -> sb.append(l + "\n"));
 
-        //         Thread.sleep(10000);
-        //         System.out.println("Sending temporal plan");
-        //         exec.on((TemporalPlan) FormatConversion.fromJson(sb.toString()));
-        //     } catch (IOException e) {
-        //         e.printStackTrace();
-        //     } catch (ParseException e) {
-        //         e.printStackTrace();
-        //     }
+                Thread.sleep(10000);
+                System.out.println("Sending temporal plan");
+                exec.on((TemporalPlan) FormatConversion.fromJson(sb.toString()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
 
-        // }
-        // else {
+        }
+        else {
         exec = PojoConfig.create(MvPlannerExecutive.class, args);
         exec.connect(exec.host, exec.port);
-        //}
+        }
 
         exec.join();
     }
