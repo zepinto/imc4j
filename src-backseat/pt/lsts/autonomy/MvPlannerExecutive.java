@@ -92,13 +92,13 @@ public class MvPlannerExecutive extends MissionExecutive {
      * for appropriate time to run a TemporalAction
      * */
     private State idle() {
-        log("idle ");
+        print("idle ");
         if(currPlan == null || toExecute.isEmpty())
             return this::idle;
 
         long currTime = System.currentTimeMillis();
         double nextActionTime = toExecute.peek().start_time;
-        log("Next action in: " + ((nextActionTime - currTime) / 1000) + "s");
+        print("Next action in: " + ((nextActionTime - currTime) / 1000) + "s");
 
         if(currTime >=  nextActionTime)
             return this::exec;
@@ -136,7 +136,6 @@ public class MvPlannerExecutive extends MissionExecutive {
         print("Executing action with id " + currAction.action.plan_id);
 
         toExecute.poll();
-        log("Executing action with id " + currAction.action.plan_id);
         TemporalAction action = new TemporalAction();
         action.action_id = currAction.action_id;
         action.system_id = currAction.system_id;
