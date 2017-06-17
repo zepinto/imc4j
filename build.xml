@@ -34,7 +34,7 @@
     	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
     	  	<classpath refid="classpath.dependencies"/>
     	 </javac>
-         <jar destfile="${dir.jarfile}/Drip.jar" filesetmanifest="mergewithoutmain">
+         <jar destfile="${dir.jarfile}/drip/Drip.jar" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="pt.lsts.backseat.drip.RiverPlumeTracker"/>
                 <attribute name="Class-Path" value="."/>

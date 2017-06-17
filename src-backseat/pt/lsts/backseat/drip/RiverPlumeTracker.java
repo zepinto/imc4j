@@ -32,10 +32,10 @@ public class RiverPlumeTracker extends TimedFSM {
 	@Parameter(description = "Longitude, in degrees, of river mouth")
 	double river_lon = -8.675311;
 
-	@Parameter(description = "Maximum depth, in meters, for yoyo profiles")
+	@Parameter(description = "Minimum depth, in meters, for yoyo profiles")
 	double min_depth = 0.5;
 
-	@Parameter(description = "Minimum depth, in meters, for yoyo profiles")
+	@Parameter(description = "Maximum depth, in meters, for yoyo profiles")
 	double max_depth = 5.5;
 
 	@Parameter(description = "Speed to travel at during yoyo profiles")
