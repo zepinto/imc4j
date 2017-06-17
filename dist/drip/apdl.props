@@ -1,0 +1,68 @@
+#River Plume Tracker Settings
+
+#Latitude, in degrees, of river mouth
+river_lat=41.1850
+
+#Longitude, in degrees, of river mouth
+river_lon=-8.7062
+
+#Maximum depth, in meters, for yoyo profiles
+min_depth=0.0
+
+#Minimum depth, in meters, for yoyo profiles
+max_depth=2.5
+
+#Speed to travel at during yoyo profiles
+yoyo_speed=1200.0
+
+#Speed units to use (RPM, m/s)
+speed_units=RPM
+
+#Number of yoyos to perform on each side of the plume
+yoyo_count=5
+
+#Start angle, in degrees
+start_ang=-200.0
+
+#End angle, in degrees
+end_ang=-45.0
+
+#Variation, in degrees, between survey angles
+angle_inc=10.0
+
+#Minimum distance from river mouth
+min_dist=50.0
+
+#Maximum distance from river mouth
+max_dist=300.0
+
+#Salinity Threshold
+salinity=30.0
+
+#Number of salinity values to average
+salinity_count=1
+
+#Use Simulated Plume
+simulated_plume=true
+
+#Distance of simulated plume
+plume_dist=150.0
+
+#Seconds to idle at each vertex
+wait_secs=30
+
+#DUNE Host Address
+host_addr=10.0.10.120
+
+#DUNE Host Port (TCP)
+host_port=6003
+
+#Minutes before termination
+mins_timeout=20
+
+#DUNE plan to execute right after termination
+end_plan=rendezvous
+
+#Maximum time underwater
+mins_underwater=7
+
