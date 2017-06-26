@@ -1,5 +1,5 @@
 DRIP_HOME=/opt/lsts/drip
-CONF_FILE="$HOME/douro.props"
+CONF_FILE="$DRIP_HOME/douro.props"
 JAVA="$DRIP_HOME/jre/bin/java"
 DATE=`date +%Y-%m-%d_%H-%M-%S`
 OUTPUT="$DRIP_HOME/log/$DATE.log"
