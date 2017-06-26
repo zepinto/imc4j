@@ -289,7 +289,7 @@ public class RiverPlumeTracker extends TimedFSM {
 					writer.write(f.getName() + "=" + f.get(tmp)+"\n\n");					
 				}
 			}
-			System.out.println("Wrote default properties to "+file.getName());
+			System.out.println("Wrote default properties to "+file.getAbsolutePath());
 			writer.close();
 			System.exit(0);			
 		}
