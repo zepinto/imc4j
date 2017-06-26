@@ -10,7 +10,7 @@ river_lon=-8.675311
 min_depth=0.0
 
 #Maximum depth, in meters, for yoyo profiles
-max_depth=5.5
+max_depth=8.0
 
 #Speed to travel at during yoyo profiles
 yoyo_speed=1300.0
@@ -49,10 +49,10 @@ simulated_plume=false
 plume_dist=1000.0
 
 #Seconds to idle at each vertex
-wait_secs=60
+wait_secs=45
 
 #DUNE Host Address
-host_addr=127.0.0.1
+host_addr=10.0.10.120
 
 #DUNE Host Port (TCP)
 host_port=6003
