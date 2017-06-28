@@ -23,52 +23,87 @@ import pt.lsts.imc4j.util.SerializationUtils;
  */
 public class TcpClient extends Thread {
 
-	private Socket socket = null;
+	private Object lock = new Object();
+    private Socket socket = null;
 	private HashSet<ImcConsumer> consumers = new HashSet<ImcConsumer>();
 	protected boolean connected = false;
 	private InputStream input;
 	private OutputStream output;
 	public int remoteSrc = 0;
 	public int localSrc = 0x555;
+	
+	private String host = "";
+	private int port = 0;
 
 	public void connect(String host, int port) throws Exception {
-		socket = new Socket(host, port);
-		connected = true;
-		this.input = socket.getInputStream();
-		this.output = socket.getOutputStream();
-		start();
+        synchronized (lock) {
+            this.host = host;
+	        this.port = port;
+	        try {
+                reConnect(host, port);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+	        start();
+        }
 	}
+
+    public void reConnect(String host, int port) throws Exception {
+        synchronized (lock) {
+            connected = true;
+            socket = new Socket(host, port);
+            this.input = socket.getInputStream();
+            this.output = socket.getOutputStream();
+        }
+    }
 
 	@Override
 	public void run() {
 		while (connected) {
-			synchronized (socket) {
-				try {
-					while (input.available() >= 22) {
-						Message m = SerializationUtils.deserializeMessage(input);
-
-						if (m != null) {
-							if (remoteSrc == 0)
-								remoteSrc = m.src;
-							dispatch(m);
-						}
-					}
-				} catch (Exception e) {
-					try {
-						socket.close();
-						socket = null;
-					}
-					catch (Exception ex) {
-						ex.printStackTrace();
-					}
-					e.printStackTrace();
-				}
+			synchronized (lock) {
+			    if (socket != null) {
+			        try {
+			            while (input.available() >= 22) {
+			                Message m = SerializationUtils.deserializeMessage(input);
+			                
+			                if (m != null) {
+			                    if (remoteSrc == 0)
+			                        remoteSrc = m.src;
+			                    dispatch(m);
+			                }
+			            }
+			        } 
+			        catch (Exception e) {
+			            try {
+			                socket.close();
+			                socket = null;
+			            }
+			            catch (Exception ex) {
+			                ex.printStackTrace();
+			            }
+			            e.printStackTrace();
+			        }
+			    }
 			}
 			try {
 				Thread.sleep(100);
 			}
 			catch (InterruptedException e) {
 				return;
+			}
+			
+			synchronized (lock) {
+			    if (connected && socket == null) {
+			        try {
+			            Thread.sleep(5000);
+			            if (connected && socket == null)
+			                reConnect(host, port);
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
+			    }
 			}
 		}
 	}
@@ -78,9 +113,10 @@ public class TcpClient extends Thread {
 		m.src = localSrc;
 		m.timestamp = System.currentTimeMillis()/1000.0;
 		
-		synchronized (socket) {
+		synchronized (lock) {
 			try {
-				output.write(m.serialize());
+				if (connected && socket != null && socket.isConnected())
+				    output.write(m.serialize());
 			}
 			catch (Exception e) {
 				e.printStackTrace();
