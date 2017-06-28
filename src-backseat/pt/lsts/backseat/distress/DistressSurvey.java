@@ -16,6 +16,7 @@ import pt.lsts.backseat.distress.net.TCPConnection;
 import pt.lsts.backseat.distress.net.UDPConnection;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.annotations.Periodic;
+import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.util.AngleUtils;
@@ -60,11 +61,17 @@ public class DistressSurvey extends TimedFSM {
     @Parameter(description = "AIS Txt UDP Host Port (UDP)")
     int aisUdpHostPort = 7878;
 
+    @Parameter(description = "Loiter Radius")
+    int loiterRadius = 15;
+
+    @Parameter(description = "Max Depth")
+    int maxDepth = 15;
+
     private TCPConnection aisTxtTcp = null;
     private UDPConnection aisTxtUdp = null;
     
     public DistressSurvey() {
-        state = this::waitState;
+        state = this::surfaceState;
     }
 
     public void init() {
@@ -138,7 +145,9 @@ public class DistressSurvey extends TimedFSM {
                 + "Heading=%.0f,Course=%.0f,RateOfTurn=%.1f,Navigation_Status=%s,Timestamp=%f,Number_Contacts=0",
                 mmsid , type, latDeg, lonDeg, depth, speedKt, headingDeg, courseDeg, rateOfTurn, navStatus,
                 timeStampSecs);
-        System.out.println((aisTxtTcp.send(aisTxt + "\r\n") ? "Sent" : "Not able to send") + " AIS txt pos. message: " + aisTxt);
+        boolean res = aisTxtTcp.send(aisTxt + "\r\n");
+        if (res)
+            System.out.println("Sent AIS txt pos. message: " + aisTxt);
     }
     
     /**
@@ -146,6 +155,28 @@ public class DistressSurvey extends TimedFSM {
      */
     public FSMState waitState(FollowRefState ref) {
         return this::waitState;
+    }
+    
+    private double[] loiterPos = null;
+    /**
+     * State Machine State
+     */
+    public FSMState surfaceState(FollowRefState ref) {
+        if (loiterPos == null) {
+            loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+            setLocation(loiterPos[0], loiterPos[1]);
+        }
+        setDepth(0);
+        setLoiterRadius(loiterRadius);
+        setSpeed();
+        return this::surfaceState;
+    }
+
+    private void setSpeed() {
+        if (speedUnits.equalsIgnoreCase("rpm"))
+            setSpeed(speed, SpeedUnits.RPM);
+        else
+            setSpeed(speed, SpeedUnits.METERS_PS);
     }
     
     public static void main(String[] args) throws Exception {
