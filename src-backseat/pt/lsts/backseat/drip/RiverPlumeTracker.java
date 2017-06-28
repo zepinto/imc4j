@@ -148,7 +148,7 @@ public class RiverPlumeTracker extends TimedFSM {
 	}
 
 	public FSMState go_out(FollowRefState ref) {
-		if (angle >= end_ang) {
+		if ((angle_inc > 0 && angle >= end_ang) || (angle_inc < 0 && angle <= end_ang) ) {
 			print("Finished!");
 			return null;
 		}
@@ -170,8 +170,7 @@ public class RiverPlumeTracker extends TimedFSM {
 
 	public FSMState descend(FollowRefState ref) {
 		setDepth(max_depth);
-		if (isUnderwater())
-			secs_underwater++;
+		secs_underwater++;
 		
 		if (arrivedXY()) {
 			print("Missed the plume!");
@@ -188,8 +187,7 @@ public class RiverPlumeTracker extends TimedFSM {
 
 	public FSMState ascend(FollowRefState ref) {
 		setDepth(min_depth);
-		if (isUnderwater())
-			secs_underwater++;
+		secs_underwater++;
 		
 		if (secs_underwater / 60 >= mins_underwater) {
 			print("Periodic surface");
@@ -213,8 +211,16 @@ public class RiverPlumeTracker extends TimedFSM {
 					return this::wait;					
 				}
 			}
-			print("Now descending.");
-			return this::descend;
+			
+			if (secs_underwater / 60 >= mins_underwater) {
+				print("Periodic surface");
+				return this::wait;
+			}			
+			else {
+				print("Now descending (underwater for "+secs_underwater+" seconds).");
+				return this::descend;
+			}
+			
 		} else
 			return this::ascend;
 	}
@@ -246,6 +252,7 @@ public class RiverPlumeTracker extends TimedFSM {
 		if (get(VehicleMedium.class).medium == MEDIUM.VM_WATER) {
 			print("Now at surface, sending report.");
 			secs_underwater = 0;
+			count_secs = 0;
 			return this::communicate; 
 		}
 		else

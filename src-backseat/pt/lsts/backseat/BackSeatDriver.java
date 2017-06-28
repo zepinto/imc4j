@@ -1,15 +1,9 @@
 package pt.lsts.backseat;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.EnumSet;
 import java.util.LinkedHashMap;
-import java.util.TimeZone;
 
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Periodic;
-import pt.lsts.imc4j.net.TcpClient;
 import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.def.ZUnits;
 import pt.lsts.imc4j.msg.Abort;
@@ -18,7 +12,6 @@ import pt.lsts.imc4j.msg.DesiredZ;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.FollowReference;
 import pt.lsts.imc4j.msg.GpsFix;
-import pt.lsts.imc4j.msg.LogBookEntry;
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.msg.MessageFactory;
 import pt.lsts.imc4j.msg.PlanControl;
@@ -30,11 +23,11 @@ import pt.lsts.imc4j.msg.PlanManeuver;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.Reference;
 import pt.lsts.imc4j.msg.Reference.FLAGS;
-import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.msg.VehicleState;
 import pt.lsts.imc4j.msg.VehicleState.OP_MODE;
+import pt.lsts.imc4j.net.TcpClient;
 
 public abstract class BackSeatDriver extends TcpClient {
 
@@ -49,7 +42,6 @@ public abstract class BackSeatDriver extends TcpClient {
 		reference.lat = Math.toRadians(latDegs);
 		reference.lon = Math.toRadians(lonDegs);
 		reference.flags.add(FLAGS.FLAG_LOCATION);
-		reference.flags.add(FLAGS.FLAG_START_POINT);
 	}
 	
 	public void setDepth(double depth) {
@@ -65,12 +57,16 @@ public abstract class BackSeatDriver extends TcpClient {
 		z.value = (float) value;
 		z.z_units = units;
 		reference.z = z;
-		reference.flags.add(FLAGS.FLAG_Z);
+		reference.flags.add(FLAGS.FLAG_Z);		
 	}
 	
 	public void setLoiterRadius(double radius) {
 		reference.radius = (float)radius;
-		reference.flags.add(FLAGS.FLAG_RADIUS);
+		if (radius != 0)
+			reference.flags.add(FLAGS.FLAG_RADIUS);
+		else
+			reference.flags.remove(FLAGS.FLAG_RADIUS);
+			
 	}
 	
 	public void end() {
@@ -113,7 +109,7 @@ public abstract class BackSeatDriver extends TcpClient {
 		}
 		catch (Exception e) {
 			return false;
-		}		
+		}
 	}
 	
 	public boolean hasGps() {
