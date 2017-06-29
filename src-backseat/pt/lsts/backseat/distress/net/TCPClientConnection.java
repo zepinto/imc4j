@@ -12,7 +12,7 @@ import java.net.SocketTimeoutException;
 import java.util.HashSet;
 
 
-public class TCPConnection {
+public class TCPClientConnection {
     
     private String tcpHost;
     private int tcpPort;
@@ -29,7 +29,7 @@ public class TCPConnection {
 
     private HashSet<Listener> listeners = new HashSet<>();
 
-    public TCPConnection(String tcpHost, int tcpPort) {
+    public TCPClientConnection(String tcpHost, int tcpPort) {
         this.tcpHost = tcpHost;
         this.tcpPort = tcpPort;
     }
@@ -77,12 +77,12 @@ public class TCPConnection {
                         setTcpConnected(true);
                     }
                     catch (ConnectException e) {
-                        System.out.println(TCPConnection.this.getClass().getSimpleName()
+                        System.out.println(TCPClientConnection.this.getClass().getSimpleName()
                                 + "Error connecting via TCP to " + tcpHost + ":" + tcpPort + " :: " + e.getMessage());
                     }
                     catch (Exception e) {
                         e.printStackTrace();
-                        System.out.println(TCPConnection.this.getClass().getSimpleName()
+                        System.out.println(TCPClientConnection.this.getClass().getSimpleName()
                                 + "Error connecting via TCP to " + tcpHost + ":" + tcpPort + " :: " + e.getMessage());
                         
                         setTcpConnected(false);
@@ -144,7 +144,7 @@ public class TCPConnection {
                         catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        if (connected && !isTcpConnected && socket == TCPConnection.this.tcpSocket) {
+                        if (connected && !isTcpConnected && socket == TCPClientConnection.this.tcpSocket) {
                             connect();
                         }
                     }

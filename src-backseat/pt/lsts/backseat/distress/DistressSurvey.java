@@ -12,7 +12,7 @@ import java.util.Properties;
 
 import pt.lsts.backseat.TimedFSM;
 import pt.lsts.backseat.distress.ais.AisCsvParser;
-import pt.lsts.backseat.distress.net.TCPConnection;
+import pt.lsts.backseat.distress.net.TCPClientConnection;
 import pt.lsts.backseat.distress.net.UDPConnection;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.annotations.Periodic;
@@ -67,7 +67,7 @@ public class DistressSurvey extends TimedFSM {
     @Parameter(description = "Max Depth")
     int maxDepth = 15;
 
-    private TCPConnection aisTxtTcp = null;
+    private TCPClientConnection aisTxtTcp = null;
     private UDPConnection aisTxtUdp = null;
     
     public DistressSurvey() {
@@ -83,7 +83,7 @@ public class DistressSurvey extends TimedFSM {
         else
             System.out.println("Will terminate by "+deadline);
         
-        aisTxtTcp = new TCPConnection(aisHostAddr, aisHostPort);
+        aisTxtTcp = new TCPClientConnection(aisHostAddr, aisHostPort);
         aisTxtTcp.register(this::parseAISTxtSentence);
         aisTxtTcp.connect();
         
