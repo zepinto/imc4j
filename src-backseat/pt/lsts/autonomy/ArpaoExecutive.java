@@ -1,5 +1,12 @@
 package pt.lsts.autonomy;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.lang.reflect.Field;
+import java.util.Properties;
+
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.def.ZUnits;
@@ -22,25 +29,25 @@ import pt.lsts.imc4j.util.WGS84Utilities;
 
 public class ArpaoExecutive extends MissionExecutive {
 
-	@Parameter
+	@Parameter(description="Sequence of plans to execute after the vehicle is ready")
 	public String[] plans = new String[] { "plan1", "plan2" };
 
-	@Parameter
+	@Parameter(description="DUNE hostname")
 	public String host = "127.0.0.1";
 
-	@Parameter
+	@Parameter(description="DUNE TCP port")
 	public int port = 6003;
 	
-	@Parameter
+	@Parameter(description="Length of IMU alignment track")
 	public double imu_align_length = 500;
 	
-	@Parameter
+	@Parameter(description="Bearing of IMU alignment track")
 	public double imu_align_bearing = -110;
 	
-	@Parameter
+	@Parameter(description="If set ot true, the vehicle will align IMU prior to mission execution")
 	public boolean align_imu = false;
 	
-	@Parameter
+	@Parameter(description="If set to true, the vehicle will calibrate the compass prior to mission execution")
 	public boolean calibrate_compass = true;
 	
 	long time = 0;
@@ -262,8 +269,49 @@ public class ArpaoExecutive extends MissionExecutive {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		ArpaoExecutive exec = PojoConfig.create(ArpaoExecutive.class, args);
-		exec.connect(exec.host, exec.port);
-		exec.join();		
+
+		if (args.length != 1) {
+			System.err.println("Usage: java -jar ArpaoExec.jar <FILE>");
+			System.exit(1);
+		}
+		
+		File file = new File(args[0]);
+		if (!file.exists()) {
+			BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+			ArpaoExecutive tmp = new ArpaoExecutive();
+			writer.write("#Arpao Executive Settings\n\n");
+			for (Field f : tmp.getClass().getDeclaredFields()) {
+				Parameter p = f.getAnnotation(Parameter.class);
+				if (p != null) {
+					Object value = f.get(tmp);
+					if (value instanceof String[]) {
+						value = String.join(", ", ((String[])value));
+					}
+					writer.write("#" + p.description()+"\n");
+					writer.write(f.getName() + "=" +value+"\n\n");					
+				}
+			}
+			System.out.println("Wrote default properties to "+file.getAbsolutePath());
+			writer.close();
+			System.exit(0);			
+		}
+		
+		Properties props = new Properties();
+		props.load(new FileInputStream(file));
+				
+		ArpaoExecutive executive = PojoConfig.create(ArpaoExecutive.class, props);
+		executive.init();
+
+		System.out.println("Arpao Executive started with settings:");
+		for (Field f : executive.getClass().getDeclaredFields()) {
+			Parameter p = f.getAnnotation(Parameter.class);
+			if (p != null) {
+				System.out.println(f.getName() + "=" + f.get(executive));
+			}
+		}
+		System.out.println();
+
+		executive.connect(executive.host, executive.port);
+		executive.join();	
 	}
 }
