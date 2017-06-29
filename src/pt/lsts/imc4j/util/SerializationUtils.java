@@ -158,7 +158,7 @@ public class SerializationUtils {
 	
 	public static int serializeInlineMsg(DataOutputStream out, Message msg) throws IOException {
 		if (msg == null) {
-			out.writeShort(0);
+			out.writeShort(65535);
 			return 2;
 		}
 		
