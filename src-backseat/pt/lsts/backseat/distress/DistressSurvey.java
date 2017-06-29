@@ -71,7 +71,7 @@ public class DistressSurvey extends TimedFSM {
     private UDPConnection aisTxtUdp = null;
     
     public DistressSurvey() {
-        state = this::surfaceState;
+        state = this::goSurfaceState;
     }
 
     public void init() {
@@ -157,19 +157,26 @@ public class DistressSurvey extends TimedFSM {
         return this::waitState;
     }
     
-    private double[] loiterPos = null;
     /**
      * State Machine State
      */
-    public FSMState surfaceState(FollowRefState ref) {
-        if (loiterPos == null) {
-            loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
-            setLocation(loiterPos[0], loiterPos[1]);
-        }
+    public FSMState goSurfaceState(FollowRefState ref) {
+        double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+        setLocation(loiterPos[0], loiterPos[1]);
         setDepth(0);
         setLoiterRadius(loiterRadius);
         setSpeed();
-        return this::surfaceState;
+        return this::staySurfaceState;
+    }
+
+    /**
+     * State Machine State
+     */
+    public FSMState staySurfaceState(FollowRefState ref) {
+        if (isUnderwater())
+            return this::staySurfaceState;
+        
+        return this::staySurfaceState;
     }
 
     private void setSpeed() {
