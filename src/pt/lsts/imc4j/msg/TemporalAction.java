@@ -66,6 +66,15 @@ public class TemporalAction extends Message {
 	)
 	public PlanSpecification action = null;
 
+	/**
+	 * The type of action
+	 */
+	@FieldType(
+			type = IMCField.TYPE_UINT8,
+			units = "Enumerated"
+	)
+	public TYPE type = TYPE.values()[0];
+
 	public String abbrev() {
 		return "TemporalAction";
 	}
@@ -84,6 +93,7 @@ public class TemporalAction extends Message {
 			_out.writeDouble(start_time);
 			_out.writeDouble(duration);
 			SerializationUtils.serializeInlineMsg(_out, action);
+			_out.writeByte((int)(type != null? type.value() : 0));
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -100,6 +110,7 @@ public class TemporalAction extends Message {
 			start_time = buf.getDouble();
 			duration = buf.getDouble();
 			action = SerializationUtils.deserializeInlineMsg(buf);
+			type = TYPE.valueOf(buf.get() & 0xFF);
 		}
 		catch (Exception e) {
 			throw new IOException(e);
@@ -136,6 +147,39 @@ public class TemporalAction extends Message {
 				}
 			}
 			throw new IllegalArgumentException("Invalid value for STATUS: "+value);
+		}
+	}
+
+	public enum TYPE {
+		ATYPE_MOVE(1l),
+
+		ATYPE_SURFACE(2l),
+
+		ATYPE_COMMUNICATE(3l),
+
+		ATYPE_SAMPLE(4l),
+
+		ATYPE_SURVEY(5l),
+
+		ATYPE_LOCATE(6l);
+
+		protected long value;
+
+		TYPE(long value) {
+			this.value = value;
+		}
+
+		long value() {
+			return value;
+		}
+
+		public static TYPE valueOf(long value) throws IllegalArgumentException {
+			for (TYPE v : TYPE.values()) {
+				if (v.value == value) {
+					return v;
+				}
+			}
+			throw new IllegalArgumentException("Invalid value for TYPE: "+value);
 		}
 	}
 }

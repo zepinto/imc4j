@@ -33,6 +33,14 @@ public class TemporalPlan extends Message {
 	)
 	public ArrayList<TemporalAction> actions = new ArrayList<>();
 
+	/**
+	 * The unique identifier for this plan.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_MESSAGELIST
+	)
+	public ArrayList<VehicleDepot> depots = new ArrayList<>();
+
 	public String abbrev() {
 		return "TemporalPlan";
 	}
@@ -47,6 +55,7 @@ public class TemporalPlan extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			SerializationUtils.serializePlaintext(_out, plan_id);
 			SerializationUtils.serializeMsgList(_out, actions);
+			SerializationUtils.serializeMsgList(_out, depots);
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -59,6 +68,7 @@ public class TemporalPlan extends Message {
 		try {
 			plan_id = SerializationUtils.deserializePlaintext(buf);
 			actions = SerializationUtils.deserializeMsgList(buf);
+			depots = SerializationUtils.deserializeMsgList(buf);
 		}
 		catch (Exception e) {
 			throw new IOException(e);

@@ -587,6 +587,8 @@ public class MessageFactory {
 
 	public static final int ID_TemporalPlanStatus = 912;
 
+	public static final int ID_VehicleDepot = 913;
+
 	public static Message create(int mgid) {
 		switch(mgid) {
 			case ID_EntityState: {
@@ -1464,6 +1466,9 @@ public class MessageFactory {
 			}
 			case ID_TemporalPlanStatus: {
 				return new TemporalPlanStatus();
+			}
+			case ID_VehicleDepot: {
+				return new VehicleDepot();
 			}
 			default: {
 				return null;
@@ -2352,6 +2357,9 @@ public class MessageFactory {
 			}
 			case "TemporalPlanStatus": {
 				return ID_TemporalPlanStatus;
+			}
+			case "VehicleDepot": {
+				return ID_VehicleDepot;
 			}
 			default: {
 				return -1;
