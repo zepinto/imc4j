@@ -146,7 +146,7 @@ public class DistressSurvey extends TimedFSM {
                 mmsid , type, latDeg, lonDeg, Double.isFinite(depth) ? String.format("%.1f", depth) : "n.a.", 
                 speedKt, headingDeg, courseDeg, rateOfTurn, navStatus, timeStampSecs);
         boolean res = aisTxtTcp.send(aisTxt + "\r\n");
-        if (true || res)
+        if (res)
             System.out.println("Sent AIS txt pos. message: " + aisTxt);
     }
     
