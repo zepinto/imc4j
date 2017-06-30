@@ -66,6 +66,8 @@ stop() {
 		rm -f $PIDFILE
 }
 
+cd "$RUN_HOME"
+
 case $1 in
 	tail)
 		status
