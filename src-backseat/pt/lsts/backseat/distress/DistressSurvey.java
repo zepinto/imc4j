@@ -133,7 +133,7 @@ public class DistressSurvey extends TimedFSM {
         double[] pos = WGS84Utilities.WGS84displace(Math.toDegrees(es.lat), Math.toDegrees(es.lon), es.depth, es.x, es.y, 0);
         double latDeg = pos[0];
         double lonDeg = pos[1];
-        double depth = pos[2];
+        double depth = es.depth < 0 ? Double.NaN : es.depth;
         double speedKt = Math.sqrt(es.vx * es.vx + es.vy * es.vy + es.vz * es.vz) * MS_TO_KNOT;
         double headingDeg = AngleUtils.nomalizeAngleDegrees360(Math.toDegrees(es.psi));
         double courseDeg = AngleUtils.nomalizeAngleDegrees180(Math.toDegrees(AngleUtils.calcAngle(0, 0, es.vy, es.vx)));
@@ -141,12 +141,12 @@ public class DistressSurvey extends TimedFSM {
         String navStatus = "0";// "n.a";
         double timeStampSecs = System.currentTimeMillis() / 1E3;
         // "AIS,Node_Name=000000001,Node_Type=AUV,Latitude=43.603935,Longitude=9.0797591,Depth=0,Speed=22.8,Heading=0,Course=0,RateOfTurn=n.a.,Navigation_Status=n.a.,Timestamp=1498496471.09482,Number_Contacts=0";
-        String aisTxt = String.format(Locale.ENGLISH, "AIS,Node_Name=%d,Node_Type=%s,Latitude=%.8f,Longitude=%.8f,Depth=%.1f,Speed=%.1f,"
+        String aisTxt = String.format(Locale.ENGLISH, "AIS,Node_Name=%d,Node_Type=%s,Latitude=%.8f,Longitude=%.8f,Depth=%s,Speed=%.1f,"
                 + "Heading=%.0f,Course=%.0f,RateOfTurn=%.1f,Navigation_Status=%s,Timestamp=%f,Number_Contacts=0",
-                mmsid , type, latDeg, lonDeg, depth, speedKt, headingDeg, courseDeg, rateOfTurn, navStatus,
-                timeStampSecs);
+                mmsid , type, latDeg, lonDeg, Double.isFinite(depth) ? String.format("%.1f", depth) : "n.a.", 
+                speedKt, headingDeg, courseDeg, rateOfTurn, navStatus, timeStampSecs);
         boolean res = aisTxtTcp.send(aisTxt + "\r\n");
-        if (res)
+        if (true || res)
             System.out.println("Sent AIS txt pos. message: " + aisTxt);
     }
     
