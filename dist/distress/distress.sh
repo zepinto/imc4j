@@ -18,9 +18,6 @@ start() {
 	echo "Starting $Name"
 
 	checkanyrunning
-	#if [ $? -eq 0 ]; then
-	#	return
-	#fi
 
 	mkdir -p "$RUN_HOME/log"
 	unlink $LATEST
@@ -41,10 +38,7 @@ checkanyrunning() {
 		echo "$NAME is running."
     echo "Possible PIDs are: " $(ps | grep $JARNAME | grep java | awk '{print $1}' c={1:-1})
 		exit 4
-#	else
-#  echo "$NAME server is not running for PID "$(cat $PIDFILE)"."
 	fi
-#		exit $status
 	return $status
 }
 
@@ -75,6 +69,7 @@ stop() {
 case $1 in
 	tail)
 		status
+		echo
 		echo "Tailing  $LATEST -> $OUTPUT"
 		tail -f $LATEST
 		;;
