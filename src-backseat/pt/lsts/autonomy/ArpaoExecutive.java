@@ -11,22 +11,17 @@ import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.def.ZUnits;
-import pt.lsts.imc4j.msg.AlignmentState;
-import pt.lsts.imc4j.msg.AlignmentState.STATE;
 import pt.lsts.imc4j.msg.CompassCalibration;
 import pt.lsts.imc4j.msg.CompassCalibration.DIRECTION;
 import pt.lsts.imc4j.msg.EntityParameter;
 import pt.lsts.imc4j.msg.EntityParameters;
 import pt.lsts.imc4j.msg.Goto;
-import pt.lsts.imc4j.msg.GpsFix;
-import pt.lsts.imc4j.msg.GpsFix.VALIDITY;
 import pt.lsts.imc4j.msg.PlanControlState;
 import pt.lsts.imc4j.msg.PlanControlState.LAST_OUTCOME;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.PopUp;
 import pt.lsts.imc4j.msg.PopUp.FLAGS;
 import pt.lsts.imc4j.msg.QueryEntityParameters;
-import pt.lsts.imc4j.msg.SetEntityParameters;
 import pt.lsts.imc4j.msg.Sms;
 import pt.lsts.imc4j.util.PojoConfig;
 import pt.lsts.imc4j.util.WGS84Utilities;
@@ -57,7 +52,7 @@ public class ArpaoExecutive extends MissionExecutive {
 	@Parameter(description = "Time, in minutes, to spend calibrating the compass")
 	public int compass_calib_mins = 15;
 	
-	@Parameter(description = "GSM Number where to send reports. Leave empty to use emergency number.")
+	@Parameter(description = "GSM Number where to send reports. Leave empty to use the emergency number.")
 	public String gsm_number = "+351914785889";
 	
 
@@ -65,6 +60,7 @@ public class ArpaoExecutive extends MissionExecutive {
 	String plan = null;
 	int plan_index = 0;
 	private String emergencyNumber = null;
+	private String alignManeuverId = "";
 	
 	public ArpaoExecutive() {
 		state = this::init;
@@ -92,7 +88,7 @@ public class ArpaoExecutive extends MissionExecutive {
 			return this::init;
 		}
 
-		if (!gps()) {
+		if (!hasGps()) {
 			print("Waiting for GPS...");
 			return this::init;
 		}
@@ -106,6 +102,7 @@ public class ArpaoExecutive extends MissionExecutive {
 			PlanSpecification spec = ccalib();
 			plan = spec.plan_id;
 			time = System.currentTimeMillis();
+			print("Starting compass calibration ("+compass_calib_mins+" mins).");
 			exec(spec);
 			return compass_calib();
 		} 
@@ -113,12 +110,14 @@ public class ArpaoExecutive extends MissionExecutive {
 			PlanSpecification spec = imu();
 			plan = spec.plan_id;
 			time = System.currentTimeMillis();
+			print("Starting IMU alignment.");
 			exec(spec);
 			return this::imu_align;
 		} 
 		else {
 			plan = "";
 			time = System.currentTimeMillis();
+			print("Starting plan sequence execution.");
 			return this::plan_exec;
 		}
 	}
@@ -130,6 +129,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		sms.timeout = 60;
 		
 		try {
+			print("Sending SMS to '"+emergencyNumber+"'with contents: '"+message+"'.");
 			send(sms);
 		}
 		catch (Exception e) {
@@ -160,11 +160,13 @@ public class ArpaoExecutive extends MissionExecutive {
 					PlanSpecification spec = imu();
 					plan = spec.plan_id;
 					time = System.currentTimeMillis();
+					print("Starting IMU alignment.");
 					exec(spec);
 					return this::imu_align;
 				} else {
 					plan = "";
 					time = System.currentTimeMillis();
+					print("Starting plan sequence execution.");
 					return this::plan_exec;
 				}
 			} else
@@ -179,14 +181,24 @@ public class ArpaoExecutive extends MissionExecutive {
 		if (System.currentTimeMillis() - time < 5000)
 			return this::imu_align;
 
-		if (imu_aligned()) {
+		// Activate imu on the last goto maneuver
+		if (get(PlanControlState.class).man_id.equals(alignManeuverId)) {
+			print("Requesting IMU activation");
+			activate("IMU");
+		}
+		
+		if (imuIsAligned()) {
+			print("Navigation is aligned");
 			stopPlan();
 			time = System.currentTimeMillis();
 			plan = "";
+			print("Starting plan sequence execution.");
 			return this::plan_exec;
 		}
 
 		if (ready()) {
+			print("Deactivating IMU");
+			deactivate("IMU");
 			PlanSpecification spec = imu();
 			plan = spec.plan_id;
 			time = System.currentTimeMillis();
@@ -204,13 +216,22 @@ public class ArpaoExecutive extends MissionExecutive {
 
 		if (ready()) {
 			PlanControlState pcs = get(PlanControlState.class);
-			if (pcs.plan_id.equals(plan) && pcs.last_outcome.equals(LAST_OUTCOME.LPO_SUCCESS))
-				plan_index++;
+			if (pcs.plan_id.equals(plan)) {
+				 if (pcs.last_outcome.equals(LAST_OUTCOME.LPO_SUCCESS)) {
+					 plan_index++;
+					 print(plan+" finished successfully.");
+				 }
+				 else {
+					 print(plan+" was not finished. Retrying.");
+				 }
+			}
+				
 			if (plan_index >= plans.length) {
-				System.out.println("Finished!");
+				print("All plans have finished successfully! Terminating.");
 				return null;
 			} else {
 				plan = plans[plan_index];
+				print("Requesting execution of plan "+plan+"...");
 				startPlan(plan);
 
 				time = System.currentTimeMillis();
@@ -226,16 +247,6 @@ public class ArpaoExecutive extends MissionExecutive {
 		return emergencyNumber != null;
 	}
 	
-	public boolean gps() {
-		GpsFix fix = get(GpsFix.class);
-		return fix != null && fix.validity.contains(VALIDITY.GFV_VALID_POS);
-	}
-
-	public boolean imu_aligned() {
-		AlignmentState state = get(AlignmentState.class);
-		return state != null && state.state == STATE.AS_ALIGNED;
-	}
-
 	public PlanSpecification ccalib() {
 		double[] pos = position();
 
@@ -316,18 +327,10 @@ public class ArpaoExecutive extends MissionExecutive {
 		man3.z_units = ZUnits.DEPTH;
 
 		PlanSpecification spec = spec(popup, man1, man2, man3);
-		// Activate IMU on second goto
-		SetEntityParameters params = new SetEntityParameters();
-		params.name = "IMU";
-		EntityParameter param = new EntityParameter();
-		param.name = "Active";
-		param.value = "true";
-		params.params.add(param);
-		spec.maneuvers.get(2).start_actions.add(params);
-
+		alignManeuverId = spec.maneuvers.get(2).maneuver_id;
 		return spec;
 	}
-
+		
 	public static void main(String[] args) throws Exception {
 
 		if (args.length != 1) {

@@ -10,7 +10,11 @@ import java.util.LinkedHashMap;
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.msg.Abort;
+import pt.lsts.imc4j.msg.AlignmentState;
+import pt.lsts.imc4j.msg.EntityParameter;
 import pt.lsts.imc4j.msg.EstimatedState;
+import pt.lsts.imc4j.msg.GpsFix;
+import pt.lsts.imc4j.msg.GpsFix.VALIDITY;
 import pt.lsts.imc4j.msg.Maneuver;
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.msg.MessageFactory;
@@ -22,6 +26,7 @@ import pt.lsts.imc4j.msg.PlanControlState.STATE;
 import pt.lsts.imc4j.msg.PlanManeuver;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.PlanTransition;
+import pt.lsts.imc4j.msg.SetEntityParameters;
 import pt.lsts.imc4j.msg.TextMessage;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.net.TcpClient;
@@ -74,6 +79,40 @@ public class MissionExecutive extends TcpClient {
 	protected boolean atSurface() {
 		VehicleMedium medium = get(VehicleMedium.class);
 		return medium != null && medium.medium.equals(VehicleMedium.MEDIUM.VM_WATER);
+	}
+
+	protected boolean hasGps() {
+		GpsFix fix = get(GpsFix.class);
+		return fix != null && fix.validity.contains(VALIDITY.GFV_VALID_POS);
+	}
+
+	protected boolean imuIsAligned() {
+		AlignmentState state = get(AlignmentState.class);
+		return state != null && state.state == pt.lsts.imc4j.msg.AlignmentState.STATE.AS_ALIGNED;
+	}
+	
+	protected void setParam(String entity, String param, String value) {
+		SetEntityParameters params = new SetEntityParameters();
+		params.name = entity;
+		EntityParameter p = new EntityParameter();
+		p.name = param;
+		p.value = value;
+		params.params.add(p);
+		
+		try {
+			send(params);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	protected void activate(String entity) {
+		setParam(entity, "Active", "true");
+	}
+	
+	protected void deactivate(String entity) {
+		setParam(entity, "Active", "false");
 	}
 
 	protected void broadcast(Message msg) throws IOException {
