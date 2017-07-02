@@ -43,6 +43,13 @@ public class DistressSurvey extends TimedFSM {
         END_OP
     }
 
+    private enum SurveyPathEnum {
+        FIRST,
+        SECOND,
+        THIRD,
+        FORTH
+    }
+
     @Parameter(description = "Speed to travel")
     double speed = 1100;
     
@@ -132,6 +139,7 @@ public class DistressSurvey extends TimedFSM {
 
     private GoSurfaceTaskEnum goSurfaceTask = GoSurfaceTaskEnum.START_OP;
     private long atSurfaceMillis = -1;
+    private SurveyPathEnum surfacePointIdx = SurveyPathEnum.FIRST;
     
     public DistressSurvey() {
         state = this::goSurfaceState;
@@ -289,19 +297,8 @@ public class DistressSurvey extends TimedFSM {
     
     private double[] calcApproachPoint(double latDegs, double lonDegs, double depth, double headingDegs, double speedKnots,
             long timestamp) {
-        double angRads = Math.toRadians(headingDegs);
-        double ol = targetLenght + approachLenghtOffset;
-        double ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10);
-        double offsetX = Math.cos(angRads) * ol + Math.sin(angRads) * ow;
-        double offsetY = Math.sin(angRads) * ol + Math.cos(angRads) * ow;
-        double[] pos = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
-
-        double latDegsRef = pos[0];
-        double lonDegsRef = pos[1];
-        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
-        
-        double[] posRef = new double[] { latDegsRef, lonDegsRef, depthRef };
-        return posRef;
+        surfacePointIdx = SurveyPathEnum.FIRST;
+        return calcSurveyLinePoint(latDegs, lonDegs, depth, headingDegs, speedKnots, timestamp);
     }
 
     private double[] calcSurveyLinePoint(double latDegs, double lonDegs, double depth, double headingDegs,
@@ -309,40 +306,26 @@ public class DistressSurvey extends TimedFSM {
         double angRads = Math.toRadians(headingDegs);
         double ol = -targetLenght;
         double ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10);
-        double offsetX = Math.cos(angRads) * ol + Math.sin(angRads) * ow;
-        double offsetY = Math.sin(angRads) * ol + Math.cos(angRads) * ow;
-        double[] pos = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
-
-        double latDegsRef = pos[0];
-        double lonDegsRef = pos[1];
-        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
+        switch (surfacePointIdx) {
+            case FIRST:
+            default:
+                ol = targetLenght + approachLenghtOffset;
+                ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10);
+                break;
+            case SECOND:
+                ol = -targetLenght;
+                ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10);
+                break;
+            case THIRD:
+                ol = -targetLenght;
+                ow = targetWidth + surveyDeltaAltitudeFromTarget * 10;
+                break;
+            case FORTH:
+                ol = targetLenght + approachLenghtOffset;
+                ow = targetWidth + surveyDeltaAltitudeFromTarget * 10;
+                break;
+        }
         
-        double[] posRef = new double[] { latDegsRef, lonDegsRef, depthRef };
-        return posRef;
-    }
-
-    private double[] calcSurveyLinePoint2(double latDegs, double lonDegs, double depth, double headingDegs,
-            double speedKnots, long timestamp) {
-        double angRads = Math.toRadians(headingDegs);
-        double ol = -targetLenght;
-        double ow = targetWidth + surveyDeltaAltitudeFromTarget * 10;
-        double offsetX = Math.cos(angRads) * ol + Math.sin(angRads) * ow;
-        double offsetY = Math.sin(angRads) * ol + Math.cos(angRads) * ow;
-        double[] pos = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
-
-        double latDegsRef = pos[0];
-        double lonDegsRef = pos[1];
-        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
-        
-        double[] posRef = new double[] { latDegsRef, lonDegsRef, depthRef };
-        return posRef;
-    }
-
-    private double[] calcSurveyLinePoint3(double latDegs, double lonDegs, double depth, double headingDegs,
-            double speedKnots, long timestamp) {
-        double angRads = Math.toRadians(headingDegs);
-        double ol = targetLenght + approachLenghtOffset;
-        double ow = targetWidth + surveyDeltaAltitudeFromTarget * 10;
         double offsetX = Math.cos(angRads) * ol + Math.sin(angRads) * ow;
         double offsetY = Math.sin(angRads) * ol + Math.cos(angRads) * ow;
         double[] pos = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
@@ -438,6 +421,7 @@ public class DistressSurvey extends TimedFSM {
     }
 
     public FSMState firstSurveyPointState(FollowRefState ref) {
+        surfacePointIdx = SurveyPathEnum.values()[surfacePointIdx.ordinal() + 1];
         printFSMStateName("firstSurveyPointState");
         DistressPosition dp = AisCsvParser.distressPosition;
         double[] posRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
@@ -462,13 +446,12 @@ public class DistressSurvey extends TimedFSM {
         }
         
         if (arrivedXY()) {
-            if (surveySideOrAround) {
+            if (surveySideOrAround || surfacePointIdx.ordinal() == SurveyPathEnum.values().length - 1) {
                 goSurfaceTask = GoSurfaceTaskEnum.END_OP; 
                 return this::goSurfaceState;
             }
             else {
-                goSurfaceTask = GoSurfaceTaskEnum.END_OP; 
-                return this::goSurfaceState;
+                return this::firstSurveyPointState;
             }
         }
         
@@ -483,8 +466,8 @@ public class DistressSurvey extends TimedFSM {
         return true;
     }
 
-    private double tmpLat = 41.1815;
-    private double tmpLon = -8.7051;
+    private double tmpLat = 41.184058;
+    private double tmpLon = -8.706333;
     private double tmpDepth = 10;
     private double tmpHeading = 20;
     private double tmpSpeedKt = 0.5;
