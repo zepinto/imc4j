@@ -55,6 +55,9 @@ public class ArpaoExecutive extends MissionExecutive {
 	@Parameter(description = "GSM Number where to send reports. Leave empty to use the emergency number.")
 	public String gsm_number = "+351914785889";
 	
+	@Parameter(description = "Send status over SMS")
+	public boolean sms_updates = false;
+	
 
 	long time = 0;
 	String plan = null;
@@ -102,7 +105,7 @@ public class ArpaoExecutive extends MissionExecutive {
 			PlanSpecification spec = ccalib();
 			plan = spec.plan_id;
 			time = System.currentTimeMillis();
-			print("Starting compass calibration ("+compass_calib_mins+" mins).");
+			sendMessage("Starting compass calibration ("+compass_calib_mins+" mins).");
 			exec(spec);
 			return compass_calib();
 		} 
@@ -110,7 +113,7 @@ public class ArpaoExecutive extends MissionExecutive {
 			PlanSpecification spec = imu();
 			plan = spec.plan_id;
 			time = System.currentTimeMillis();
-			print("Starting IMU alignment.");
+			sendMessage("Starting IMU alignment.");
 			exec(spec);
 			return this::imu_align;
 		} 
@@ -129,8 +132,14 @@ public class ArpaoExecutive extends MissionExecutive {
 		sms.timeout = 60;
 		
 		try {
-			print("Sending SMS to '"+emergencyNumber+"'with contents: '"+message+"'.");
-			send(sms);
+			if (sms_updates) {
+				print("Sending SMS to '"+emergencyNumber+"'with contents: '"+message+"'.");
+				send(sms);	
+			}
+			else {
+				print(message+" - Not sending SMS -");
+			}
+			
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -160,13 +169,13 @@ public class ArpaoExecutive extends MissionExecutive {
 					PlanSpecification spec = imu();
 					plan = spec.plan_id;
 					time = System.currentTimeMillis();
-					print("Starting IMU alignment.");
+					sendMessage("Starting IMU alignment.");
 					exec(spec);
 					return this::imu_align;
 				} else {
 					plan = "";
 					time = System.currentTimeMillis();
-					print("Starting plan sequence execution.");
+					sendMessage("Starting plan sequence execution.");
 					return this::plan_exec;
 				}
 			} else
@@ -192,7 +201,7 @@ public class ArpaoExecutive extends MissionExecutive {
 			stopPlan();
 			time = System.currentTimeMillis();
 			plan = "";
-			print("Starting plan sequence execution.");
+			sendMessage("Starting plan sequence execution.");
 			return this::plan_exec;
 		}
 
@@ -202,6 +211,7 @@ public class ArpaoExecutive extends MissionExecutive {
 			PlanSpecification spec = imu();
 			plan = spec.plan_id;
 			time = System.currentTimeMillis();
+			sendMessage("Restarting IMU alignment.");
 			exec(spec);
 			return this::imu_align;
 		}
@@ -219,19 +229,19 @@ public class ArpaoExecutive extends MissionExecutive {
 			if (pcs.plan_id.equals(plan)) {
 				 if (pcs.last_outcome.equals(LAST_OUTCOME.LPO_SUCCESS)) {
 					 plan_index++;
-					 print(plan+" finished successfully.");
+					 sendMessage(plan+" finished successfully.");
 				 }
 				 else {
-					 print(plan+" was not finished. Retrying.");
+					 print(plan+" was not completed. Retrying...");
 				 }
 			}
 				
 			if (plan_index >= plans.length) {
-				print("All plans have finished successfully! Terminating.");
+				sendMessage("All plans have finished successfully! Terminating.");
 				return null;
 			} else {
 				plan = plans[plan_index];
-				print("Requesting execution of plan "+plan+"...");
+				sendMessage("Starting execution of '"+plan+"'...");
 				startPlan(plan);
 
 				time = System.currentTimeMillis();
