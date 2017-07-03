@@ -140,7 +140,24 @@ public class TcpClient extends Thread {
 			send(req);
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		}		
+	}
+	
+	public void disconnect() {
+		if (socket == null)
+			return;
 		
+		synchronized (socket) {
+			if (connected)
+				try {
+					socket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			consumers.clear();
+			input = null;
+			output = null;
+			socket = null;
+		}		
 	}
 }

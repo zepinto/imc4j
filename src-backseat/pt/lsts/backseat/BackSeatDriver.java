@@ -218,6 +218,7 @@ public abstract class BackSeatDriver extends TcpClient {
 			if (endPlan != null)
 				startPlan(endPlan);
 			
+			disconnect();
 			System.exit(0);
 		}
 		
