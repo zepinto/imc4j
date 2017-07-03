@@ -8,12 +8,24 @@ public class FSMController extends BackSeatDriver {
 	
 	@Override
 	public void update(FollowRefState fref) {
-		if (state == null)
+		if (state == null) {
 			end();
-		else
-			state = state.step(fref);		
+		}
+		else {
+			try {
+                state = state.step(fref);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                end();
+            }
+		}
 	}
 	
+    protected void printFSMStateName(String name) {
+        print("FSM> Steping into state " + name);
+    }
+
 	@FunctionalInterface
 	public static interface FSMState {
 		public FSMState step(FollowRefState refState);

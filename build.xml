@@ -61,4 +61,24 @@
             <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
          </jar>
     </target>
+
+    <target name="distress">
+        <delete dir="bin" failonerror="no"/>
+        <mkdir dir="bin"/>
+
+        <copy file="ais.cache" todir="${dir.jarfile}/distress" overwrite="false" failonerror="no" />
+
+        <javac encoding="${compile-encoding}" srcdir="src;src-backseat" destdir="bin" includes="**/*.java" fork="false">
+            <classpath refid="classpath.dependencies"/>
+        </javac>
+        <jar destfile="${dir.jarfile}/distress/Distress.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Main-Class" value="pt.lsts.backseat.distress.DistressSurvey"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="${dir.buildfile}/bin"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+        </jar>
+    </target>
+
 </project>
