@@ -5,7 +5,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 
 NAME="Arpao"
 RUN_HOME="/opt/lsts/arpao"
-JARNAME="ArpaoExec.jar.jar"
+JARNAME="ArpaoExec.jar"
 CONF_FILE="$RUN_HOME/np3.props"
 
 JAVA="/opt/lsts/jre/bin/java"
