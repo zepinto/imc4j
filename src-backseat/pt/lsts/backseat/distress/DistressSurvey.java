@@ -388,8 +388,11 @@ public class DistressSurvey extends TimedFSM {
             return this::goSurfaceStayState;
         }
 
-        if (atSurfaceMillis == -1)
+        if (atSurfaceMillis == -1) {
             atSurfaceMillis = curTimeMillis;
+            double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+            setSurfaceLoiterRef(loiterPos[0], loiterPos[1]);
+        }
         
         switch (goSurfaceTask) {
             case END_OP:
@@ -512,7 +515,9 @@ public class DistressSurvey extends TimedFSM {
         String dis = getAisDistressString(tmpTargetLat, tmpTargetLon, tmpTargetDepth, tmpTargetSpeedKt, tmpTargetHeading);
         parseAISTxtSentence(dis + "\r\n");
         
-        String aisPos = getAisPositionString(1000022, "Submarine", tmpTargetLat, tmpTargetLon, tmpTargetDepth, tmpTargetSpeedKt, tmpTargetHeading,
+        // 263029000,NRP Arpao
+        // 263125000,NRP Hidra
+        String aisPos = getAisPositionString(263029000, "Submarine", tmpTargetLat, tmpTargetLon, tmpTargetDepth, tmpTargetSpeedKt, tmpTargetHeading,
                 tmpTargetHeading, 0, "0", System.currentTimeMillis());
         byte[] buf = aisPos.getBytes();
         try {
