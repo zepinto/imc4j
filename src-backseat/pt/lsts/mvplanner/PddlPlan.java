@@ -104,5 +104,44 @@ public class PddlPlan {
 
 		return ret;
 	}
+	
+	public ArrayList<PddlLocation> locations(int vehicle_id) {
+		ArrayList<PddlLocation> ret = new ArrayList<>();
+		ret.add(depots.get(vehicle_id));
+		for (IPddlAction action : actions(vehicle_id)) {
+			if (action instanceof SurveyAction) {
+				ret.add(((SurveyAction)action).getStartLocation());
+				ret.add(((SurveyAction)action).getEndLocation());				
+			}
+			if (action instanceof SampleAction) {
+				PddlLocation loc = ((SurveyAction)action).getAssociatedLocation(); 
+				loc.name = action.getAssociatedTask()+"_oi";
+				ret.add(loc);
+			}			
+		}
+		
+		return ret;		
+	}
+	
+	public ArrayList<SurveyAction> surveyActions(int vehicle_id) {
+		ArrayList<SurveyAction> actions = new ArrayList<>();
+		for (IPddlAction action : actions(vehicle_id)) {
+			if (action instanceof SurveyAction)
+				actions.add((SurveyAction)action);
+		}
+		
+		return actions;
+	}
+	
+	public ArrayList<SampleAction> sampleActions(int vehicle_id) {
+		ArrayList<SampleAction> actions = new ArrayList<>();
+		for (IPddlAction action : actions(vehicle_id)) {
+			if (action instanceof SampleAction)
+				actions.add((SampleAction)action);
+		}
+		
+		return actions;
+	}
+	
 
 }
