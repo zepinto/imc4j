@@ -50,57 +50,50 @@ public class DistressSurvey extends TimedFSM {
         FORTH
     }
 
-    @Parameter(description = "Speed to travel")
-    double speed = 1100;
-    
-    @Parameter(description = "Speed units to use (RPM, m/s)")
-    String speedUnits = "RPM";
-
     @Parameter(description = "DUNE Host Address")
     String hostAddr = "127.0.0.1";
-
     @Parameter(description = "DUNE Host Port (TCP)")
     int hostPort = 6003;
+    @Parameter(description = "DUNE plan to execute right after termination")
+    String endPlanToUse = "rendezvous";
     
     @Parameter(description = "Minutes before termination")
     int minutesTimeout = 60;
     
-    @Parameter(description = "DUNE plan to execute right after termination")
-    String endPlanToUse = "rendezvous";
-    
-    @Parameter(description = "Maximum time underwater")
-    int minsUnderwater = 15;
+//    @Parameter(description = "Maximum time underwater (minutes)")
+//    int minsUnderwater = 15;
 
     @Parameter(description = "AIS Txt Host Address")
     String aisHostAddr = "127.0.0.1";
-
+    @Parameter(description = "AIS Txt by TCP")
+    boolean aisByTCP = true;
     @Parameter(description = "AIS Txt Host Port (TCP)")
     int aisHostPort = 13000;
-    
+    @Parameter(description = "AIS Txt by UDP")
+    boolean aisByUDP = false;
     @Parameter(description = "AIS Txt UDP Host Port (UDP)")
-    int aisUdpHostPort = 7878;
+    int aisUdpHostPort = 7879;
 
-    @Parameter(description = "Loiter Radius")
+    @Parameter(description = "Loiter Radius (m)")
     int loiterRadius = 15;
-
-    @Parameter(description = "Max Depth")
+    @Parameter(description = "Max Depth (m)")
     int maxDepth = 15;
-
-    @Parameter(description = "Working Depth")
+    @Parameter(description = "Working Depth (m)")
     int workingDepth = 5;
+    @Parameter(description = "Speed to travel")
+    double speed = 1100;
+    @Parameter(description = "Speed units to use (RPM, m/s)")
+    String speedUnits = "RPM";
 
-    @Parameter(description = "Survey Delta Altitude from Target")
+    @Parameter(description = "Survey Delta Altitude from Target (m)")
     double surveyDeltaAltitudeFromTarget = 5;
-    
     @Parameter(description = "Approach Lenght Offset")
     double approachLenghtOffset = 50;
-
     @Parameter(description = "Survey Side (true) or Around (false)")
     private boolean surveySideOrAround = false;
 
     @Parameter(description = "Target Width")
     double targetWidth = 6.3;
-
     @Parameter(description = "Target Lenght")
     double targetLenght = 65;
 
@@ -109,10 +102,8 @@ public class DistressSurvey extends TimedFSM {
     
     @Parameter(description = "Delta Time for Distress Valid (milliseconds)")
     long deltaTimeMillisDistressValid = 30000;
-
     @Parameter(description = "Delta End Time Millis at Surface (milliseconds)")
     long deltaEndTimeMillisAtSurface = 20000;
-
     @Parameter(description = "Delta Dist to Adjust Approach (m)")
     double deltaDistToAdjustApproach = 20;
     
@@ -124,7 +115,22 @@ public class DistressSurvey extends TimedFSM {
     private boolean useGSM = true;
     @Parameter(description = "Use Satellite Report")
     private boolean useSatellite = true;
-    
+
+    @Parameter(description = "Test Target Simulate")
+    private boolean testTargetSimulate = false;
+    @Parameter(description = "Test Target Lat (decimal degs)")
+    private double testTargetLat = 41.184058;
+    @Parameter(description = "Test Target Lon (decimal degs)")
+    private double testTargetLon = -8.706333;
+    @Parameter(description = "Test Target Depth (m)")
+    private double testTargetDepth = 10;
+    @Parameter(description = "Test Target Heading (degs)")
+    private double testTargetHeading = 320;
+    @Parameter(description = "Test Target Heading Gaussian Noise (degs)")
+    private double testTargetHeadingGaussianNoiseDegs = 2;
+    @Parameter(description = "Test Target Speed (knots)")
+    private double testTargetSpeedKt = 0.5;
+
     private TCPClientConnection aisTxtTcp = null;
     private UDPConnection aisTxtUdp = null;
 
@@ -132,15 +138,21 @@ public class DistressSurvey extends TimedFSM {
     private long curTimeMillis = System.currentTimeMillis();
     private long reportSentMillis = -1;
     
-    private FSMState stateToReturn = null;
-    private double targetLatDeg = Double.NaN;
-    private double targetLonDeg = Double.NaN;
-    private double targetHeadingDeg = Double.NaN;
+    private FSMState stateToReturnTo = null;
 
     private GoSurfaceTaskEnum goSurfaceTask = GoSurfaceTaskEnum.START_OP;
     private long atSurfaceMillis = -1;
     private SurveyPathEnum surfacePointIdx = SurveyPathEnum.FIRST;
-    
+
+    // Target test vars
+    private double tmpTargetLat = 41.184058;
+    private double tmpTargetLon = -8.706333;
+    private double tmpTargetDepth = 10;
+    private double tmpTargetHeading = 320;
+    private double tmpTargetSpeedKt = 0.5;
+    private long tmpTargetLastSendTime = -1;
+    private Random tmpTargetRandom = new Random();
+
     public DistressSurvey() {
         state = this::goSurfaceState;
     }
@@ -161,15 +173,19 @@ public class DistressSurvey extends TimedFSM {
             System.out.println("Will terminate by " + deadline + " and execute '" + endPlanToUse + "'");
         }
         else
-            System.out.println("Will terminate by "+deadline);
+            System.out.println("Will terminate by " + deadline);
+
+        if (aisByTCP) {
+            aisTxtTcp = new TCPClientConnection(aisHostAddr, aisHostPort);
+            aisTxtTcp.register(this::parseAISTxtSentence);
+            aisTxtTcp.connect();
+        }
         
-//        aisTxtTcp = new TCPClientConnection(aisHostAddr, aisHostPort);
-//        aisTxtTcp.register(this::parseAISTxtSentence);
-//        aisTxtTcp.connect();
-//        
-//        aisTxtUdp = new UDPConnection(aisUdpHostPort);
-//        aisTxtUdp.register(this::parseAISTxtSentence);
-//        aisTxtUdp.connect();
+        if (aisByUDP) {
+            aisTxtUdp = new UDPConnection(aisUdpHostPort);
+            aisTxtUdp.register(this::parseAISTxtSentence);
+            aisTxtUdp.connect();
+        }
     }
 
     @Override
@@ -466,49 +482,50 @@ public class DistressSurvey extends TimedFSM {
         return true;
     }
 
-    private double tmpLat = 41.184058;
-    private double tmpLon = -8.706333;
-    private double tmpDepth = 10;
-    private double tmpHeading = 20;
-    private double tmpSpeedKt = 0.5;
-    private long tmpLastSendTime = -1;
-    private Random tmpRandom = new Random();
     @Periodic(value = 10000)
     private void sendDistressTest() {
-//        double lat = 41.1815;
-//        double lon = -8.7051;
-//        double depth = 10;
-//        double heading = 20;
-//        double speedKt = 0;
-
-        if (tmpLastSendTime > 0) {
-            long deltaTMillis = System.currentTimeMillis() - tmpLastSendTime;
-            double deltaTMeters = tmpSpeedKt / MS_TO_KNOT * deltaTMillis / 1E3;
-            double angRads = Math.toRadians(tmpHeading);
+        if (!testTargetSimulate)
+            return;
+        
+        if (tmpTargetLastSendTime <= 0) {
+            tmpTargetLat = testTargetLat;
+            tmpTargetLon = testTargetLon;
+            tmpTargetDepth = testTargetDepth;
+            tmpTargetHeading = testTargetHeading;
+            tmpTargetSpeedKt = testTargetSpeedKt;
+        }
+        else {
+            long deltaTMillis = System.currentTimeMillis() - tmpTargetLastSendTime;
+            double deltaTMeters = tmpTargetSpeedKt / MS_TO_KNOT * deltaTMillis / 1E3;
+            double angRads = Math.toRadians(tmpTargetHeading);
             double offsetX = Math.cos(angRads) * deltaTMeters;
             double offsetY = Math.sin(angRads) * deltaTMeters;
-            double[] pos = WGS84Utilities.WGS84displace(tmpLat, tmpLon, 0, offsetX, offsetY, 0);
-            tmpLat = pos[0];
-            tmpLon = pos[1];
-            tmpHeading += tmpRandom.nextGaussian() * 2;
+            double[] pos = WGS84Utilities.WGS84displace(tmpTargetLat, tmpTargetLon, 0, offsetX, offsetY, 0);
+            tmpTargetLat = pos[0];
+            tmpTargetLon = pos[1];
+            tmpTargetHeading += tmpTargetRandom.nextGaussian() * testTargetHeadingGaussianNoiseDegs;
         }
         
-        String dis = getAisDistressString(tmpLat, tmpLon, tmpDepth, tmpSpeedKt, tmpHeading);
+        String dis = getAisDistressString(tmpTargetLat, tmpTargetLon, tmpTargetDepth, tmpTargetSpeedKt, tmpTargetHeading);
         parseAISTxtSentence(dis + "\r\n");
         
-        String aisPos = getAisPositionString(1000022, "Submarine", tmpLat, tmpLon, tmpDepth, tmpSpeedKt, tmpHeading,
-                tmpHeading, 0, "0", System.currentTimeMillis());
+        String aisPos = getAisPositionString(1000022, "Submarine", tmpTargetLat, tmpTargetLon, tmpTargetDepth, tmpTargetSpeedKt, tmpTargetHeading,
+                tmpTargetHeading, 0, "0", System.currentTimeMillis());
         byte[] buf = aisPos.getBytes();
         try {
             DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getByName(aisHostAddr), aisUdpHostPort);
-            DatagramSocket socket = new DatagramSocket();
-            socket.send(packet);
+            try (DatagramSocket socket = new DatagramSocket()) {
+                socket.send(packet);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
         }
         
-        tmpLastSendTime = System.currentTimeMillis();
+        tmpTargetLastSendTime = System.currentTimeMillis();
     }
     
     public static void main(String[] args) throws Exception {
