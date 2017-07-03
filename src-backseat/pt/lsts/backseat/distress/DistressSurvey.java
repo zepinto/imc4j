@@ -322,11 +322,15 @@ public class DistressSurvey extends TimedFSM {
         double angRads = Math.toRadians(headingDegs);
         double ol = -targetLenght;
         double ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10);
+
+        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
+
         switch (surfacePointIdx) {
             case FIRST:
             default:
                 ol = targetLenght + approachLenghtOffset;
                 ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10);
+                depthRef = workingDepth;
                 break;
             case SECOND:
                 ol = -targetLenght;
@@ -348,7 +352,6 @@ public class DistressSurvey extends TimedFSM {
 
         double latDegsRef = pos[0];
         double lonDegsRef = pos[1];
-        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
         
         double[] posRef = new double[] { latDegsRef, lonDegsRef, depthRef };
         return posRef;
