@@ -24,6 +24,9 @@ calibrate_compass=true
 #Time, in minutes, to spend calibrating the compass
 compass_calib_mins=15
 
-#GSM Number where to send reports. Leave empty to use emergency number.
+#GSM Number where to send reports. Leave empty to use the emergency number.
 gsm_number=
+
+#Send status over SMS
+sms_updates=false
 
