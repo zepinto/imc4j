@@ -58,20 +58,6 @@ status()
 
 stop()
 {
-    echo "Stopping $Name"
-    ps | grep $JARNAME | grep java | grep $(cat $PIDFILE 2>/dev/null) >/dev/null 2>&1
-    status=$?
-    if [ $status -eq 0 ]; then
-        NPID=$(cat $PIDFILE) && kill -15 $NPID
-        echo "Stopping $Name end"
-    else
-        echo "$NAME is not running for PID "$(cat $PIDFILE 2>/dev/null)"."
-    fi
-    rm -f $PIDFILE
-}
-
-stop_all()
-{
     PIDS=$(ps | grep $JARNAME | grep java | awk '{print $1}' c={1:-1});
     if [ -z "$PIDS" ]; then
         echo "$NAME is not running"
@@ -104,6 +90,12 @@ stop_all()
 }
 
 cd "$RUN_HOME"
+
+case "$0" in
+    *services*)
+        return
+        ;;
+esac;
 
 case $1 in
     tail)
