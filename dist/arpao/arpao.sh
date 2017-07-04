@@ -108,10 +108,10 @@ case $1 in
         status
         ;;
     stop)
-        stop_all
+        stop
         ;;
     restart)
-        stop_all
+        stop
         echo "Waiting 5s before running start..."
         sleep 5
         start
