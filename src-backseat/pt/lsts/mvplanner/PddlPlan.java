@@ -3,6 +3,7 @@ package pt.lsts.mvplanner;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
@@ -20,13 +21,14 @@ public class PddlPlan {
 	public static PddlPlan parse(TemporalPlan plan) {
 		PddlPlan result = new PddlPlan();
 		for (VehicleDepot depot : plan.depots) {
-			PddlLocation loc = new PddlLocation(VehicleParams.vehicleNickname(depot.vehicle)+"_depot", Math.toDegrees(depot.lat),
-					Math.toDegrees(depot.lon));
+			PddlLocation loc = new PddlLocation(VehicleParams.vehicleNickname(depot.vehicle) + "_depot",
+					Math.toDegrees(depot.lat), Math.toDegrees(depot.lon));
 			result.depots.put(depot.vehicle, loc);
 			result.deadlines.put(depot.vehicle, new Date((long) (depot.deadline * 1000)));
 		}
-		for (TemporalAction action : plan.actions)
+		for (TemporalAction action : plan.actions) {
 			result.actions.add(createAction(action));
+		}
 
 		Collections.sort(result.actions);
 		return result;
@@ -104,44 +106,47 @@ public class PddlPlan {
 
 		return ret;
 	}
-	
+
 	public ArrayList<PddlLocation> locations(int vehicle_id) {
 		ArrayList<PddlLocation> ret = new ArrayList<>();
 		ret.add(depots.get(vehicle_id));
-		for (IPddlAction action : actions(vehicle_id)) {
-			if (action instanceof SurveyAction) {
-				ret.add(((SurveyAction)action).getStartLocation());
-				ret.add(((SurveyAction)action).getEndLocation());				
-			}
-			if (action instanceof SampleAction) {
-				PddlLocation loc = ((SurveyAction)action).getAssociatedLocation(); 
-				loc.name = action.getAssociatedTask()+"_oi";
-				ret.add(loc);
-			}			
+		for (IPddlAction action : surveyActions(vehicle_id)) {
+			ret.add(action.getStartLocation());
+			ret.add(action.getEndLocation());
 		}
-		
-		return ret;		
+		for (IPddlAction action : sampleActions(vehicle_id)) {
+			PddlLocation loc = action.getAssociatedLocation();
+			loc.name = action.getAssociatedTask() + "_oi";
+			ret.add(loc);
+		}
+
+		return ret;
 	}
-	
+
 	public ArrayList<SurveyAction> surveyActions(int vehicle_id) {
 		ArrayList<SurveyAction> actions = new ArrayList<>();
+		HashSet<String> actionNames = new HashSet<>();
 		for (IPddlAction action : actions(vehicle_id)) {
-			if (action instanceof SurveyAction)
-				actions.add((SurveyAction)action);
+			if (action instanceof SurveyAction && !actionNames.contains(action.getAssociatedTask())) {
+				actions.add((SurveyAction) action);
+				actionNames.add(action.getAssociatedTask());
+			}
 		}
-		
+
 		return actions;
 	}
-	
+
 	public ArrayList<SampleAction> sampleActions(int vehicle_id) {
 		ArrayList<SampleAction> actions = new ArrayList<>();
+		HashSet<String> actionNames = new HashSet<>();
 		for (IPddlAction action : actions(vehicle_id)) {
-			if (action instanceof SampleAction)
-				actions.add((SampleAction)action);
+			if (action instanceof SampleAction && !actionNames.contains(action.getAssociatedTask())) {
+				actions.add((SampleAction) action);
+				actionNames.add(action.getAssociatedTask());
+			}
 		}
-		
+
 		return actions;
 	}
-	
 
 }
