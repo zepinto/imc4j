@@ -82,7 +82,7 @@ public class VehicleParams {
 	static {
 		for (int id : vehicleNames.keySet()) {
 			String name = vehicleNames.get(id);
-			vehicleNames.put(id, name.replaceFirst("lauv-", "").replaceAll("-", ""));
+			vehicleNicknames.put(id, name.replaceFirst("lauv-", "").replaceAll("-", ""));
 		}
 	}
 
@@ -145,5 +145,11 @@ public class VehicleParams {
 
 	public static String vehicleNickname(int vehicle) {
 		return vehicleNicknames.get(vehicle);
+	}
+	
+	public static void main(String[] args) {
+		for (int id : vehicleNicknames.keySet()) {
+			System.out.println(id+" : "+vehicleNickname(id));
+		}
 	}
 }

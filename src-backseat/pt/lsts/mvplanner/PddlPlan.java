@@ -20,7 +20,7 @@ public class PddlPlan {
 	public static PddlPlan parse(TemporalPlan plan) {
 		PddlPlan result = new PddlPlan();
 		for (VehicleDepot depot : plan.depots) {
-			PddlLocation loc = new PddlLocation("depot_" + depot.vehicle, Math.toDegrees(depot.lat),
+			PddlLocation loc = new PddlLocation(VehicleParams.vehicleNickname(depot.vehicle)+"_depot", Math.toDegrees(depot.lat),
 					Math.toDegrees(depot.lon));
 			result.depots.put(depot.vehicle, loc);
 			result.deadlines.put(depot.vehicle, new Date((long) (depot.deadline * 1000)));

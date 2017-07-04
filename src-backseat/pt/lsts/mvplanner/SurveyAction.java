@@ -17,6 +17,7 @@ public class SurveyAction extends AbstractPddlAction {
 		setStartTime(startTime);
 		setEndTime(endTime);
 		setAssociatedLocation(location);
+		System.out.println(behavior);
 		locs.addAll(PlanUtilities.computeLocations(behavior));
 		this.behavior = spec;		
 	}	
