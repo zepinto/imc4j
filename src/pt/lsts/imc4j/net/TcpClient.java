@@ -195,7 +195,7 @@ public class TcpClient extends Thread {
 		if (socket == null)
 			return;
 		
-		synchronized (socket) {
+		synchronized (lock) {
 			if (connected)
 				try {
 					socket.close();
