@@ -55,7 +55,6 @@ public class PddlPlan {
 	public static IPddlAction createAction(TemporalAction action) {
 		PddlLocation loc = null;
 		Date start = null, end = null;
-
 		try {
 			double[] pos = PlanUtilities.computeLocations(action.action).iterator().next();
 			loc = new PddlLocation(action.action_id + "_loc", pos[0], pos[1]);
@@ -140,6 +139,7 @@ public class PddlPlan {
 		ArrayList<SampleAction> actions = new ArrayList<>();
 		HashSet<String> actionNames = new HashSet<>();
 		for (IPddlAction action : actions(vehicle_id)) {
+			System.out.println(action.getClass());
 			if (action instanceof SampleAction && !actionNames.contains(action.getAssociatedTask())) {
 				actions.add((SampleAction) action);
 				actionNames.add(action.getAssociatedTask());
