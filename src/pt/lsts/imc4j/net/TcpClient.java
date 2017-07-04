@@ -34,6 +34,7 @@ public class TcpClient extends Thread {
 	
 	private String host = "";
 	private int port = 0;
+	private int timeoutMillis = 5000;
 
 	public void connect(String host, int port) throws Exception {
         synchronized (lock) {
@@ -53,6 +54,7 @@ public class TcpClient extends Thread {
         synchronized (lock) {
             connected = true;
             socket = new Socket(host, port);
+            socket.setSoTimeout(timeoutMillis);
             this.input = socket.getInputStream();
             this.output = socket.getOutputStream();
         }
@@ -78,6 +80,8 @@ public class TcpClient extends Thread {
 			            try {
 			                socket.close();
 			                socket = null;
+			                input = null;
+			                output = null;
 			            }
 			            catch (Exception ex) {
 			                ex.printStackTrace();
@@ -97,8 +101,10 @@ public class TcpClient extends Thread {
 			    if (connected && socket == null) {
 			        try {
 			            Thread.sleep(5000);
-			            if (connected && socket == null)
+			            if (connected && socket == null) {
+			                print("Should be connected, retrying to connect.");
 			                reConnect(host, port);
+			            }
                     }
                     catch (Exception e) {
                         e.printStackTrace();
@@ -115,11 +121,17 @@ public class TcpClient extends Thread {
 		
 		synchronized (lock) {
 			try {
-				if (connected && socket != null && socket.isConnected())
+				if (connected && socket != null && socket.isConnected()) {
 				    output.write(m.serialize());
+				}
 			}
 			catch (Exception e) {
 				e.printStackTrace();
+				
+				// To force reconnect
+				System.out.println("Force a reconnect due to error! " + e.getMessage()); // don't use print(..)!
+				socket.close();
+				socket = null;
 			}
 		}
 	}
@@ -187,9 +199,10 @@ public class TcpClient extends Thread {
 			if (connected)
 				try {
 					socket.close();
-				} catch (IOException e) {
-					e.printStackTrace();
 				}
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
 			consumers.clear();
 			input = null;
 			output = null;
