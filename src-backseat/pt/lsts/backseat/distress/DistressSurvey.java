@@ -9,6 +9,9 @@ import java.lang.reflect.Field;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Locale;
@@ -48,6 +51,13 @@ public class DistressSurvey extends TimedFSM {
         SECOND,
         THIRD,
         FORTH
+    }
+
+    private enum ApproachCornerEnum {
+        FRONT_LEFT,
+        FRONT_RIGHT,
+        BACK_RIGHT,
+        BACK_LEFT
     }
 
     @Parameter(description = "DUNE Host Address")
@@ -142,6 +152,7 @@ public class DistressSurvey extends TimedFSM {
 
     private GoSurfaceTaskEnum goSurfaceTask = GoSurfaceTaskEnum.START_OP;
     private long atSurfaceMillis = -1;
+    private ApproachCornerEnum approachCorner = ApproachCornerEnum.FRONT_LEFT;
     private SurveyPathEnum surfacePointIdx = SurveyPathEnum.FIRST;
 
     // Target test vars
@@ -277,6 +288,7 @@ public class DistressSurvey extends TimedFSM {
         setCourseSpeed();
     }
 
+    @SuppressWarnings("unused")
     private void setSurfaceLoiterRef() {
         setSurfaceLoiterRef(Double.NaN, Double.NaN);
     }
@@ -311,6 +323,45 @@ public class DistressSurvey extends TimedFSM {
         reportSentMillis = curTimeMillis;
     }
     
+    private ApproachCornerEnum calcApproachCorner(double latDegs, double lonDegs, double depth, double headingDegs, double speedKnots,
+            long timestamp) {
+        double[] vehPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+        ApproachCornerEnum approachCorner = ApproachCornerEnum.FRONT_LEFT;
+        double angRads = Math.toRadians(headingDegs);
+        double offsetX = Math.cos(angRads) * targetLenght / 2.;
+        double offsetY = Math.sin(angRads) * targetLenght / 2.;
+        double[] frontCenterPoint = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
+        offsetX = Math.cos(angRads) * -targetLenght / 2.;
+        offsetY = Math.sin(angRads) * -targetLenght / 2.;
+        double[] backCenterPoint = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
+        
+        double distToFront = WGS84Utilities.distance(vehPos[0], vehPos[1], frontCenterPoint[0], frontCenterPoint[1]);
+        double distToBack = WGS84Utilities.distance(vehPos[0], vehPos[1], backCenterPoint[0], backCenterPoint[1]);
+        double angleDeltaRads = 0;
+        
+        if (distToFront <= distToBack) {
+            approachCorner = ApproachCornerEnum.FRONT_LEFT;
+            angleDeltaRads = AngleUtils.calcAngle(frontCenterPoint[1], frontCenterPoint[0], vehPos[1], vehPos[0]);
+            angleDeltaRads -= angRads;
+            angleDeltaRads = AngleUtils.nomalizeAngleRadsPi(angleDeltaRads);
+            if (angleDeltaRads > 0)
+                approachCorner = ApproachCornerEnum.FRONT_RIGHT;
+        }
+        else {
+            approachCorner = ApproachCornerEnum.BACK_RIGHT;
+            angleDeltaRads = AngleUtils.calcAngle(backCenterPoint[1], backCenterPoint[0], vehPos[1], vehPos[0]);
+            angleDeltaRads -= angRads;
+            angleDeltaRads = AngleUtils.nomalizeAngleRadsPi(angleDeltaRads);
+            if (AngleUtils.nomalizeAngleRadsPi(angleDeltaRads - Math.PI) > 0)
+                approachCorner = ApproachCornerEnum.BACK_LEFT;
+        }
+        
+        print(String.format("Approach front %.2f  back %.2f  angle %.1f  approach %s",
+                distToFront, distToBack, Math.toDegrees(angleDeltaRads), approachCorner.toString()));
+        
+        return approachCorner;
+    }
+    
     private double[] calcApproachPoint(double latDegs, double lonDegs, double depth, double headingDegs, double speedKnots,
             long timestamp) {
         surfacePointIdx = SurveyPathEnum.FIRST;
@@ -325,30 +376,73 @@ public class DistressSurvey extends TimedFSM {
 
         double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
 
-        switch (surfacePointIdx) {
-            case FIRST:
+        ArrayList<Double> olPointsList = new ArrayList<>();
+        ArrayList<Double> owPointsList = new ArrayList<>();
+        // FrontLeft
+        olPointsList.add(targetLenght); // + approachLenghtOffset;
+        owPointsList.add(-(targetWidth + surveyDeltaAltitudeFromTarget * 10));
+        // BackLeft
+        olPointsList.add(-targetLenght);
+        owPointsList.add(-(targetWidth + surveyDeltaAltitudeFromTarget * 10));
+        // BackRight
+        olPointsList.add(-targetLenght);
+        owPointsList.add(targetWidth + surveyDeltaAltitudeFromTarget * 10);
+        // FrontRight
+        olPointsList.add(targetLenght); // + approachLenghtOffset;
+        owPointsList.add(targetWidth + surveyDeltaAltitudeFromTarget * 10);
+        
+        double approachLenghtOffsetFixed = approachLenghtOffset;
+        
+        switch (approachCorner) {
+            case FRONT_LEFT: // 1,2,3,4
             default:
-                ol = targetLenght + approachLenghtOffset;
-                ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10);
-                depthRef = workingDepth;
                 break;
-            case SECOND:
-                ol = -targetLenght;
-                ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10);
+            case BACK_LEFT: // 2,1,4,3
+                Collections.reverse(olPointsList);
+                Collections.reverse(owPointsList);
+                Collections.rotate(olPointsList, 2);
+                Collections.rotate(owPointsList, 2);
+                approachLenghtOffsetFixed *= -1;
                 break;
-            case THIRD:
-                ol = -targetLenght;
-                ow = targetWidth + surveyDeltaAltitudeFromTarget * 10;
+            case BACK_RIGHT: // 3,4,1,2
+                Collections.rotate(olPointsList, 2);
+                Collections.rotate(owPointsList, 2);
+                approachLenghtOffsetFixed *= -1;
                 break;
-            case FORTH:
-                ol = targetLenght + approachLenghtOffset;
-                ow = targetWidth + surveyDeltaAltitudeFromTarget * 10;
+            case FRONT_RIGHT: // 4,3,2,1
+                Collections.reverse(olPointsList);
+                Collections.reverse(owPointsList);
                 break;
         }
         
-        double offsetX = Math.cos(angRads) * ol + Math.sin(angRads) * ow;
+        switch (surfacePointIdx) {
+            case FIRST:
+            default:
+                ol = olPointsList.get(0) + approachLenghtOffsetFixed;
+                ow = owPointsList.get(0);
+                depthRef = workingDepth;
+                break;
+            case SECOND:
+                ol = olPointsList.get(1);
+                ow = owPointsList.get(1);
+                break;
+            case THIRD:
+                ol = olPointsList.get(2);
+                ow = owPointsList.get(2);
+                break;
+            case FORTH:
+                ol = olPointsList.get(3) + approachLenghtOffsetFixed;
+                ow = owPointsList.get(3);
+                break;
+        }
+        
+        double offsetX = Math.cos(angRads) * ol - Math.sin(angRads) * ow;
         double offsetY = Math.sin(angRads) * ol + Math.cos(angRads) * ow;
         double[] pos = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
+
+        print(String.format("Delta %s %s   l %.2f  w %.2f  offn %.2f  offe %.2f ::  %s  %s", approachCorner,
+                surfacePointIdx, ol, ow, offsetX, offsetY, Arrays.toString(olPointsList.toArray()),
+                Arrays.toString(owPointsList.toArray())));
 
         double latDegsRef = pos[0];
         double lonDegsRef = pos[1];
@@ -414,7 +508,10 @@ public class DistressSurvey extends TimedFSM {
     public FSMState approachSurveyPointState(FollowRefState ref) {
         printFSMStateName("approachSurveyPointState");
         DistressPosition dp = AisCsvParser.distressPosition;
+
+        approachCorner = calcApproachCorner(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
         double[] posRef = calcApproachPoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
+        
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setCourseSpeed();
         
