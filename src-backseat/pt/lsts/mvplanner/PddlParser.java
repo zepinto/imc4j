@@ -1,19 +1,24 @@
 package pt.lsts.mvplanner;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
-import java.text.ParseException;
+import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.msg.PlanManeuver;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.SetEntityParameters;
 import pt.lsts.imc4j.msg.TemporalPlan;
+import pt.lsts.imc4j.msg.VehicleDepot;
 import pt.lsts.imc4j.util.FormatConversion;
 
 public class PddlParser {
@@ -61,11 +66,16 @@ public class PddlParser {
 		if (plan.sampleActions(vehicle).isEmpty())
 			sb.append("dummy_obj ");
 
-		sb.append(" - oi\n  ");
+		sb.append("- oi\n  ");
 
 		// Task names
 		for (IPddlAction action : allActions) {
-			sb.append(action.getAssociatedTask() + " ");
+			
+			for (PayloadRequirement payload : payloads(action)) {
+				sb.append(action.getAssociatedTask() + "_"+payload.name() + " ");	
+			}
+			
+			
 		}
 		sb.append("- task\n");
 
@@ -74,7 +84,7 @@ public class PddlParser {
 		// distance between all locations
 		sb.append(distances(locations));
 
-		sb.append("\n  (= (tasks-completed) 0)\n\n");
+		sb.append("  (= (tasks-completed) 0)\n");
 
 		sb.append("  (= (base-returns) 0) ; \"cost\" of returning to the depots\n\n");
 
@@ -107,6 +117,7 @@ public class PddlParser {
 				PddlLocation loc1 = locations.get(i);
 				PddlLocation loc2 = locations.get(j);
 				double dist = Math.max(0.01, loc1.distanceTo(loc2));
+				dist /= CommonSettings.SPEED;
 				sb.append("  (=(distance " + loc1.name + " " + loc2.name + ") " + String.format(Locale.US, "%.2f", dist)
 						+ ")\n");
 			}
@@ -118,24 +129,27 @@ public class PddlParser {
 	protected static String vehicleDetails(int v, PddlPlan plan) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n;" + VehicleParams.vehicleNickname(v) + ":\n");
-		double moveConsumption = VehicleParams.moveConsumption(v) * 1000 / 3600.0;
+		//double moveConsumption = VehicleParams.moveConsumption(v) * 1000 / 3600.0;
 		sb.append("  (= (speed " + VehicleParams.vehicleNickname(v) + ") " + CommonSettings.SPEED + ")\n");
-		sb.append("  (= (battery-consumption-move " + VehicleParams.vehicleNickname(v) + ") "
-				+ String.format(Locale.US, "%.2f", moveConsumption) + ")\n");
-		sb.append("  (= (battery-level " + VehicleParams.vehicleNickname(v) + ") " + VehicleParams.maxBattery(v) * 1000
-				+ ")\n");
+		//sb.append("  (= (battery-consumption-move " + VehicleParams.vehicleNickname(v) + ") "
+		//		+ String.format(Locale.US, "%.2f", moveConsumption) + ")\n");
+		//sb.append("  (= (battery-level " + VehicleParams.vehicleNickname(v) + ") " + VehicleParams.maxBattery(v) * 1000
+		//		+ ")\n");
 		sb.append(
 				"  (base " + VehicleParams.vehicleNickname(v) + " " + VehicleParams.vehicleNickname(v) + "_depot)\n\n");
 		sb.append("  (at " + VehicleParams.vehicleNickname(v) + " " + VehicleParams.vehicleNickname(v) + "_depot"
 				+ ")\n");
 		for (PayloadRequirement req : VehicleParams.payloadsFor(v)) {
-			double consumption = req.getConsumptionPerHour() / 3600.0 * 1000;
-			sb.append("  (= (battery-consumption-payload " + req.name() + ") "
-					+ String.format(Locale.US, "%.2f", consumption) + ")\n");
-			sb.append("  (having " + req.name() + " " + VehicleParams.vehicleNickname(v) + ")\n");
+			//double consumption = req.getConsumptionPerHour() / 3600.0 * 1000;
+			//sb.append("  (= (battery-consumption-payload " + req.name() + ") "
+			//		+ String.format(Locale.US, "%.2f", consumption) + ")\n");
+			sb.append("  (having " + VehicleParams.vehicleNickname(v) + "_" + req.name() + " "
+					+ VehicleParams.vehicleNickname(v) + ")\n");
 		}
 
-		int timeLeft = (int) ((System.currentTimeMillis() - plan.deadlines.get(v).getTime()) / 1000);
+		double secsLeft = (plan.deadlines.get(v).getTime() - System.currentTimeMillis())/1000.0;
+		
+		int timeLeft = (int) secsLeft; 
 		sb.append("  (= (time-elapsed " + VehicleParams.vehicleNickname(v)
 				+ ") 0) ; how long the vehicle is \"operating\"\n");
 		sb.append("  (= (goal-time " + VehicleParams.vehicleNickname(v) + ") " + timeLeft
@@ -212,19 +226,23 @@ public class PddlParser {
 	private static String goals(int vehicle, PddlPlan plan) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("(:goal (and\n");
-		for (SampleAction t : plan.sampleActions(vehicle)) {
+		String nick = VehicleParams.vehicleNickname(vehicle);
+		
+		/*for (SampleAction t : plan.sampleActions(vehicle)) {
 			for (PayloadRequirement r : payloads(t)) {
 				sb.append("  (communicated_data " + t.getAssociatedTask() + "_" + r.name() + ")\n");
 			}
 		}
 
 		for (SurveyAction t : plan.surveyActions(vehicle)) {
-			System.out.println(payloads(t));
 			for (PayloadRequirement r : payloads(t)) {
 				sb.append("  (communicated_data " + t.getAssociatedTask() + "_" + r.name() + ")\n");
 			}
 		}
-
+		 */
+		
+		sb.append("  (at "+nick+" "+nick+"_depot)\n");
+		sb.append("  (>= (tasks-completed) 1)\n");
 		sb.append("))\n");
 		sb.append("(:metric maximize (tasks-completed)))\n");
 		return sb.toString();
@@ -278,33 +296,96 @@ public class PddlParser {
 		return new IPddlAction[] { action };
 	}
 
-	public static PddlPlan replan(PddlPlan plan, int vehicle, String solution) throws Exception {
+	public static PddlPlan parseSolution(PddlPlan previousPlan, int vehicle, String solution) throws Exception {
 		ArrayList<IPddlAction> newActions = new ArrayList<>();
 
 		for (String line : solution.split("\n")) {
 			if (line.trim().isEmpty() || line.trim().startsWith(";"))
 				continue;
-			IPddlAction[] act = createAction(plan, vehicle, line.toLowerCase());
+			IPddlAction[] act = createAction(previousPlan, vehicle, line.toLowerCase());
 			if (act != null) {
 				for (IPddlAction a : act)
 					newActions.add(a);
 			}
 		}
 		PddlPlan newPlan = new PddlPlan();
-		newPlan.deadlines.putAll(plan.deadlines);
-		newPlan.depots.putAll(plan.depots);
+		newPlan.deadlines.putAll(previousPlan.deadlines);
+		newPlan.depots.putAll(previousPlan.depots);
 		newPlan.actions.addAll(newActions);
 
 		return newPlan;
 	}
+	
+	 public static String replan(PddlPlan plan, int vehicle, int secs) throws Exception {
+	        String cmd = "lpg -o DOMAIN -f INITIAL_STATE -out OUTFILE -n 10 -cputime "+secs;
+	        
+	        SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd-HHmmss");
+	        fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+	        String timestamp = fmt.format(new Date());
+	        File input_file = new File("log/pddl/" + timestamp + "_problem.pddl");
+	        File output_file = new File("log/pddl/" + timestamp + ".SOL");
+	        File domain_file = new File("log/pddl/" + timestamp + "_domain.pddl");
+	        
+	        System.out.println("Writing domain model to "+domain_file.getPath());
+	        
+	        domain_file.getParentFile().mkdirs();
+	        Files.copy(PddlParser.class.getClassLoader().getResourceAsStream("pt/lsts/mvplanner/domain.pddl"), domain_file.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-	public static void main(String[] args) throws ParseException, IOException {
+	        System.out.println("Writing initial state to "+input_file.getPath());
+	        String initial_state = initialState(plan, vehicle);
+	        Files.write(input_file.toPath(), initial_state.getBytes());
+	        System.out.println(initial_state);
+	        
+	        cmd = cmd.replaceAll("DOMAIN", domain_file.getAbsolutePath());
+	        cmd = cmd.replaceAll("INITIAL_STATE", input_file.getAbsolutePath());
+	        cmd = cmd.replaceAll("OUTFILE", output_file.getAbsolutePath());
 
+	        cmd = cmd.replaceAll("/", System.getProperty("file.separator"));
+	        System.out.println("Executing "+cmd+"...");
+	        Process p = Runtime.getRuntime().exec(cmd, null, new File("log/pddl"));
+	        
+	        Thread monitor = new Thread() {
+	            public void run() {
+	                try {
+	                    if (!p.waitFor(secs+1, TimeUnit.SECONDS)) {
+	                        System.out.println("Killing LPG process.");
+	                        p.destroyForcibly();
+	                    }
+	                }
+	                catch (Exception e) {
+	                    e.printStackTrace();
+	                }
+	            };
+	        };
+	        monitor.setDaemon(true);
+	        monitor.start();
+	        
+	        BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+	        String line = reader.readLine();
+	        
+	        while (line != null) {
+	            System.out.println(line);
+	            line = reader.readLine();
+	        }
+	        if (output_file.canRead()) {
+	            return new String(Files.readAllBytes(output_file.toPath()));
+	        }
+	        else {
+	        	System.out.println("No solution was produced.");
+	        	return null;
+	        }
+	        
+	    }
+
+	public static void main(String[] args) throws Exception {
 		String json = new String(Files.readAllBytes(new File("res/temporalplan.json").toPath()));
-		//System.out.println(json);
 		TemporalPlan plan = (TemporalPlan) FormatConversion.fromJson(json);
+		for (VehicleDepot depot : plan.depots)
+			depot.deadline = new Date().getTime() / 1000.0 + 1130;
 		PddlPlan pplan = PddlPlan.parse(plan);
-		System.out.println(PddlParser.initialState(pplan, 26));
+		
+//		System.out.println(PddlParser.initialState(pplan, 26));
+		PddlParser.replan(pplan, 27, 10);
+		
 	}
-
 }

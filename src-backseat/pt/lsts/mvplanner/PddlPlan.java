@@ -139,7 +139,6 @@ public class PddlPlan {
 		ArrayList<SampleAction> actions = new ArrayList<>();
 		HashSet<String> actionNames = new HashSet<>();
 		for (IPddlAction action : actions(vehicle_id)) {
-			System.out.println(action.getClass());
 			if (action instanceof SampleAction && !actionNames.contains(action.getAssociatedTask())) {
 				actions.add((SampleAction) action);
 				actionNames.add(action.getAssociatedTask());
