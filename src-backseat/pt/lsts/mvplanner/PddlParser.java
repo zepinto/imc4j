@@ -130,6 +130,8 @@ public class PddlParser {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n;" + VehicleParams.vehicleNickname(v) + ":\n");
 		//double moveConsumption = VehicleParams.moveConsumption(v) * 1000 / 3600.0;
+		
+		sb.append("  (can-move " + VehicleParams.vehicleNickname(v) + ")\n");
 		sb.append("  (= (speed " + VehicleParams.vehicleNickname(v) + ") " + CommonSettings.SPEED + ")\n");
 		//sb.append("  (= (battery-consumption-move " + VehicleParams.vehicleNickname(v) + ") "
 		//		+ String.format(Locale.US, "%.2f", moveConsumption) + ")\n");
@@ -381,7 +383,7 @@ public class PddlParser {
 		String json = new String(Files.readAllBytes(new File("res/temporalplan.json").toPath()));
 		TemporalPlan plan = (TemporalPlan) FormatConversion.fromJson(json);
 		for (VehicleDepot depot : plan.depots)
-			depot.deadline = new Date().getTime() / 1000.0 + 1130;
+			depot.deadline = new Date().getTime() / 1000.0 + 1830;
 		PddlPlan pplan = PddlPlan.parse(plan);
 		
 //		System.out.println(PddlParser.initialState(pplan, 26));
