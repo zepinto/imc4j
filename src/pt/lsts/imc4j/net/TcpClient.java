@@ -73,6 +73,20 @@ public class TcpClient extends Thread {
 		}
 	}
 
+	public void sendOut(Message m) throws IOException {
+		m.dst = 65535;
+		m.src = remoteSrc;
+		m.timestamp = System.currentTimeMillis()/1000.0;
+		synchronized (socket) {
+			try {
+				output.write(m.serialize());
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	public void send(Message m) throws IOException {
 		m.dst = remoteSrc;
 		m.src = localSrc;

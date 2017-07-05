@@ -193,7 +193,7 @@ public class MvPlannerExecutive extends MissionExecutive {
             }
 
             try {
-                send(status);
+            	sendOut(status);
             } catch (IOException e) {
                 print("Failed to communicate...");
             }

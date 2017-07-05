@@ -129,30 +129,17 @@ public class PddlParser {
 	protected static String vehicleDetails(int v, PddlPlan plan) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n;" + VehicleParams.vehicleNickname(v) + ":\n");
-		// double moveConsumption = VehicleParams.moveConsumption(v) * 1000 / 3600.0;
-
 		sb.append("  (can-move " + VehicleParams.vehicleNickname(v) + ")\n");
 		sb.append("  (= (speed " + VehicleParams.vehicleNickname(v) + ") " + CommonSettings.SPEED + ")\n");
-		// sb.append(" (= (battery-consumption-move " + VehicleParams.vehicleNickname(v)
-		// + ") "
-		// + String.format(Locale.US, "%.2f", moveConsumption) + ")\n");
-		// sb.append(" (= (battery-level " + VehicleParams.vehicleNickname(v) + ") " +
-		// VehicleParams.maxBattery(v) * 1000
-		// + ")\n");
 		sb.append(
 				"  (base " + VehicleParams.vehicleNickname(v) + " " + VehicleParams.vehicleNickname(v) + "_depot)\n\n");
 		sb.append("  (at " + VehicleParams.vehicleNickname(v) + " " + VehicleParams.vehicleNickname(v) + "_depot"
 				+ ")\n");
-		for (PayloadRequirement req : VehicleParams.payloadsFor(v)) {
-			// double consumption = req.getConsumptionPerHour() / 3600.0 * 1000;
-			// sb.append(" (= (battery-consumption-payload " + req.name() + ") "
-			// + String.format(Locale.US, "%.2f", consumption) + ")\n");
+		for (PayloadRequirement req : VehicleParams.payloadsFor(v))
 			sb.append("  (having " + VehicleParams.vehicleNickname(v) + "_" + req.name() + " "
 					+ VehicleParams.vehicleNickname(v) + ")\n");
-		}
-
+		
 		double secsLeft = (plan.deadlines.get(v).getTime() - System.currentTimeMillis()) / 1000.0;
-
 		int timeLeft = (int) secsLeft;
 		sb.append("  (= (time-elapsed " + VehicleParams.vehicleNickname(v)
 				+ ") 0) ; how long the vehicle is \"operating\"\n");
