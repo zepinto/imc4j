@@ -16,4 +16,9 @@ public class PddlLocation {
 	public double distanceTo(PddlLocation loc) {
 		return WGS84Utilities.distance(latDegs, lonDegs, loc.latDegs, loc.lonDegs);
 	}
+	
+	@Override
+	public String toString() {
+		return name+"("+latDegs+", "+lonDegs+")";
+	}
 }
