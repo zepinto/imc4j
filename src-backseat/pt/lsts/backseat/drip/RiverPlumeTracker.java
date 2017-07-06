@@ -249,7 +249,7 @@ public class RiverPlumeTracker extends TimedFSM {
 			
 			Sms sms = new Sms();
 			sms.timeout = 20;
-			sms.contents = String.format("DRIP: %s, salinity: %.1f", going_in ? "Going in, " : "Going out", salinity());
+			sms.contents = String.format("DRIP: %s, salinity: %.1f, angle: %.0f", going_in ? "Going in, " : "Going out", salinity(), angle);
 			sms.number = sms_recipient;
 			try {
 				print("Sending DRIP state to "+sms_recipient+" ("+sms.contents+")");
