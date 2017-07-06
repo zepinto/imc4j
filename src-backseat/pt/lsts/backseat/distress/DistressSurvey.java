@@ -237,7 +237,12 @@ public class DistressSurvey extends TimedFSM {
         if (es == null)
             return;
 
-        int mmsid = es.src;
+        String mmsid = "" + es.src;
+        Announce announceMsg = get(Announce.class);
+        if (announceMsg != null) {
+            mmsid = announceMsg.sys_name;
+        }
+        
         String type = "AUV";
         double[] pos = WGS84Utilities.WGS84displace(Math.toDegrees(es.lat), Math.toDegrees(es.lon), es.depth, es.x, es.y, 0);
         double latDeg = pos[0];
@@ -256,10 +261,10 @@ public class DistressSurvey extends TimedFSM {
             System.out.println("Sent AIS txt pos. message: " + aisTxt);
     }
 
-    private String getAisPositionString(int mmsid, String type, double latDeg, double lonDeg, double depth, double speedKt,
+    private String getAisPositionString(String mmsid, String type, double latDeg, double lonDeg, double depth, double speedKt,
             double headingDeg, double courseDeg, double rateOfTurn, String navStatus, double timeStampSecs) {
         // "AIS,Node_Name=000000001,Node_Type=AUV,Latitude=43.603935,Longitude=9.0797591,Depth=0,Speed=22.8,Heading=0,Course=0,RateOfTurn=n.a.,Navigation_Status=n.a.,Timestamp=1498496471.09482,Number_Contacts=0";
-        String aisTxt = String.format(Locale.ENGLISH, "AIS,Node_Name=%d,Node_Type=%s,Latitude=%.8f,Longitude=%.8f,Depth=%s,Speed=%.1f,"
+        String aisTxt = String.format(Locale.ENGLISH, "AIS,Node_Name=%s,Node_Type=%s,Latitude=%.8f,Longitude=%.8f,Depth=%s,Speed=%.1f,"
                 + "Heading=%.0f,Course=%.0f,RateOfTurn=%.1f,Navigation_Status=%s,Timestamp=%f,Number_Contacts=0",
                 mmsid , type, latDeg, lonDeg, Double.isFinite(depth) ? String.format("%.1f", depth) : "n.a.", 
                 speedKt, headingDeg, courseDeg, rateOfTurn, navStatus, timeStampSecs);
@@ -618,7 +623,7 @@ public class DistressSurvey extends TimedFSM {
         
         // 263029000,NRP Arpao
         // 263125000,NRP Hidra
-        String aisPos = getAisPositionString(263029000, "Submarine", tmpTargetLat, tmpTargetLon, tmpTargetDepth, tmpTargetSpeedKt, tmpTargetHeading,
+        String aisPos = getAisPositionString("NRP Arpao", "Submarine", tmpTargetLat, tmpTargetLon, tmpTargetDepth, tmpTargetSpeedKt, tmpTargetHeading,
                 tmpTargetHeading, 0, "0", System.currentTimeMillis());
         byte[] buf = aisPos.getBytes();
         try {
