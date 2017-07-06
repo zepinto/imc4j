@@ -26,6 +26,7 @@ import pt.lsts.backseat.distress.net.UDPConnection;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.def.SpeedUnits;
+import pt.lsts.imc4j.msg.Announce;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.ReportControl;
@@ -61,64 +62,64 @@ public class DistressSurvey extends TimedFSM {
     }
 
     @Parameter(description = "DUNE Host Address")
-    String hostAddr = "127.0.0.1";
+    private String hostAddr = "127.0.0.1";
     @Parameter(description = "DUNE Host Port (TCP)")
-    int hostPort = 6003;
+    private int hostPort = 6003;
     @Parameter(description = "DUNE plan to execute right after termination")
-    String endPlanToUse = "rendezvous";
+    private String endPlanToUse = "rendezvous";
     
     @Parameter(description = "Minutes before termination")
-    int minutesTimeout = 60;
+    private int minutesTimeout = 60;
     
 //    @Parameter(description = "Maximum time underwater (minutes)")
 //    int minsUnderwater = 15;
 
     @Parameter(description = "AIS Txt Host Address")
-    String aisHostAddr = "127.0.0.1";
+    private String aisHostAddr = "127.0.0.1";
     @Parameter(description = "AIS Txt by TCP")
-    boolean aisByTCP = true;
+    private boolean aisByTCP = true;
     @Parameter(description = "AIS Txt Host Port (TCP)")
-    int aisHostPort = 13000;
+    private int aisHostPort = 13000;
     @Parameter(description = "AIS Txt by UDP")
-    boolean aisByUDP = false;
+    private boolean aisByUDP = false;
     @Parameter(description = "AIS Txt UDP Host Port (UDP)")
-    int aisUdpHostPort = 7879;
+    private int aisUdpHostPort = 7879;
 
     @Parameter(description = "Loiter Radius (m)")
-    int loiterRadius = 15;
+    private int loiterRadius = 15;
     @Parameter(description = "Max Depth (m)")
-    int maxDepth = 15;
+    private int maxDepth = 15;
     @Parameter(description = "Working Depth (m)")
-    int workingDepth = 5;
+    private int workingDepth = 5;
     @Parameter(description = "Speed to travel")
-    double speed = 1100;
+    private double speed = 1100;
     @Parameter(description = "Speed units to use (RPM, m/s)")
-    String speedUnits = "RPM";
+    private String speedUnits = "RPM";
 
     @Parameter(description = "Survey Delta Altitude from Target (m)")
-    double surveyDeltaAltitudeFromTarget = 5;
+    private double surveyDeltaAltitudeFromTarget = 5;
     @Parameter(description = "Approach Lenght Offset")
-    double approachLenghtOffset = 50;
+    private double approachLenghtOffset = 50;
     @Parameter(description = "Survey Side (true) or Around (false)")
     private boolean surveySideOrAround = false;
 
     @Parameter(description = "Target Width")
-    double targetWidth = 6.3;
+    private double targetWidth = 6.3;
     @Parameter(description = "Target Lenght")
-    double targetLenght = 65;
+    private double targetLenght = 65;
 
-    @Parameter(description = "Comm Period (seconds)")
-    long commPeriodSeconds = 5 * 60;
+//    @Parameter(description = "Comm Period (seconds)")
+//    long commPeriodSeconds = 5 * 60;
     
     @Parameter(description = "Delta Time for Distress Valid (milliseconds)")
-    long deltaTimeMillisDistressValid = 30000;
+    private long deltaTimeMillisDistressValid = 30000;
     @Parameter(description = "Delta End Time Millis at Surface (milliseconds)")
-    long deltaEndTimeMillisAtSurface = 20000;
+    private long deltaEndTimeMillisAtSurface = 20000;
     @Parameter(description = "Delta Dist to Adjust Approach (m)")
-    double deltaDistToAdjustApproach = 20;
+    private double deltaDistToAdjustApproach = 20;
     
     @Parameter(description = "Report Period (s) [0 for not sending periodic report]")
-    long reportPeriodSeconds = 60;    
+    private long reportPeriodSeconds = 60;    
     @Parameter(description = "Use Acoustic Report")
     private boolean useAcoustic = true;
     @Parameter(description = "Use GSM Report")
@@ -148,6 +149,7 @@ public class DistressSurvey extends TimedFSM {
     private long curTimeMillis = System.currentTimeMillis();
     private long reportSentMillis = -1;
     
+    @SuppressWarnings("unused")
     private FSMState stateToReturnTo = null;
 
     private GoSurfaceTaskEnum goSurfaceTask = GoSurfaceTaskEnum.START_OP;
@@ -525,6 +527,7 @@ public class DistressSurvey extends TimedFSM {
         double distToNewRef = WGS84Utilities.distance(Math.toDegrees(ref.reference.lat), Math.toDegrees(ref.reference.lon), newPosRef[0], newPosRef[1]);
         EstimatedState estState = get(EstimatedState.class);
         double[] curPos = WGS84Utilities.toLatLonDepth(estState);
+        @SuppressWarnings("unused")
         double distToRef = WGS84Utilities.distance(curPos[0], curPos[1], newPosRef[0], newPosRef[1]);
         
         if (distToNewRef > deltaDistToAdjustApproach) {
@@ -557,6 +560,7 @@ public class DistressSurvey extends TimedFSM {
         double distToNewRef = WGS84Utilities.distance(Math.toDegrees(ref.reference.lat), Math.toDegrees(ref.reference.lon), newPosRef[0], newPosRef[1]);
         EstimatedState estState = get(EstimatedState.class);
         double[] curPos = WGS84Utilities.toLatLonDepth(estState);
+        @SuppressWarnings("unused")
         double distToRef = WGS84Utilities.distance(curPos[0], curPos[1], newPosRef[0], newPosRef[1]);
 
         if (distToNewRef > deltaDistToAdjustApproach) {
