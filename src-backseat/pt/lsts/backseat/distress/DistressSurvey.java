@@ -44,7 +44,8 @@ public class DistressSurvey extends TimedFSM {
     
     private enum GoSurfaceTaskEnum {
         START_OP,
-        END_OP
+        END_OP,
+        PREEMPTIVE_OP
     }
 
     private enum SurveyPathEnum {
@@ -71,8 +72,12 @@ public class DistressSurvey extends TimedFSM {
     @Parameter(description = "Minutes before termination")
     private int minutesTimeout = 60;
     
-//    @Parameter(description = "Maximum time underwater (minutes)")
-//    int minsUnderwater = 15;
+    @Parameter(description = "Maximum time underwater (minutes)")
+    private int minsUnderwater = 15;
+    @Parameter(description = "Surface on Corners")
+    private boolean usePeriodicSurfaceForPos = false;
+    @Parameter(description = "Surface on Corners")
+    private boolean surfaceOnCorners = false;
 
     @Parameter(description = "AIS Txt Host Address")
     private String aisHostAddr = "127.0.0.1";
@@ -92,7 +97,7 @@ public class DistressSurvey extends TimedFSM {
     @Parameter(description = "Working Depth (m)")
     private int workingDepth = 5;
     @Parameter(description = "Speed to travel")
-    private double speed = 1100;
+    private double speed = 1400;
     @Parameter(description = "Speed units to use (RPM, m/s)")
     private String speedUnits = "RPM";
 
@@ -108,9 +113,6 @@ public class DistressSurvey extends TimedFSM {
     @Parameter(description = "Target Lenght")
     private double targetLenght = 65;
 
-//    @Parameter(description = "Comm Period (seconds)")
-//    long commPeriodSeconds = 5 * 60;
-    
     @Parameter(description = "Delta Time for Distress Valid (milliseconds)")
     private long deltaTimeMillisDistressValid = 30000;
     @Parameter(description = "Delta End Time Millis at Surface (milliseconds)")
@@ -149,7 +151,6 @@ public class DistressSurvey extends TimedFSM {
     private long curTimeMillis = System.currentTimeMillis();
     private long reportSentMillis = -1;
     
-    @SuppressWarnings("unused")
     private FSMState stateToReturnTo = null;
 
     private GoSurfaceTaskEnum goSurfaceTask = GoSurfaceTaskEnum.START_OP;
@@ -458,20 +459,34 @@ public class DistressSurvey extends TimedFSM {
         return posRef;
     }
 
+    private void markState(FSMState state) {
+        stateToReturnTo = state;
+    }
+
+    private boolean isGoSurfaceTime() {
+        return usePeriodicSurfaceForPos && curTimeMillis - atSurfaceMillis > minsUnderwater * 60 * 1E3;
+    }
+
     public FSMState waitState(FollowRefState ref) {
         printFSMStateName("waitState");
+        markState(this::waitState);
         return this::waitState;
     }
     
     public FSMState goSurfaceState(FollowRefState ref) {
         printFSMStateName("goSurfaceState");
+        // markState(this::goSurfaceState);
+        
         double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
         setSurfaceLoiterRef(loiterPos[0], loiterPos[1]);
         setCourseSpeed();
 
-        atSurfaceMillis = -1;
+        // if (isUnderwater())
+            atSurfaceMillis = -1;
 
         switch (goSurfaceTask) {
+            case PREEMPTIVE_OP:
+                break;
             case END_OP:
                 break;
             case START_OP:
@@ -484,6 +499,8 @@ public class DistressSurvey extends TimedFSM {
 
     public FSMState goSurfaceStayState(FollowRefState ref) {
         printFSMStateName("goSurfaceStayState");
+        // markState(this::goSurfaceState);
+
         if (isUnderwater()) {
             atSurfaceMillis = -1;
             return this::goSurfaceStayState;
@@ -496,6 +513,12 @@ public class DistressSurvey extends TimedFSM {
         }
         
         switch (goSurfaceTask) {
+            case PREEMPTIVE_OP:
+                if (hasGps()) {
+                    sendReportMsg();
+                    return stateToReturnTo;
+                }
+                break;
             case END_OP:
                 if (hasGps() || curTimeMillis - atSurfaceMillis > deltaEndTimeMillisAtSurface) {
                     sendReportMsg();
@@ -514,6 +537,13 @@ public class DistressSurvey extends TimedFSM {
 
     public FSMState approachSurveyPointState(FollowRefState ref) {
         printFSMStateName("approachSurveyPointState");
+        markState(this::approachSurveyPointState);
+        
+        if (isGoSurfaceTime()) {
+            goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
+            return this::goSurfaceState;
+        }
+
         DistressPosition dp = AisCsvParser.distressPosition;
 
         approachCorner = calcApproachCorner(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
@@ -527,6 +557,13 @@ public class DistressSurvey extends TimedFSM {
 
     public FSMState approachSurveyPointStayState(FollowRefState ref) {
         printFSMStateName("approachSurveyPointStayState");
+        markState(this::approachSurveyPointState);
+
+        if (isGoSurfaceTime()) {
+            goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
+            return this::goSurfaceState;
+        }
+
         DistressPosition dp = AisCsvParser.distressPosition;
         double[] newPosRef = calcApproachPoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
         double distToNewRef = WGS84Utilities.distance(Math.toDegrees(ref.reference.lat), Math.toDegrees(ref.reference.lon), newPosRef[0], newPosRef[1]);
@@ -548,8 +585,18 @@ public class DistressSurvey extends TimedFSM {
     }
 
     public FSMState firstSurveyPointState(FollowRefState ref) {
-        surfacePointIdx = SurveyPathEnum.values()[surfacePointIdx.ordinal() + 1];
         printFSMStateName("firstSurveyPointState");
+        markState(this::firstSurveyPointState);
+
+        if (surfaceOnCorners && (SurveyPathEnum.FIRST.compareTo(surfacePointIdx) == 0
+                || SurveyPathEnum.THIRD.compareTo(surfacePointIdx) == 0)) {
+            if (isGoSurfaceTime()) {
+                goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
+                return this::goSurfaceState;
+            }
+        }
+        
+        surfacePointIdx = SurveyPathEnum.values()[surfacePointIdx.ordinal() + 1];
         DistressPosition dp = AisCsvParser.distressPosition;
         double[] posRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
         setGoingRef(posRef[0], posRef[1], posRef[2]);
@@ -560,6 +607,8 @@ public class DistressSurvey extends TimedFSM {
 
     public FSMState firstSurveyPointStayState(FollowRefState ref) {
         printFSMStateName("firstSurveyPointStayState");
+        markState(this::firstSurveyPointState);
+
         DistressPosition dp = AisCsvParser.distressPosition;
         double[] newPosRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
         double distToNewRef = WGS84Utilities.distance(Math.toDegrees(ref.reference.lat), Math.toDegrees(ref.reference.lon), newPosRef[0], newPosRef[1]);

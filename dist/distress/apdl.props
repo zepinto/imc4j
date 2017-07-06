@@ -12,6 +12,15 @@ endPlanToUse=rendezvous
 #Minutes before termination
 minutesTimeout=60
 
+#Maximum time underwater (minutes)
+minsUnderwater=5
+
+#Surface on Corners
+usePeriodicSurfaceForPos=true
+
+#Surface on Corners
+surfaceOnCorners=true
+
 #AIS Txt Host Address
 aisHostAddr=10.0.2.90
 
@@ -56,9 +65,6 @@ targetWidth=6.3
 
 #Target Lenght
 targetLenght=65.0
-
-#Comm Period (seconds)
-commPeriodSeconds=300
 
 #Delta Time for Distress Valid (milliseconds)
 deltaTimeMillisDistressValid=30000
