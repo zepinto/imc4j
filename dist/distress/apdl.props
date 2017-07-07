@@ -1,7 +1,7 @@
 #Distress Survey Settings
 
 #DUNE Host Address
-hostAddr=10.0.2.90
+hostAddr=127.0.0.1
 
 #DUNE Host Port (TCP)
 hostPort=6003
@@ -13,13 +13,22 @@ endPlanToUse=rendezvous
 minutesTimeout=60
 
 #Maximum time underwater (minutes)
-minsUnderwater=5
+minsUnderwater=1
 
 #Surface on Corners
 usePeriodicSurfaceForPos=true
 
 #Surface on Corners
 surfaceOnCorners=true
+
+#Wait Distress Underwater
+waitDistressUnderwater=true
+
+#Wait Distress Underwater Periodic Resurface (minutes)
+waitDistressUnderwaterPeriodicResurfaceMinutes=2
+
+#Keep in Parking Pos at Start
+keepInParkingPosAtStart=true
 
 #AIS Txt Host Address
 aisHostAddr=10.0.2.90
