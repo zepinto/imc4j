@@ -55,6 +55,11 @@ public class DistressSurvey extends TimedFSM {
         FORTH
     }
 
+    private enum SurveyStageEnum {
+        WAITING_TO_START,
+        ON_GOING
+    }
+
     private enum ApproachCornerEnum {
         FRONT_LEFT,
         FRONT_RIGHT,
@@ -78,6 +83,14 @@ public class DistressSurvey extends TimedFSM {
     private boolean usePeriodicSurfaceForPos = false;
     @Parameter(description = "Surface on Corners")
     private boolean surfaceOnCorners = false;
+    
+    @Parameter(description = "Wait Distress Underwater")
+    private boolean waitDistressUnderwater = false;
+    @Parameter(description = "Wait Distress Underwater Periodic Resurface (minutes)")
+    private int waitDistressUnderwaterPeriodicResurfaceMinutes = 10;
+    
+    @Parameter(description = "Keep in Parking Pos at Start")
+    private boolean keepInParkingPosAtStart = true;
 
     @Parameter(description = "AIS Txt Host Address")
     private String aisHostAddr = "127.0.0.1";
@@ -150,13 +163,15 @@ public class DistressSurvey extends TimedFSM {
     // State variables
     private long curTimeMillis = System.currentTimeMillis();
     private long reportSentMillis = -1;
+    private long atSurfaceMillis = -1;
+    private long atWaitingUnderwaterMillis = -1;
     
     private FSMState stateToReturnTo = null;
 
     private GoSurfaceTaskEnum goSurfaceTask = GoSurfaceTaskEnum.START_OP;
-    private long atSurfaceMillis = -1;
     private ApproachCornerEnum approachCorner = ApproachCornerEnum.FRONT_LEFT;
     private SurveyPathEnum surfacePointIdx = SurveyPathEnum.FIRST;
+    private SurveyStageEnum surveyStage = SurveyStageEnum.WAITING_TO_START;
 
     // Target test vars
     private double tmpTargetLat = 41.184058;
@@ -166,8 +181,15 @@ public class DistressSurvey extends TimedFSM {
     private double tmpTargetSpeedKt = 0.5;
     private long tmpTargetLastSendTime = -1;
     private Random tmpTargetRandom = new Random();
+    
+    private double latDegParking = Double.NaN;
+    private double lonDegParking = Double.NaN;
 
     public DistressSurvey() {
+        if (waitDistressUnderwater) {
+            stateToReturnTo = this::loiterUnderwaterState;
+            goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
+        }
         state = this::goSurfaceState;
     }
 
@@ -199,6 +221,11 @@ public class DistressSurvey extends TimedFSM {
             aisTxtUdp = new UDPConnection(aisUdpHostPort);
             aisTxtUdp.register(this::parseAISTxtSentence);
             aisTxtUdp.connect();
+        }
+        
+        if (waitDistressUnderwater) {
+            stateToReturnTo = this::loiterUnderwaterState;
+            goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
         }
     }
 
@@ -467,12 +494,79 @@ public class DistressSurvey extends TimedFSM {
         return usePeriodicSurfaceForPos && curTimeMillis - atSurfaceMillis > minsUnderwater * 60 * 1E3;
     }
 
-    public FSMState waitState(FollowRefState ref) {
-        printFSMStateName("waitState");
-        markState(this::waitState);
-        return this::waitState;
+    public FSMState loiterUnderwaterState(FollowRefState ref) {
+        printFSMStateName("loiterUnderwaterState");
+        markState(this::loiterUnderwaterState);
+        
+        double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+        setLoiterRef(loiterPos[0], loiterPos[1], workingDepth);
+        setCourseSpeed();
+
+        switch (surveyStage) {
+            case ON_GOING:
+                break;
+            case WAITING_TO_START:
+            default:
+                if (keepInParkingPosAtStart && (Double.isFinite(latDegParking) && Double.isFinite(lonDegParking))) {
+                    print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
+                    setLoiterRef(latDegParking, lonDegParking, workingDepth);
+                }
+                break;
+        }
+
+        if (!isUnderwater())
+            atWaitingUnderwaterMillis = -1;
+
+        return this::loiterUnderwaterStayState;
     }
-    
+
+    public FSMState loiterUnderwaterStayState(FollowRefState ref) {
+        printFSMStateName("loiterUnderwaterStayState");
+        markState(this::loiterUnderwaterState);
+
+        if (!isUnderwater()) {
+            atWaitingUnderwaterMillis = -1;
+            return this::loiterUnderwaterStayState;
+        }
+
+        if (atWaitingUnderwaterMillis == -1) {
+            atWaitingUnderwaterMillis = curTimeMillis;
+            double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+            setLoiterRef(loiterPos[0], loiterPos[1], workingDepth);
+            
+            switch (surveyStage) {
+                case ON_GOING:
+                    break;
+                case WAITING_TO_START:
+                default:
+                    if (keepInParkingPosAtStart && (Double.isFinite(latDegParking) && Double.isFinite(lonDegParking))) {
+                        print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
+                        setLoiterRef(latDegParking, lonDegParking, workingDepth);
+                    }
+                    break;
+            }
+        }
+
+        if (isDistressKnownToStart()) {
+            if (isGoSurfaceTime()) {
+                markState(this::approachSurveyPointState);
+                goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
+                return this::goSurfaceState;
+            }
+            else {
+                return this::approachSurveyPointState;
+            }
+        }
+        else {
+            if (curTimeMillis - atWaitingUnderwaterMillis > waitDistressUnderwaterPeriodicResurfaceMinutes * 60 * 1E3) {
+                goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
+                return this::goSurfaceState;
+            }
+        }
+
+        return this::loiterUnderwaterStayState;
+    }
+
     public FSMState goSurfaceState(FollowRefState ref) {
         printFSMStateName("goSurfaceState");
         // markState(this::goSurfaceState);
@@ -502,14 +596,35 @@ public class DistressSurvey extends TimedFSM {
         // markState(this::goSurfaceState);
 
         if (isUnderwater()) {
+            print("Wainting to surface");
             atSurfaceMillis = -1;
             return this::goSurfaceStayState;
+        }
+        else if (hasGps()) {
+            if (!Double.isFinite(latDegParking) || !Double.isFinite(lonDegParking)) {
+                double[] curPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+                latDegParking = curPos[0];
+                lonDegParking = curPos[1];
+                print(String.format("Set PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
+            }
         }
 
         if (atSurfaceMillis == -1) {
             atSurfaceMillis = curTimeMillis;
             double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
             setSurfaceLoiterRef(loiterPos[0], loiterPos[1]);
+        }
+        
+        switch (surveyStage) {
+            case ON_GOING:
+                break;
+            case WAITING_TO_START:
+            default:
+                if (keepInParkingPosAtStart && (Double.isFinite(latDegParking) && Double.isFinite(lonDegParking))) {
+                    print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
+                    setSurfaceLoiterRef(latDegParking, lonDegParking);
+                }
+                break;
         }
         
         switch (goSurfaceTask) {
@@ -538,6 +653,8 @@ public class DistressSurvey extends TimedFSM {
     public FSMState approachSurveyPointState(FollowRefState ref) {
         printFSMStateName("approachSurveyPointState");
         markState(this::approachSurveyPointState);
+        
+        surveyStage = SurveyStageEnum.ON_GOING;
         
         if (isGoSurfaceTime()) {
             goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
@@ -643,7 +760,7 @@ public class DistressSurvey extends TimedFSM {
         return true;
     }
 
-    @Periodic(value = 10000)
+    @Periodic(value = 90000)
     private void sendDistressTest() {
         if (!testTargetSimulate)
             return;
