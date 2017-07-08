@@ -181,7 +181,7 @@ public class PojoConfig {
 	
 	public static void writeProperties(Object pojo, File file) {
 	    try(BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-	        String nl = "\r\n";
+	        String nl = System.lineSeparator();
 	        String name = pojo.getClass().getSimpleName();
 	        name = name.replaceAll("([a-z0-9])([A-Z])", "$1 $2");
 	        writer.write("#" + name + " Settings" + nl + nl);
