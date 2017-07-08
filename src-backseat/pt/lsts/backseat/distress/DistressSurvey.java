@@ -264,7 +264,7 @@ public class DistressSurvey extends TimedFSM {
      */
     private void parseAISTxtSentence(String sentence) {
         boolean res = AisCsvParser.process(sentence);
-        System.out.println("Parsing AIS " + res);
+        System.out.println("Parsing AIS " + res + "  >> " + sentence);
     }
 
     private void retransmitAISTxtSentence(String sentence) {
@@ -287,8 +287,7 @@ public class DistressSurvey extends TimedFSM {
         }
     }
 
-    
-    @Periodic(value = 1000)
+    @Periodic(value = 5000)
     private void sendAisPos() {
         EstimatedState es = get(EstimatedState.class);
         if (es == null)
