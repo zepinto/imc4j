@@ -102,6 +102,13 @@ public class DistressSurvey extends TimedFSM {
     private boolean aisByUDP = false;
     @Parameter(description = "AIS Txt UDP Host Port (UDP)")
     private int aisUdpHostPort = 7879;
+    
+    @Parameter(description = "AIS UDP ReTransmit")
+    private boolean aisUDPReTransmit = false;
+    @Parameter(description = "AIS UDP ReTransmit Host")
+    private String aisUDPReTransmitHost = "127.0.0.1";
+    @Parameter(description = "AIS UDP ReTransmit Port")
+    private int aisUDPReTransmitPort = 7878;
 
     @Parameter(description = "Loiter Radius (m)")
     private int loiterRadius = 15;
@@ -214,6 +221,7 @@ public class DistressSurvey extends TimedFSM {
         if (aisByTCP) {
             aisTxtTcp = new TCPClientConnection(aisHostAddr, aisHostPort);
             aisTxtTcp.register(this::parseAISTxtSentence);
+            aisTxtTcp.register(this::retransmitAISTxtSentence);
             aisTxtTcp.connect();
         }
         
@@ -258,6 +266,27 @@ public class DistressSurvey extends TimedFSM {
         boolean res = AisCsvParser.process(sentence);
         System.out.println("Parsing AIS " + res);
     }
+
+    private void retransmitAISTxtSentence(String sentence) {
+        if (!aisUDPReTransmit)
+            return;
+            
+        byte[] buf = sentence.getBytes();
+        try {
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getByName(aisUDPReTransmitHost),
+                    aisUDPReTransmitPort);
+            try (DatagramSocket socket = new DatagramSocket()) {
+                socket.send(packet);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     
     @Periodic(value = 1000)
     private void sendAisPos() {
