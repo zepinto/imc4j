@@ -435,7 +435,7 @@ public class DistressSurvey extends TimedFSM {
             double speedKnots, long timestamp) {
         double angRads = Math.toRadians(headingDegs);
         double ol = -targetLenght;
-        double ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10);
+        double ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10 / 2.);
 
         double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
 
