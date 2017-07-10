@@ -403,6 +403,8 @@ public class MessageFactory {
 
 	public static final int ID_FollowPoint = 494;
 
+	public static final int ID_Handover = 495;
+
 	public static final int ID_VehicleState = 500;
 
 	public static final int ID_VehicleCommand = 501;
@@ -1190,6 +1192,9 @@ public class MessageFactory {
 			}
 			case ID_FollowPoint: {
 				return new FollowPoint();
+			}
+			case ID_Handover: {
+				return new Handover();
 			}
 			case ID_VehicleState: {
 				return new VehicleState();
@@ -2081,6 +2086,9 @@ public class MessageFactory {
 			}
 			case "FollowPoint": {
 				return ID_FollowPoint;
+			}
+			case "Handover": {
+				return ID_Handover;
 			}
 			case "VehicleState": {
 				return ID_VehicleState;
