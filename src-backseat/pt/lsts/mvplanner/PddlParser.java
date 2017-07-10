@@ -373,7 +373,6 @@ public class PddlParser {
 			System.out.println("No solution was produced.");
 			return null;
 		}
-
 	}
 
 	public static void main(String[] args) throws Exception {
