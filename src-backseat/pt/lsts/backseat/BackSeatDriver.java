@@ -214,9 +214,21 @@ public abstract class BackSeatDriver extends TcpClient {
 	public final void sendRef() {
 
 		if (finished) {
-			print("Starting execution of '"+endPlan+"'.");
-			if (endPlan != null)
+			if (endPlan != null) {
+			    print("Starting execution of '"+endPlan+"'.");
 				startPlan(endPlan);
+				
+				try {
+				    print("Waiting 5s to tidy thing up before exiting...");
+                    Thread.sleep(5000);
+                }
+                catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+			}
+			else {
+	             print("No exit plan given. Exiting with nothing triggered");
+			}
 			
 			disconnect();
 			System.exit(0);
