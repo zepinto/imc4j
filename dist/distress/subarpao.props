@@ -1,0 +1,110 @@
+#Distress Survey Settings
+
+#DUNE Host Address
+hostAddr=127.0.0.1
+
+#DUNE Host Port (TCP)
+hostPort=6003
+
+#DUNE plan to execute right after termination
+endPlanToUse=rendezvous
+
+#Minutes before termination
+minutesTimeout=60
+
+#Maximum time underwater (minutes)
+minsUnderwater=5
+
+#Surface on Corners
+usePeriodicSurfaceForPos=true
+
+#Surface on Corners
+surfaceOnCorners=true
+
+#AIS Txt Host Address
+aisHostAddr=127.0.0.1
+
+#AIS Txt by TCP
+aisByTCP=false
+
+#AIS Txt Host Port (TCP)
+aisHostPort=13000
+
+#AIS Txt by UDP
+aisByUDP=false
+
+#AIS Txt UDP Host Port (UDP)
+aisUdpHostPort=7878
+
+#Loiter Radius (m)
+loiterRadius=15
+
+#Max Depth (m)
+maxDepth=15
+
+#Working Depth (m)
+workingDepth=5
+
+#Speed to travel
+speed=1800.0
+
+#Speed units to use (RPM, m/s)
+speedUnits=RPM
+
+#Survey Delta Altitude from Target (m)
+surveyDeltaAltitudeFromTarget=5.0
+
+#Approach Lenght Offset
+approachLenghtOffset=20.0
+
+#Survey Side (true) or Around (false)
+surveySideOrAround=false
+
+#Target Width
+targetWidth=6.3
+
+#Target Lenght
+targetLenght=65.0
+
+#Delta Time for Distress Valid (milliseconds)
+deltaTimeMillisDistressValid=30000
+
+#Delta End Time Millis at Surface (milliseconds)
+deltaEndTimeMillisAtSurface=20000
+
+#Delta Dist to Adjust Approach (m)
+deltaDistToAdjustApproach=20.0
+
+#Report Period (s) [0 for not sending periodic report]
+reportPeriodSeconds=60
+
+#Use Acoustic Report
+useAcoustic=true
+
+#Use GSM Report
+useGSM=true
+
+#Use Satellite Report
+useSatellite=true
+
+#Test Target Simulate
+testTargetSimulate=true
+
+#Test Target Lat (decimal degs)
+testTargetLat=41.184058
+
+#Test Target Lon (decimal degs)
+testTargetLon=-8.706333
+
+#Test Target Depth (m)
+testTargetDepth=10.0
+
+#Test Target Heading (degs)
+testTargetHeading=20.0
+
+#Test Target Heading Gaussian Noise (degs)
+testTargetHeadingGaussianNoiseDegs=2.0
+
+#Test Target Speed (knots)
+testTargetSpeedKt=0.3
+

@@ -10,7 +10,11 @@ import java.util.LinkedHashMap;
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.msg.Abort;
+import pt.lsts.imc4j.msg.AlignmentState;
+import pt.lsts.imc4j.msg.EntityParameter;
 import pt.lsts.imc4j.msg.EstimatedState;
+import pt.lsts.imc4j.msg.GpsFix;
+import pt.lsts.imc4j.msg.GpsFix.VALIDITY;
 import pt.lsts.imc4j.msg.Maneuver;
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.msg.MessageFactory;
@@ -22,7 +26,9 @@ import pt.lsts.imc4j.msg.PlanControlState.STATE;
 import pt.lsts.imc4j.msg.PlanManeuver;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.PlanTransition;
+import pt.lsts.imc4j.msg.SetEntityParameters;
 import pt.lsts.imc4j.msg.TextMessage;
+import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.net.TcpClient;
 import pt.lsts.imc4j.util.PojoConfig;
 import pt.lsts.imc4j.util.SerializationUtils;
@@ -36,7 +42,7 @@ public class MissionExecutive extends TcpClient {
 	protected boolean useBroadcast = true;
 
 	protected State state = null;
-	
+
 	public MissionExecutive() {
 		super();
 		register(this);
@@ -56,7 +62,7 @@ public class MissionExecutive extends TcpClient {
 		System.err.println("Received ABORT. Terminating.");
 		System.exit(1);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	protected <T extends Message> T get(Class<T> clazz) {
 		int id = MessageFactory.idOf(clazz.getSimpleName());
@@ -68,6 +74,45 @@ public class MissionExecutive extends TcpClient {
 	protected boolean ready() {
 		PlanControlState pcs = get(PlanControlState.class);
 		return pcs != null && pcs.state == STATE.PCS_READY;
+	}
+
+	protected boolean atSurface() {
+		VehicleMedium medium = get(VehicleMedium.class);
+		return medium != null && medium.medium.equals(VehicleMedium.MEDIUM.VM_WATER);
+	}
+
+	protected boolean hasGps() {
+		GpsFix fix = get(GpsFix.class);
+		return fix != null && fix.validity.contains(VALIDITY.GFV_VALID_POS);
+	}
+
+	protected boolean imuIsAligned() {
+		AlignmentState state = get(AlignmentState.class);
+		return state != null && state.state == pt.lsts.imc4j.msg.AlignmentState.STATE.AS_ALIGNED;
+	}
+	
+	protected void setParam(String entity, String param, String value) {
+		SetEntityParameters params = new SetEntityParameters();
+		params.name = entity;
+		EntityParameter p = new EntityParameter();
+		p.name = param;
+		p.value = value;
+		params.params.add(p);
+		
+		try {
+			send(params);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	protected void activate(String entity) {
+		setParam(entity, "Active", "true");
+	}
+	
+	protected void deactivate(String entity) {
+		setParam(entity, "Active", "false");
 	}
 
 	protected void broadcast(Message msg) throws IOException {
@@ -85,7 +130,7 @@ public class MissionExecutive extends TcpClient {
 		}
 		socket.close();
 	}
-	
+
 	public double[] position() {
 		return WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 	}
@@ -127,6 +172,7 @@ public class MissionExecutive extends TcpClient {
 		pc.arg = plan;
 		pc.op = OP.PC_START;
 		pc.type = TYPE.PC_REQUEST;
+		pc.dst = remoteSrc;
 		try {
 			send(pc);
 		} catch (Exception e) {
@@ -137,11 +183,12 @@ public class MissionExecutive extends TcpClient {
 	void startPlan(String id) {
 		PlanControl pc = new PlanControl();
 		pc.plan_id = id;
+		pc.arg = null;
 		pc.op = OP.PC_START;
 		pc.type = TYPE.PC_REQUEST;
+		pc.dst = remoteSrc;
 		try {
 			send(pc);
-			System.out.println(pc);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -151,6 +198,7 @@ public class MissionExecutive extends TcpClient {
 		PlanControl pc = new PlanControl();
 		pc.op = OP.PC_STOP;
 		pc.type = TYPE.PC_REQUEST;
+		pc.dst = remoteSrc;
 		try {
 			send(pc);
 		} catch (Exception e) {
@@ -223,15 +271,15 @@ public class MissionExecutive extends TcpClient {
 			executive.broadcast(m);
 		}
 	}
-	
+
 	@Periodic(1000)
 	public void update() {
 		if (state == null)
 			System.exit(0);
 		else
-			state = state.step();		
+			state = state.step();
 	}
-	
+
 	@FunctionalInterface
 	public static interface State {
 		public State step();

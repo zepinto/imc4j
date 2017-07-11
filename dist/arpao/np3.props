@@ -1,0 +1,32 @@
+#Arpao Executive Settings
+
+#Sequence of plans to execute after the vehicle is ready
+plans=plan1, plan2
+
+#DUNE hostname
+host=10.0.10.100
+
+#DUNE TCP port
+port=6003
+
+#Length of IMU alignment track
+imu_align_length=250.0
+
+#Bearing of IMU alignment track
+imu_align_bearing=-110.0
+
+#If set ot true, the vehicle will align IMU prior to mission execution
+align_imu=true
+
+#If set to true, the vehicle will calibrate the compass prior to mission execution
+calibrate_compass=true
+
+#Time, in minutes, to spend calibrating the compass
+compass_calib_mins=15
+
+#GSM Number where to send reports. Leave empty to use the emergency number.
+gsm_number=
+
+#Send status over SMS
+sms_updates=false
+

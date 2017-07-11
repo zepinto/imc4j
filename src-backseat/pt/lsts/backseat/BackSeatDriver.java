@@ -42,7 +42,6 @@ public abstract class BackSeatDriver extends TcpClient {
 		reference.lat = Math.toRadians(latDegs);
 		reference.lon = Math.toRadians(lonDegs);
 		reference.flags.add(FLAGS.FLAG_LOCATION);
-		reference.flags.add(FLAGS.FLAG_START_POINT);
 	}
 	
 	public void setDepth(double depth) {
@@ -58,12 +57,16 @@ public abstract class BackSeatDriver extends TcpClient {
 		z.value = (float) value;
 		z.z_units = units;
 		reference.z = z;
-		reference.flags.add(FLAGS.FLAG_Z);
+		reference.flags.add(FLAGS.FLAG_Z);		
 	}
 	
 	public void setLoiterRadius(double radius) {
 		reference.radius = (float)radius;
-		reference.flags.add(FLAGS.FLAG_RADIUS);
+		if (radius != 0)
+			reference.flags.add(FLAGS.FLAG_RADIUS);
+		else
+			reference.flags.remove(FLAGS.FLAG_RADIUS);
+			
 	}
 	
 	public void end() {
@@ -106,7 +109,7 @@ public abstract class BackSeatDriver extends TcpClient {
 		}
 		catch (Exception e) {
 			return false;
-		}		
+		}
 	}
 	
 	public boolean hasGps() {
@@ -215,6 +218,7 @@ public abstract class BackSeatDriver extends TcpClient {
 			if (endPlan != null)
 				startPlan(endPlan);
 			
+			disconnect();
 			System.exit(0);
 		}
 		

@@ -19,6 +19,7 @@ import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.msg.Salinity;
+import pt.lsts.imc4j.msg.Sms;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.util.PojoConfig;
@@ -32,10 +33,10 @@ public class RiverPlumeTracker extends TimedFSM {
 	@Parameter(description = "Longitude, in degrees, of river mouth")
 	double river_lon = -8.675311;
 
-	@Parameter(description = "Maximum depth, in meters, for yoyo profiles")
+	@Parameter(description = "Minimum depth, in meters, for yoyo profiles")
 	double min_depth = 0.5;
 
-	@Parameter(description = "Minimum depth, in meters, for yoyo profiles")
+	@Parameter(description = "Maximum depth, in meters, for yoyo profiles")
 	double max_depth = 5.5;
 
 	@Parameter(description = "Speed to travel at during yoyo profiles")
@@ -92,6 +93,9 @@ public class RiverPlumeTracker extends TimedFSM {
 	@Parameter(description = "Maximum time underwater")
 	int mins_underwater = 15;
 	
+	@Parameter(description = "Number where to send reports")
+	String sms_recipient = "";
+	
 	int num_yoyos;
 	double angle;
 	int count_secs;
@@ -100,7 +104,7 @@ public class RiverPlumeTracker extends TimedFSM {
 	int secs_underwater = 0;
 	
 	public RiverPlumeTracker() {
-		state = this::go_out;
+		state = this::wait;
 	}
 
 	public void init() {
@@ -140,6 +144,14 @@ public class RiverPlumeTracker extends TimedFSM {
 		}
 	}
 	
+	public double salinity() {
+		OptionalDouble val;
+		synchronized (salinity_data) {
+			val = salinity_data.stream().mapToDouble(s -> s.value).average();
+		}
+		return val.orElse(0);
+	}
+	
 	public boolean insideSimulatedPlume() {
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		boolean inside = WGS84Utilities.distance(pos[0], pos[1], river_lat, river_lon) < plume_dist;
@@ -148,7 +160,7 @@ public class RiverPlumeTracker extends TimedFSM {
 	}
 
 	public FSMState go_out(FollowRefState ref) {
-		if (angle >= end_ang) {
+		if ((angle_inc > 0 && angle >= end_ang) || (angle_inc < 0 && angle <= end_ang) ) {
 			print("Finished!");
 			return null;
 		}
@@ -170,8 +182,7 @@ public class RiverPlumeTracker extends TimedFSM {
 
 	public FSMState descend(FollowRefState ref) {
 		setDepth(max_depth);
-		if (isUnderwater())
-			secs_underwater++;
+		secs_underwater++;
 		
 		if (arrivedXY()) {
 			print("Missed the plume!");
@@ -188,8 +199,7 @@ public class RiverPlumeTracker extends TimedFSM {
 
 	public FSMState ascend(FollowRefState ref) {
 		setDepth(min_depth);
-		if (isUnderwater())
-			secs_underwater++;
+		secs_underwater++;
 		
 		if (secs_underwater / 60 >= mins_underwater) {
 			print("Periodic surface");
@@ -213,8 +223,16 @@ public class RiverPlumeTracker extends TimedFSM {
 					return this::wait;					
 				}
 			}
-			print("Now descending.");
-			return this::descend;
+			
+			if (secs_underwater / 60 >= mins_underwater) {
+				print("Periodic surface");
+				return this::wait;
+			}			
+			else {
+				print("Now descending (underwater for "+secs_underwater+" seconds).");
+				return this::descend;
+			}
+			
 		} else
 			return this::ascend;
 	}
@@ -226,6 +244,21 @@ public class RiverPlumeTracker extends TimedFSM {
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
 		}
+		
+		if (count_secs == 40 && !sms_recipient.isEmpty()) {
+			
+			Sms sms = new Sms();
+			sms.timeout = 20;
+			sms.contents = String.format("DRIP: %s, salinity: %.1f, angle: %.0f", going_in ? "Going in, " : "Going out", salinity(), angle);
+			sms.number = sms_recipient;
+			try {
+				print("Sending DRIP state to "+sms_recipient+" ("+sms.contents+")");
+				send(sms);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}		
 		if (count_secs >= wait_secs) {
 			if (going_in)
 				return this::go_in;
@@ -246,6 +279,7 @@ public class RiverPlumeTracker extends TimedFSM {
 		if (get(VehicleMedium.class).medium == MEDIUM.VM_WATER) {
 			print("Now at surface, sending report.");
 			secs_underwater = 0;
+			count_secs = 0;
 			return this::communicate; 
 		}
 		else
@@ -289,7 +323,7 @@ public class RiverPlumeTracker extends TimedFSM {
 					writer.write(f.getName() + "=" + f.get(tmp)+"\n\n");					
 				}
 			}
-			System.out.println("Wrote default properties to "+file.getName());
+			System.out.println("Wrote default properties to "+file.getAbsolutePath());
 			writer.close();
 			System.exit(0);			
 		}

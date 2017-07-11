@@ -1,5 +1,8 @@
 package pt.lsts.imc4j.util;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -174,6 +177,27 @@ public class PojoConfig {
 		}
 		
 		return result;
+	}
+	
+	public static void writeProperties(Object pojo, File file) {
+	    try(BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+	        String nl = System.lineSeparator();
+	        String name = pojo.getClass().getSimpleName();
+	        name = name.replaceAll("([a-z0-9])([A-Z])", "$1 $2");
+	        writer.write("#" + name + " Settings" + nl + nl);
+	        for (Field f : pojo.getClass().getDeclaredFields()) {
+	            f.setAccessible(true);
+	            Parameter p = f.getAnnotation(Parameter.class);
+	            if (p != null) {
+	                writer.write("#" + p.description() + nl);
+	                writer.write(f.getName() + "=" + f.get(pojo) + nl + nl);                    
+	            }
+	        }
+	        System.out.println("Wrote default properties to " + file.getAbsolutePath());
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
 	}
 	
 	public static void main(String[] args) throws Exception {
