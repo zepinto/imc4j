@@ -61,4 +61,22 @@
       <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
     </jar>
   </target>
+
+  <target name="mvreplanner">
+    <mkdir dir="bin"/>
+    <delete dir="bin"/>
+    <mkdir dir="bin"/>
+    
+    <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+      <classpath refid="classpath.dependencies"/>
+    </javac>
+    <jar destfile="${dir.jarfile}/MvReplanner.jar" filesetmanifest="mergewithoutmain">
+      <manifest>
+        <attribute name="Main-Class" value="pt.lsts.autonomy.MvReplanningExecutive"/>
+        <attribute name="Class-Path" value="."/>
+      </manifest>
+      <fileset dir="${dir.buildfile}/bin"/>
+      <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+    </jar>
+  </target>
 </project>
