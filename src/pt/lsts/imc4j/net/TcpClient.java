@@ -84,8 +84,10 @@ public class TcpClient extends Thread {
 			catch (Exception e) {
 				e.printStackTrace();
 			}
-		}
+		}		
 	}
+	
+	
 	
 	public void send(Message m) throws IOException {
 		m.dst = remoteSrc;
