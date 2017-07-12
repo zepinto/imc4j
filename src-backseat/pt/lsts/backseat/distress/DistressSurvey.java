@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Random;
@@ -41,6 +43,8 @@ import pt.lsts.imc4j.util.WGS84Utilities;
 public class DistressSurvey extends TimedFSM {
 
     public static final double MS_TO_KNOT = 3.6 / 1.852; // 1.9438444924406047516198704103672
+    @SuppressWarnings("unused")
+    private static final String PAYLOAD_TO_ACTIVATE_PATTERN = "(?i)(payload *?=[\\w- \\[\\]\\(\\)]+)((\\;)[\\w- \\[\\]\\(\\)]+)=[\\w- \\[\\]\\(\\)]+))*(\\; *)";
     
     private enum GoSurfaceTaskEnum {
         START_OP,
@@ -163,6 +167,12 @@ public class DistressSurvey extends TimedFSM {
     private double testTargetHeadingGaussianNoiseDegs = 2;
     @Parameter(description = "Test Target Speed (knots)")
     private double testTargetSpeedKt = 0.5;
+    
+    @Parameter(description = "Use payload")
+    private boolean usePayload = false;
+    @Parameter(description = "(Payload=<Payload Name>(;<Param Name>=<Param Value>)*)*")
+    private String activatePayload = "Payload=Sidescan; High-Frequency Channels=Both; High-Frequency Range=75; "
+            + "Low-Frequency Channels=Both; Low-Frequency Range=150; Range Multiplier=2";
 
     private TCPClientConnection aisTxtTcp = null;
     private UDPConnection aisTxtUdp = null;
@@ -192,6 +202,8 @@ public class DistressSurvey extends TimedFSM {
     private double latDegParking = Double.NaN;
     private double lonDegParking = Double.NaN;
 
+    private HashMap<String, HashMap<String, String>> payloadToActivate = new LinkedHashMap<>();
+    
     public DistressSurvey() {
         if (waitDistressUnderwater) {
             stateToReturnTo = this::loiterUnderwaterState;
@@ -235,10 +247,14 @@ public class DistressSurvey extends TimedFSM {
             stateToReturnTo = this::loiterUnderwaterState;
             goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
         }
+        
+        processPayloadToActivate();
     }
 
     @Override
     public void end() {
+        deactivatePayload();
+        
         try {
             if (aisTxtTcp != null)
                 aisTxtTcp.disconnect();
@@ -257,7 +273,77 @@ public class DistressSurvey extends TimedFSM {
 
         super.end();
     }
-    
+
+    private void processPayloadToActivate() {
+        if (activatePayload == null || activatePayload.length() < 3)
+            return;
+        
+        try {
+            String[] itemsList = activatePayload.split(" *; *");
+            LinkedHashMap<String, String> paramValue = null;
+            for (String it : itemsList) {
+                String[] paramNameTk = it.split(" *= *");
+                if (paramNameTk.length != 2)
+                    continue;
+                
+                try {
+                    String name = paramNameTk[0].trim();
+                    String value = paramNameTk[1].trim();
+                    
+                    if ("payload".equalsIgnoreCase(name)) {
+                        paramValue = new LinkedHashMap<>();
+                        payloadToActivate.put(value, paramValue);
+                    }
+                    else if (paramValue != null) {
+                        paramValue.put(name, value);
+                    }
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void activatePayload() {
+        String pls = "";
+        if (usePayload && !payloadToActivate.isEmpty()) {
+            for (String pl : payloadToActivate.keySet()) {
+                HashMap<String, String> pv = payloadToActivate.get(pl);
+                if (pv != null && !pv.isEmpty()) {
+                    pls += pl + " (no params);";
+                    activate(pl);
+                }
+                else {
+                    pls += pl + ";";
+                    StringBuilder paramValue = new StringBuilder();
+                    pv.keySet().stream().forEach(k -> paramValue.append(pv).append("=").append(pv.get(k)));
+                    activate(pl, paramValue.toString());
+                }
+            }
+            print("Activating: " + pls);
+        }
+        else {
+            print("NOT activating: " + pls);
+        }
+    }
+    private void deactivatePayload() {
+        String pls = "";
+        if (usePayload && !payloadToActivate.isEmpty()) {
+            for (String pl : payloadToActivate.keySet()) {
+                deactivate(pl);
+                pls += pl + ";";
+            }
+            print("Deactivating: " + pls);
+        }
+        else {
+            print("NOT deactivating: " + pls);
+        }
+    }
+
     /**
      * AIX Txt Parser
      * @param sentence
@@ -737,11 +823,29 @@ public class DistressSurvey extends TimedFSM {
                 || SurveyPathEnum.THIRD.compareTo(surfacePointIdx) == 0)) {
             if (isGoSurfaceTime()) {
                 goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
+                deactivatePayload();
                 return this::goSurfaceState;
             }
         }
         
         surfacePointIdx = SurveyPathEnum.values()[surfacePointIdx.ordinal() + 1];
+        
+        switch (surfacePointIdx) {
+            case SECOND:
+            case FORTH:
+                activatePayload();
+                break;
+            case FIRST:
+            case THIRD:
+                if (!usePeriodicSurfaceForPos) {
+                    activatePayload();
+                    break;
+                }
+            default:
+                deactivatePayload();
+                break;
+        }
+        
         DistressPosition dp = AisCsvParser.distressPosition;
         double[] posRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
         setGoingRef(posRef[0], posRef[1], posRef[2]);
@@ -769,7 +873,8 @@ public class DistressSurvey extends TimedFSM {
         
         if (arrivedXY()) {
             if (surveySideOrAround || surfacePointIdx.ordinal() == SurveyPathEnum.values().length - 1) {
-                goSurfaceTask = GoSurfaceTaskEnum.END_OP; 
+                goSurfaceTask = GoSurfaceTaskEnum.END_OP;
+                deactivatePayload();
                 return this::goSurfaceState;
             }
             else {
@@ -862,6 +967,17 @@ public class DistressSurvey extends TimedFSM {
             }
         }
         System.out.println();
+
+        System.out.print("Payloads Set:");
+        for (String ent : tracker.payloadToActivate.keySet()) {
+            System.out.print("\nPayload: " + ent + " (");
+            HashMap<String, String> params = tracker.payloadToActivate.get(ent);
+            for (String v : params.keySet()) {
+                System.out.print(v + "=" + params.get(v) + "; ");
+            }
+        }
+        System.out.println(" End Payloads Set");
+        
 
         tracker.connect(tracker.hostAddr, tracker.hostPort);
         tracker.join();
