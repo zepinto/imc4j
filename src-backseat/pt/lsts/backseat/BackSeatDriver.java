@@ -1,5 +1,6 @@
 package pt.lsts.backseat;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 
 import pt.lsts.imc4j.annotations.Consume;
@@ -9,6 +10,7 @@ import pt.lsts.imc4j.def.ZUnits;
 import pt.lsts.imc4j.msg.Abort;
 import pt.lsts.imc4j.msg.DesiredSpeed;
 import pt.lsts.imc4j.msg.DesiredZ;
+import pt.lsts.imc4j.msg.EntityParameter;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.FollowReference;
 import pt.lsts.imc4j.msg.GpsFix;
@@ -23,6 +25,7 @@ import pt.lsts.imc4j.msg.PlanManeuver;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.Reference;
 import pt.lsts.imc4j.msg.Reference.FLAGS;
+import pt.lsts.imc4j.msg.SetEntityParameters;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.msg.VehicleState;
@@ -258,11 +261,68 @@ public abstract class BackSeatDriver extends TcpClient {
 	}
 
 	public abstract void update(FollowRefState fref);
-	
-	public BackSeatDriver() {
-		super();
-		register(this);		
-	}
-	
 
+	public BackSeatDriver() {
+	    super();
+	    register(this);		
+	}
+
+	protected void setParam(String entity, String param, String value) {
+	    setParam(entity, new String[] {param, value});
+	}
+
+	protected void setParam(String entity, String... paramValue) {
+	    if (paramValue == null || paramValue.length < 2) {
+	        print("No parameters to set for entity " + entity);
+	        return;
+	    }
+	    
+	    SetEntityParameters params = new SetEntityParameters();
+	    params.name = entity;
+
+	    for (int i = 1; i < paramValue.length; i = i + 2) {
+	        try {
+	            String param = paramValue[i - 1];
+	            String value = paramValue[i];
+	            EntityParameter p = new EntityParameter();
+	            p.name = param;
+	            p.value = value;
+	            params.params.add(p);
+	        }
+	        catch (Exception e) {
+                print(String.format("Error '%s' setting parameters message to send for %s with %s", e, entity,
+                        paramValue == null || paramValue.length == 0 ? "EMPTY" : Arrays.toString(paramValue)));
+            }
+	    }
+
+	    try {
+	        send(params);
+	    }
+	    catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+
+	protected void activate(String entity) {
+	    setParam(entity, "Active", "true");
+	}
+
+	protected void activate(String entity, String... paramValue) {
+        if (paramValue == null || paramValue.length < 2) {
+            setParam(entity, "Active", "true");
+        }
+        else {
+            String[] params = new String[2 + paramValue.length];
+            params[0] = "Active";
+            params[1] = "true";
+            for (int i = 0; i < paramValue.length; i++) {
+                params[i + 2] = paramValue[i];
+            }
+            setParam(entity, paramValue);
+        }
+	}
+
+	protected void deactivate(String entity) {
+	    setParam(entity, "Active", "false");
+	}
 }
