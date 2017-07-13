@@ -305,7 +305,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		popup.z_units = ZUnits.DEPTH;
 
 		double offsetX = Math.cos(Math.toRadians(imu_align_bearing)) * 40;
-		double offsetY = Math.cos(Math.toRadians(imu_align_bearing)) * 40;
+		double offsetY = Math.sin(Math.toRadians(imu_align_bearing)) * 40;
 
 		double[] loc1 = WGS84Utilities.WGS84displace(pos[0], pos[1], 0, offsetX, offsetY, 0);
 		Goto man1 = new Goto();
@@ -317,7 +317,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		man1.z_units = ZUnits.DEPTH;
 
 		offsetX = Math.cos(Math.toRadians(imu_align_bearing)) * imu_align_length;
-		offsetY = Math.cos(Math.toRadians(imu_align_bearing)) * imu_align_length;
+		offsetY = Math.sin(Math.toRadians(imu_align_bearing)) * imu_align_length;
 
 		double[] loc2 = WGS84Utilities.WGS84displace(pos[0], pos[1], 0, offsetX, offsetY, 0);
 		Goto man2 = new Goto();
