@@ -42,10 +42,22 @@ public class MissionExecutive extends TcpClient {
 	protected boolean useBroadcast = true;
 
 	protected State state = null;
+	
+	protected String endPlan = null;
 
 	public MissionExecutive() {
 		super();
 		register(this);
+	}
+
+	public final void setup() {
+	    setupChild();
+	}
+
+	/**
+	 * Overwrite this for extra setup, but CALL {@link #setup()}
+	 */
+	protected void setupChild() {
 	}
 
 	@Consume
@@ -263,6 +275,7 @@ public class MissionExecutive extends TcpClient {
 
 	public static void main(String[] args) throws Exception {
 		MissionExecutive executive = PojoConfig.create(MissionExecutive.class, args);
+		executive.setup();
 		executive.connect("127.0.0.1", 6003);
 		while (true) {
 			Thread.sleep(10000);
@@ -274,10 +287,28 @@ public class MissionExecutive extends TcpClient {
 
 	@Periodic(1000)
 	public void update() {
-		if (state == null)
+		if (state == null) {
+		    if (endPlan != null) {
+		        print("Starting execution of '" + endPlan + "'.");
+		        startPlan(endPlan);
+
+		        try {
+		            print("Waiting 5s to tidy thing up before exiting...");
+		            Thread.sleep(5000);
+		        }
+		        catch (InterruptedException e) {
+		            e.printStackTrace();
+		        }
+		    }
+		    else {
+		        print("No exit plan given. Exiting with nothing triggered");
+		    }
+
 			System.exit(0);
-		else
+		}
+		else {
 			state = state.step();
+		}
 	}
 
 	@FunctionalInterface
