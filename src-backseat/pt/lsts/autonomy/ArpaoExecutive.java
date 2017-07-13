@@ -58,6 +58,8 @@ public class ArpaoExecutive extends MissionExecutive {
 	@Parameter(description = "Send status over SMS")
 	public boolean sms_updates = false;
 	
+    @Parameter(description = "DUNE plan to execute right after termination (empty for not use)")
+    private String endPlanToUse = "";
 
 	long time = 0;
 	String plan = null;
@@ -69,8 +71,13 @@ public class ArpaoExecutive extends MissionExecutive {
 		state = this::init;
 	}
 
+	public void setupChild() {
+        if (!endPlanToUse.isEmpty()) {
+            endPlan = endPlanToUse;
+        }
+	}
+	
 	public State init() {
-
 		if (!knowsEmergencyNumber()) {
 			QueryEntityParameters query = new QueryEntityParameters();
 			query.name = "Emergency Monitor";
@@ -386,6 +393,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		}
 		System.out.println();
 
+		executive.setup();
 		executive.connect(executive.host, executive.port);
 		executive.join();
 		executive.init();
