@@ -225,6 +225,7 @@ public class PddlParser {
 		return sb.toString();
 	}
 
+	static int count = 1;
 	private static IPddlAction[] createAction(PddlPlan plan, int vehicle, String line) throws Exception {
 		line = line.trim();
 		String regex = "[\\:\\(\\)\\[\\] ]+";
@@ -293,6 +294,7 @@ public class PddlParser {
 			return null;
 		}
 		action.setVehicle(vehicle);
+		action.setId((count++)+"_"+actionType);
 		return new IPddlAction[] { action };
 	}
 

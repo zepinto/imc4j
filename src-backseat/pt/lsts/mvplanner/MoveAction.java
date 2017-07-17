@@ -11,7 +11,7 @@ import pt.lsts.imc4j.msg.TemporalAction.TYPE;
 import pt.lsts.imc4j.util.PlanUtilities;
 
 public class MoveAction extends AbstractPddlAction {
-    private static int count = 1;
+    
 	public MoveAction(PddlLocation location, Date startTime, Date endTime) {
 		setStartTime(startTime);
 		setEndTime(endTime);
@@ -30,7 +30,7 @@ public class MoveAction extends AbstractPddlAction {
         man.travel_z = CommonSettings.Z;
         man.travel_z_units = ZUnits.DEPTH;
         
-        return PlanUtilities.createPlan("mvplan_"+(count++), man);
+        return PlanUtilities.createPlan(getId(), man);
         
     }
     

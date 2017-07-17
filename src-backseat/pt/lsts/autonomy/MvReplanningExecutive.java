@@ -180,7 +180,6 @@ public class MvReplanningExecutive extends MissionExecutive {
 	}
 
 	protected State monitor() {
-		print("monitor");
 		PlanControlState msg = get(PlanControlState.class);
 		if(msg == null || msg.src != currAction.system_id  || !msg.plan_id.contains(currAction.action_id))
 			return this::monitor;

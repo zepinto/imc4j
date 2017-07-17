@@ -14,6 +14,8 @@ public abstract class AbstractPddlAction implements IPddlAction {
     protected PddlLocation associatedLocation = null;
     protected PlanSpecification associatedPlan = null;
     protected static int counter = 1;
+    protected String id = "";
+    
     
     @Override
     public String getAssociatedTask() {
@@ -95,13 +97,21 @@ public abstract class AbstractPddlAction implements IPddlAction {
 		return getAssociatedLocation();
 	}
 	
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
 	@Override
     public TemporalAction asImc() {
     	TemporalAction action = new TemporalAction();
     	if (getAssociatedTask() != null)
     		action.action_id = getAssociatedTask();
     	else
-    		action.action_id = (getClass().getSimpleName()+"_"+(counter++)).toLowerCase();
+    		action.action_id = getId();
     	action.action = getBehavior();
     	action.duration = getDuration();
     	action.start_time = getStartTime().getTime()/1000.0;

@@ -28,7 +28,7 @@ public class SurfaceAction extends AbstractPddlAction {
         man.z_units = ZUnits.DEPTH;
         man.duration = (int) getDuration();
         man.radius = 10;        
-        return PlanUtilities.createPlan("mvplan_"+getAssociatedTask(), man);    
+        return PlanUtilities.createPlan(getId(), man);    
     }
     
 	@Override
