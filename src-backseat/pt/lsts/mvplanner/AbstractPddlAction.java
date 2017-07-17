@@ -13,6 +13,7 @@ public abstract class AbstractPddlAction implements IPddlAction {
     protected Date start = null, end = null;
     protected PddlLocation associatedLocation = null;
     protected PlanSpecification associatedPlan = null;
+    protected static int counter = 1;
     
     @Override
     public String getAssociatedTask() {
@@ -97,10 +98,14 @@ public abstract class AbstractPddlAction implements IPddlAction {
 	@Override
     public TemporalAction asImc() {
     	TemporalAction action = new TemporalAction();
-    	action.action_id = getAssociatedTask();
+    	if (getAssociatedTask() != null)
+    		action.action_id = getAssociatedTask();
+    	else
+    		action.action_id = (getClass().getSimpleName()+"_"+(counter++)).toLowerCase();
     	action.action = getBehavior();
     	action.duration = getDuration();
-    	action.start_time = getStartTime().getTime()/1000.0;    	
+    	action.start_time = getStartTime().getTime()/1000.0;
+    	action.system_id = getVehicle();
     	action.status = STATUS.ASTAT_UKNOWN;
     	return action;
     }

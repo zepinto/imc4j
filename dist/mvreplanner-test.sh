@@ -9,12 +9,12 @@ echo "Starting BackSeat for NP1"
 cd $MVPLAN_HOME
 java -jar MvReplanner.jar --port=6002 &
 
-echo "Starting Dune for NP2"
+echo "Starting Dune for NP3"
 cd $DUNE_HOME
-./dune -c lauv-noptilus-2 -p Simulation &
-echo "Starting BackSeat for NP2"
+./dune -c lauv-noptilus-3 -p Simulation &
+echo "Starting BackSeat for NP3"
 cd $MVPLAN_HOME
-java -jar MvReplanner.jar --port=6003 &
+java -jar MvReplanner.jar --port=6004 &
 
 echo "Starting Dune for XP1"
 cd $DUNE_HOME

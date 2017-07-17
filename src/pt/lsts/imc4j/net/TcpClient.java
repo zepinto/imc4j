@@ -118,6 +118,7 @@ public class TcpClient extends Thread {
 		m.dst = 65535;
 		m.src = remoteSrc;
 		m.timestamp = System.currentTimeMillis()/1000.0;
+		System.out.println("Sending out "+m.abbrev());
 		synchronized (socket) {
 			try {
 				output.write(m.serialize());

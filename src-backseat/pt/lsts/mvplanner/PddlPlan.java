@@ -46,8 +46,13 @@ public class PddlPlan {
 			plan.depots.add(d);
 		}
 
-		for (IPddlAction action : actions)
-			plan.actions.add(action.asImc());
+		int count = 1;
+		for (IPddlAction action : actions) {
+			TemporalAction a = action.asImc();
+			if (a.action_id == null || a.action_id.isEmpty())
+				a.action_id = "action_"+(count++);
+			plan.actions.add(a);
+		}
 
 		return plan;
 	}
@@ -89,7 +94,7 @@ public class PddlPlan {
 			System.err.println("Unrecognized action type: " + action.type);
 			return null;
 		}
-
+		System.out.println("Setting system of "+a.getClass().getSimpleName()+" to be "+action.system_id);
 		a.setTask(action.action_id);
 		a.setVehicle(action.system_id);
 

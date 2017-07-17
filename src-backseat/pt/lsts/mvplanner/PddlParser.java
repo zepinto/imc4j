@@ -281,7 +281,7 @@ public class PddlParser {
 			action = new LocateAction(locations.get(parts[4]), new Date((long)(start*1000)), new Date((long)(end*1000)));
 			break;
 		case "communicate":
-			action = new CommunicateAction(locations.get(parts[4]), new Date((long)(start*1000)), new Date((long)(end*1000)));
+			action = new CommunicateAction(locations.get(parts[3]), new Date((long)(start*1000)), new Date((long)(end*1000)));
 			break;
 		case "survey":
 		case "sample":
@@ -292,7 +292,7 @@ public class PddlParser {
 			System.err.println("Did not recognize this action type: "+actionType);
 			return null;
 		}
-		
+		action.setVehicle(vehicle);
 		return new IPddlAction[] { action };
 	}
 
@@ -303,6 +303,7 @@ public class PddlParser {
 			if (line.trim().isEmpty() || line.trim().startsWith(";"))
 				continue;
 			IPddlAction[] act = createAction(previousPlan, vehicle, line.toLowerCase());
+			
 			if (act != null) {
 				for (IPddlAction a : act)
 					newActions.add(a);
@@ -328,6 +329,11 @@ public class PddlParser {
 
 		System.out.println("Writing domain model to " + domain_file.getPath());
 
+		System.out.println("Domain file: "+PddlParser.class.getClassLoader().getResourceAsStream("pt/lsts/mvplanner/domain.pddl"));
+		
+		//if (true)
+		//	return "";
+		
 		domain_file.getParentFile().mkdirs();
 		Files.copy(PddlParser.class.getClassLoader().getResourceAsStream("pt/lsts/mvplanner/domain.pddl"),
 				domain_file.toPath(), StandardCopyOption.REPLACE_EXISTING);

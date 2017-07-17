@@ -67,7 +67,13 @@
     <delete dir="bin"/>
     <mkdir dir="bin"/>
     
-    <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+    <copy verbose="true" todir="bin">
+      <fileset dir="src-backseat" includes="**/*.pddl"/>
+      <fileset dir="src" includes="**/*.java"/>
+	  <fileset dir="src-backseat" includes="**/*.java"/>
+    </copy>
+
+    <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  debug="on" destdir="bin" includes="**/*.java" fork="false">
       <classpath refid="classpath.dependencies"/>
     </javac>
     <jar destfile="${dir.jarfile}/MvReplanner.jar" filesetmanifest="mergewithoutmain">

@@ -22,6 +22,7 @@ import pt.lsts.imc4j.msg.Announce;
 import pt.lsts.imc4j.msg.PlanControl;
 import pt.lsts.imc4j.msg.PlanControlState;
 import pt.lsts.imc4j.msg.TemporalAction;
+import pt.lsts.imc4j.msg.TemporalAction.TYPE;
 import pt.lsts.imc4j.msg.TemporalPlan;
 import pt.lsts.imc4j.msg.TemporalPlanStatus;
 import pt.lsts.imc4j.util.FormatConversion;
@@ -46,7 +47,13 @@ public class MvReplanningExecutive extends MissionExecutive {
 
 	@Parameter
 	public int replanningSecs = 10;
-
+	
+	@Parameter
+	public int replanAheadOfTaskTermination = 0;
+	
+	@Parameter
+	public boolean sendStatusOnlyOnCommunicate = true;
+	
 
 	/** Current plan being executed **/
 	private TemporalPlan currPlan = null;
@@ -75,8 +82,11 @@ public class MvReplanningExecutive extends MissionExecutive {
 		currPlan = msg;
 
 		print("Got a new plan with " + currPlan.actions.size() + " actions");
+		System.out.println(msg);
+		
 
 		toExecute.clear();
+		
 		currPlan.actions.stream()
 		.filter(a -> a.system_id == systemId)
 		.forEach(a -> toExecute.add(a));
@@ -118,7 +128,7 @@ public class MvReplanningExecutive extends MissionExecutive {
 
 		long currTime = System.currentTimeMillis();
 		double nextActionTime = toExecute.peek().start_time;
-		print("Next action in: " + ((nextActionTime - currTime) / 1000) + "s");
+		print("Next action in ("+nextActionTime+") ("+currTime+"): " + ((nextActionTime - currTime/1000) ) + "s");
 
 		if(currTime >=  nextActionTime)
 			return this::exec;
@@ -153,12 +163,15 @@ public class MvReplanningExecutive extends MissionExecutive {
 			return this::exec;
 		}
 
-		print("Executing action with id " + currAction.action.plan_id);
+		print("Executing action with id " + currAction.action.plan_id+" of type "+currAction.type);
 
 		toExecute.poll();
 		TemporalAction action = new TemporalAction();
 		action.action_id = currAction.action_id;
 		action.system_id = currAction.system_id;
+		action.start_time = currAction.start_time;
+		action.duration = currAction.duration;
+		action.type = currAction.type;
 		action.status = TemporalAction.STATUS.ASTAT_SCHEDULED;
 
 		handledActions.push(action);
@@ -167,6 +180,7 @@ public class MvReplanningExecutive extends MissionExecutive {
 	}
 
 	protected State monitor() {
+		print("monitor");
 		PlanControlState msg = get(PlanControlState.class);
 		if(msg == null || msg.src != currAction.system_id  || !msg.plan_id.contains(currAction.action_id))
 			return this::monitor;
@@ -174,7 +188,7 @@ public class MvReplanningExecutive extends MissionExecutive {
 		boolean success = false;
 		boolean failed = false;
 
-		if (msg.state == PlanControlState.STATE.PCS_EXECUTING && msg.plan_eta > 0 && msg.plan_eta <= replanningSecs) { 
+		if (replanAheadOfTaskTermination > 0 && msg.state == PlanControlState.STATE.PCS_EXECUTING && msg.plan_eta > 0 && msg.plan_eta <= replanAheadOfTaskTermination) { 
 			if (!replanning)
 				replan(true);
 		}
@@ -196,7 +210,7 @@ public class MvReplanningExecutive extends MissionExecutive {
 			handledActions.peek().status = TemporalAction.STATUS.ASTAT_FAILED;
 			currAction = null;
 			replan(false);
-			return this::idle;
+			return this::replanning;
 		}
 
 		return this::monitor;
@@ -205,7 +219,6 @@ public class MvReplanningExecutive extends MissionExecutive {
 	private boolean replanning = false;
 
 	protected void replan(boolean skipCurrentAction) {
-		System.out.println(currPlan);
 		TemporalPlan copy = null;
 		try {
 			copy = (TemporalPlan) FormatConversion.fromJson(FormatConversion.asJson(currPlan));
@@ -237,10 +250,13 @@ public class MvReplanningExecutive extends MissionExecutive {
 			public void run() {
 				try {    				
 					String solution = PddlParser.replan(plan, remoteSrc, replanningSecs);
-					PddlPlan newPlan = PddlParser.parseSolution(plan, remoteSrc, solution);
 					print("Finished replanning.");
+					System.out.println(solution);
 					replanning = false;
-					on(newPlan.asPlan());            		
+					if (solution != null) {
+						PddlPlan newPlan = PddlParser.parseSolution(plan, remoteSrc, solution);
+						on(newPlan.asPlan());
+					}
 				}
 				catch (Exception e) {
 					e.printStackTrace();
@@ -261,6 +277,9 @@ public class MvReplanningExecutive extends MissionExecutive {
 
 	@Periodic(10000)
 	private void communicate() {
+		if (sendStatusOnlyOnCommunicate && (currAction != null && currAction.type != TYPE.ATYPE_COMMUNICATE) || replanning)
+			return;
+		
 		print("Communicating");
 
 		if(status == null)
