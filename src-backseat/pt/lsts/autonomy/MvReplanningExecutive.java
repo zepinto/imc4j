@@ -18,15 +18,22 @@ import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.def.SystemType;
+import pt.lsts.imc4j.def.ZUnits;
 import pt.lsts.imc4j.msg.Announce;
+import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.PlanControl;
+import pt.lsts.imc4j.msg.PlanControl.OP;
 import pt.lsts.imc4j.msg.PlanControlState;
+import pt.lsts.imc4j.msg.PlanSpecification;
+import pt.lsts.imc4j.msg.StationKeeping;
 import pt.lsts.imc4j.msg.TemporalAction;
 import pt.lsts.imc4j.msg.TemporalAction.TYPE;
 import pt.lsts.imc4j.msg.TemporalPlan;
 import pt.lsts.imc4j.msg.TemporalPlanStatus;
 import pt.lsts.imc4j.util.FormatConversion;
 import pt.lsts.imc4j.util.PojoConfig;
+import pt.lsts.imc4j.util.WGS84Utilities;
+import pt.lsts.mvplanner.CommonSettings;
 import pt.lsts.mvplanner.PddlParser;
 import pt.lsts.mvplanner.PddlPlan;
 
@@ -214,6 +221,33 @@ public class MvReplanningExecutive extends MissionExecutive {
 
 		return this::monitor;
 	}
+	
+	protected void startSkeeping(int secs) {
+		StationKeeping sk = new StationKeeping();
+		sk.duration = secs;
+		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+		sk.lat = Math.toRadians(pos[0]);
+		sk.lon = Math.toRadians(pos[1]);
+		sk.speed = CommonSettings.SPEED;
+		sk.speed_units = CommonSettings.SPEED_UNITS;
+		sk.z = 0;
+		sk.z_units = ZUnits.DEPTH;
+		sk.radius = 20;
+	
+		PlanSpecification spec = spec(sk);
+		spec.plan_id = "replanning";
+		PlanControl pc = new PlanControl();
+		pc.arg = spec;
+		pc.plan_id = spec.plan_id;
+		pc.op = OP.PC_START;
+		pc.type = PlanControl.TYPE.PC_REQUEST;
+		pc.dst = remoteSrc;
+		try {
+			send(pc);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	private boolean replanning = false;
 
@@ -239,16 +273,21 @@ public class MvReplanningExecutive extends MissionExecutive {
 				copy.actions.remove(index);	
 		}		
 		
+		
+		
 		PddlPlan plan = PddlPlan.parse(currPlan);
 		
 		print("Replanning for "+replanningSecs+" seconds...");
-
+		startSkeeping(replanningSecs);
 		replanning = true;
 		Thread t = new Thread("Replanning") {
 			@Override
 			public void run() {
 				try {    				
-					String solution = PddlParser.replan(plan, remoteSrc, replanningSecs);
+					EstimatedState state = get(EstimatedState.class);
+					double[] position = WGS84Utilities.toLatLonDepth(state);
+					
+					String solution = PddlParser.replan(plan, position, remoteSrc, replanningSecs);
 					print("Finished replanning.");
 					System.out.println(solution);
 					replanning = false;

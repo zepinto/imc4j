@@ -24,9 +24,11 @@ import pt.lsts.imc4j.util.FormatConversion;
 
 public class PddlParser {
 
-	public static String initialState(PddlPlan plan, int vehicle) {
+	public static String initialState(PddlPlan plan, double[] position, int vehicle) {
 
 		ArrayList<PddlLocation> locations = plan.locations(vehicle);
+		
+		locations.add(new PddlLocation("curr_position", position[0], position[1]));
 
 		// start printing...
 		StringBuilder sb = new StringBuilder();
@@ -133,8 +135,9 @@ public class PddlParser {
 		sb.append("  (= (speed " + VehicleParams.vehicleNickname(v) + ") " + CommonSettings.SPEED + ")\n");
 		sb.append(
 				"  (base " + VehicleParams.vehicleNickname(v) + " " + VehicleParams.vehicleNickname(v) + "_depot)\n\n");
-		sb.append("  (at " + VehicleParams.vehicleNickname(v) + " " + VehicleParams.vehicleNickname(v) + "_depot"
-				+ ")\n");
+
+		sb.append("  (at " + VehicleParams.vehicleNickname(v) + " curr_position)\n");
+				
 		for (PayloadRequirement req : VehicleParams.payloadsFor(v))
 			sb.append("  (having " + VehicleParams.vehicleNickname(v) + "_" + req.name() + " "
 					+ VehicleParams.vehicleNickname(v) + ")\n");
@@ -319,7 +322,7 @@ public class PddlParser {
 		return newPlan;
 	}
 
-	public static String replan(PddlPlan plan, int vehicle, int secs) throws Exception {
+	public static String replan(PddlPlan plan, double[] position, int vehicle, int secs) throws Exception {
 		String cmd = "lpg -o DOMAIN -f INITIAL_STATE -out OUTFILE -n 10 -cputime " + secs;
 
 		SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd-HHmmss");
@@ -333,15 +336,12 @@ public class PddlParser {
 
 		System.out.println("Domain file: "+PddlParser.class.getClassLoader().getResourceAsStream("pt/lsts/mvplanner/domain.pddl"));
 		
-		//if (true)
-		//	return "";
-		
 		domain_file.getParentFile().mkdirs();
 		Files.copy(PddlParser.class.getClassLoader().getResourceAsStream("pt/lsts/mvplanner/domain.pddl"),
 				domain_file.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
 		System.out.println("Writing initial state to " + input_file.getPath());
-		String initial_state = initialState(plan, vehicle);
+		String initial_state = initialState(plan, position, vehicle);
 		Files.write(input_file.toPath(), initial_state.getBytes());
 		System.out.println(initial_state);
 
@@ -392,7 +392,7 @@ public class PddlParser {
 		PddlPlan pplan = PddlPlan.parse(plan);
 		
 		while (true) {
-			String solution = PddlParser.replan(pplan, 27, 3);
+			String solution = PddlParser.replan(pplan, new double[] { 0, 0, 0 }, 27, 3);
 			pplan = PddlParser.parseSolution(pplan, 27, solution);
 			Thread.sleep(30000);
 		}		
