@@ -62,7 +62,7 @@ public class MvReplanningExecutive extends MissionExecutive {
 	public boolean sendStatusOnlyOnCommunicate = true;
 	
 	@Parameter
-	public int forcedFailureSeconds = 300;
+	public int forcedFailureSeconds = 600;
 	
 
 	/** Current plan being executed **/
@@ -196,6 +196,7 @@ public class MvReplanningExecutive extends MissionExecutive {
 		if (countFailure > forcedFailureSeconds && forcedFailureSeconds > 0) {
 			print("Simulated failure!");
 			stopPlan();
+			countFailure = 0;
 		}
 		
 		PlanControlState msg = get(PlanControlState.class);
