@@ -304,20 +304,38 @@ public class PddlParser {
 	public static PddlPlan parseSolution(PddlPlan previousPlan, int vehicle, String solution) throws Exception {
 		ArrayList<IPddlAction> newActions = new ArrayList<>();
 
-		for (String line : solution.split("\n")) {
-			if (line.trim().isEmpty() || line.trim().startsWith(";"))
-				continue;
-			IPddlAction[] act = createAction(previousPlan, vehicle, line.toLowerCase());
-			
-			if (act != null) {
-				for (IPddlAction a : act)
-					newActions.add(a);
-			}
+		ArrayList<String> surveys = new ArrayList<>();
+
+		if (solution != null) {
+			for (String line : solution.split("\n")) {
+				if (line.trim().isEmpty() || line.trim().startsWith(";"))
+					continue;
+				IPddlAction[] act = createAction(previousPlan, vehicle, line.toLowerCase());
+				
+				String task = act[0].getAssociatedTask(); 
+				if (task != null && task.startsWith("t"))
+					surveys.add(task);
+				
+				if (act != null) {
+					for (IPddlAction a : act)
+						newActions.add(a);
+				}
+			}				
 		}
+		
 		PddlPlan newPlan = new PddlPlan();
 		newPlan.deadlines.putAll(previousPlan.deadlines);
 		newPlan.depots.putAll(previousPlan.depots);
 		newPlan.actions.addAll(newActions);
+		newPlan.cancelled.addAll(previousPlan.cancelled);
+		
+		for (IPddlAction action : previousPlan.actions(vehicle)) {
+			String t = action.getAssociatedTask();
+			if (t != null && t.startsWith("t") && !surveys.contains(t)) {
+				System.out.println("Action "+action.getAssociatedTask()+" got cancelled.");
+				newPlan.cancelled.add(action);
+			}
+		}
 
 		return newPlan;
 	}

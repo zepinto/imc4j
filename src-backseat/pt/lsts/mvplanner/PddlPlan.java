@@ -8,8 +8,10 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import pt.lsts.imc4j.msg.TemporalAction;
+import pt.lsts.imc4j.msg.TemporalAction.STATUS;
 import pt.lsts.imc4j.msg.TemporalPlan;
 import pt.lsts.imc4j.msg.VehicleDepot;
+import pt.lsts.imc4j.util.FormatConversion;
 import pt.lsts.imc4j.util.PlanUtilities;
 
 public class PddlPlan {
@@ -17,6 +19,8 @@ public class PddlPlan {
 	protected LinkedHashMap<Integer, PddlLocation> depots = new LinkedHashMap<>();
 	protected LinkedHashMap<Integer, Date> deadlines = new LinkedHashMap<>();
 	protected ArrayList<IPddlAction> actions = new ArrayList<>();
+	protected ArrayList<IPddlAction> cancelled = new ArrayList<>();
+	
 
 	public static PddlPlan parse(TemporalPlan plan) {
 		PddlPlan result = new PddlPlan();
@@ -27,7 +31,10 @@ public class PddlPlan {
 			result.deadlines.put(depot.vehicle, new Date((long) (depot.deadline * 1000)));
 		}
 		for (TemporalAction action : plan.actions) {
-			result.actions.add(createAction(action));
+			if (action.status == STATUS.ASTAT_CANCELLED)
+				result.cancelled.add(createAction(action));
+			else
+				result.actions.add(createAction(action));
 		}
 
 		Collections.sort(result.actions);
@@ -53,6 +60,13 @@ public class PddlPlan {
 				a.action_id = "action_"+(count++);
 			plan.actions.add(a);
 		}
+		
+		for (IPddlAction action : cancelled) {
+			TemporalAction a = action.asImc();
+			a.status = STATUS.ASTAT_CANCELLED;
+			plan.actions.add(a);
+		}
+		
 
 		return plan;
 	}
@@ -60,13 +74,14 @@ public class PddlPlan {
 	public static IPddlAction createAction(TemporalAction action) {
 		PddlLocation loc = null;
 		Date start = null, end = null;
-		try {
+		try {			
 			double[] pos = PlanUtilities.computeLocations(action.action).iterator().next();
 			loc = new PddlLocation(action.action_id + "_loc", pos[0], pos[1]);
 			start = new Date((long) (action.start_time * 1000));
 			end = new Date((long) ((action.start_time + action.duration) * 1000));
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.err.println("Error processing action: "+FormatConversion.asJson(action));
+			e.printStackTrace();			
 			return null;
 		}
 

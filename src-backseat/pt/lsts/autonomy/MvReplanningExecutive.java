@@ -88,9 +88,8 @@ public class MvReplanningExecutive extends MissionExecutive {
 
 		currPlan = msg;
 
-		print("Got a new plan with " + currPlan.actions.size() + " actions");
-		System.out.println(msg);
-		
+		print("Got a new plan with " + currPlan.actions.size() + " actions from "+ msg.src);
+		System.out.println(msg);		
 
 		toExecute.clear();
 		
@@ -188,6 +187,8 @@ public class MvReplanningExecutive extends MissionExecutive {
 
 	protected State monitor() {
 		PlanControlState msg = get(PlanControlState.class);
+		if (currAction == null)
+			return this::monitor;
 		if(msg == null || msg.src != currAction.system_id  || !msg.plan_id.contains(currAction.action_id))
 			return this::monitor;
 
@@ -291,10 +292,8 @@ public class MvReplanningExecutive extends MissionExecutive {
 					print("Finished replanning.");
 					System.out.println(solution);
 					replanning = false;
-					if (solution != null) {
-						PddlPlan newPlan = PddlParser.parseSolution(plan, remoteSrc, solution);
-						on(newPlan.asPlan());
-					}
+					PddlPlan newPlan = PddlParser.parseSolution(plan, remoteSrc, solution);
+					on(newPlan.asPlan());										
 				}
 				catch (Exception e) {
 					e.printStackTrace();
@@ -310,12 +309,18 @@ public class MvReplanningExecutive extends MissionExecutive {
 		if (replanning)
 			return this::replanning;
 		else
-			return this::idle;    	
+			return this::exec;    	
 	}
 
 	@Periodic(10000)
 	private void communicate() {
-		if (sendStatusOnlyOnCommunicate && (currAction != null && currAction.type != TYPE.ATYPE_COMMUNICATE) || replanning)
+		if (sendStatusOnlyOnCommunicate && toExecute.size()>1)
+			return;
+		
+		if (sendStatusOnlyOnCommunicate && (currAction != null && currAction.type != TYPE.ATYPE_COMMUNICATE))
+			return;
+		
+		if (replanning)
 			return;
 		
 		print("Communicating");

@@ -463,6 +463,7 @@ public class PlanUtilities {
 		case Loiter.ID_STATIC:
 		case CompassCalibration.ID_STATIC:
 		case StationKeeping.ID_STATIC:
+		case ScheduledGoto.ID_STATIC:
 		case CommsRelay.ID_STATIC:
 			return computeSingleLoc(m);
 		case Elevator.ID_STATIC:
