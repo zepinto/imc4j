@@ -94,7 +94,7 @@ public class MvReplanningExecutive extends MissionExecutive {
 		toExecute.clear();
 		
 		currPlan.actions.stream()
-		.filter(a -> a.system_id == systemId)
+		.filter(a -> a.system_id == systemId && a.status != TemporalAction.STATUS.ASTAT_CANCELLED)
 		.forEach(a -> toExecute.add(a));
 
 		print("To execute: " + toExecute.size() + " actions");
