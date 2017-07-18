@@ -61,6 +61,9 @@ public class MvReplanningExecutive extends MissionExecutive {
 	@Parameter
 	public boolean sendStatusOnlyOnCommunicate = true;
 	
+	@Parameter
+	public int forcedFailureSeconds = 300;
+	
 
 	/** Current plan being executed **/
 	private TemporalPlan currPlan = null;
@@ -75,6 +78,8 @@ public class MvReplanningExecutive extends MissionExecutive {
 	private TemporalAction currAction = null;
 
 	private TemporalPlanStatus status = null;
+	
+	private int countFailure = 0;
 
 	public MvReplanningExecutive() throws ParseException {
 		this.state = this::init;
@@ -186,6 +191,13 @@ public class MvReplanningExecutive extends MissionExecutive {
 	}
 
 	protected State monitor() {
+		
+		countFailure++;
+		if (countFailure > forcedFailureSeconds && forcedFailureSeconds > 0) {
+			print("Simulated failure!");
+			stopPlan();
+		}
+		
 		PlanControlState msg = get(PlanControlState.class);
 		if (currAction == null)
 			return this::monitor;
