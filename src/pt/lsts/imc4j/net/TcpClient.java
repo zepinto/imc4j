@@ -36,6 +36,10 @@ public class TcpClient extends Thread {
 	private int port = 0;
 	private int timeoutMillis = 5000;
 
+	public void connect() throws Exception {
+		connect("127.0.0.1", 6006);
+	}
+	
 	public void connect(String host, int port) throws Exception {
         synchronized (lock) {
             this.host = host;
@@ -192,6 +196,9 @@ public class TcpClient extends Thread {
 	}
 	
 	public void disconnect() {
+		
+		print("Terminating connection...");
+		
 		if (socket == null)
 			return;
 		
@@ -206,7 +213,9 @@ public class TcpClient extends Thread {
 			consumers.clear();
 			input = null;
 			output = null;
-			socket = null;
+			socket = null;			
 		}		
+		PeriodicCallbacks.unregister(this);
+		connected = false;
 	}
 }

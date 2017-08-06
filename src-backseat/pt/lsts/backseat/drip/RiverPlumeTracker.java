@@ -104,10 +104,10 @@ public class RiverPlumeTracker extends TimedFSM {
 	int secs_underwater = 0;
 	
 	public RiverPlumeTracker() {
-		state = this::wait;
+		state = this::init;
 	}
 
-	public void init() {
+	public FSMState init(FollowRefState state) {
 		angle = start_ang;
 		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
 		if (!end_plan.isEmpty()) {
@@ -115,8 +115,14 @@ public class RiverPlumeTracker extends TimedFSM {
 			System.out.println("Will terminate by "+deadline+" and execute '"+end_plan+"'");
 		}
 		else
-			System.out.println("Will terminate by "+deadline);
+			System.out.println("Will terminate by "+deadline);	
 		
+		return this::wait;
+	}
+	
+	@Override
+	public void connect() throws Exception {
+		connect(host_addr, host_port);
 	}
 	
 	@Consume
@@ -249,7 +255,7 @@ public class RiverPlumeTracker extends TimedFSM {
 			
 			Sms sms = new Sms();
 			sms.timeout = 20;
-			sms.contents = String.format("DRIP: %s, salinity: %.1f, angle: %.0f", going_in ? "Going in, " : "Going out", salinity(), angle);
+			sms.contents = String.format("DRIP: %s, salinity: %.1f, angle: %.0f", going_in ? "Going in" : "Going out", salinity(), angle);
 			sms.number = sms_recipient;
 			try {
 				print("Sending DRIP state to "+sms_recipient+" ("+sms.contents+")");
@@ -332,8 +338,7 @@ public class RiverPlumeTracker extends TimedFSM {
 		props.load(new FileInputStream(file));
 				
 		RiverPlumeTracker tracker = PojoConfig.create(RiverPlumeTracker.class, props);
-		tracker.init();
-
+		
 		System.out.println("River Plume Tracker started with settings:");
 		for (Field f : tracker.getClass().getDeclaredFields()) {
 			Parameter p = f.getAnnotation(Parameter.class);

@@ -233,8 +233,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	             print("No exit plan given. Exiting with nothing triggered");
 			}
 			
-			disconnect();
-			System.exit(0);
+			disconnect();			
 		}
 		
 		if (executing) {
