@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -16,7 +17,6 @@ import java.util.Properties;
 
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response.Status;
-import fi.iki.elonen.util.ServerRunner;
 import pt.lsts.backseat.BackSeatDriver;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.util.PeriodicCallbacks;
@@ -50,9 +50,31 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 		catch (Exception e) {
 			e.printStackTrace();
-		}		
-		ServerRunner.executeInstance(this);
+		}
+        
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+		    public void run() {
+		    	stop();
+		        System.out.println("Server is stopped.\n");
+		    }
+		}));
 		
+        System.out.println("Listening on port "+http_port+"...\n");
+
+		try {
+			start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);			
+        } catch (IOException ioe) {
+            System.err.println("Couldn't start server:\n" + ioe);
+            System.exit(-1);
+        }
+		
+		while(true) {
+			try {
+				Thread.sleep(1000);
+			}
+			catch (Exception e) {
+			}
+		}
 	}
 
 	private String settings() throws Exception {
