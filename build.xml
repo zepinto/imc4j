@@ -7,6 +7,7 @@
 	
 	<path id="classpath.dependencies">
 	    <pathelement location="lib/minimal-json-0.9.4.jar" />
+	    <pathelement location="lib/nanohttpd-2.3.1.jar" />
 	  </path>
 	
 	<target name="compile-backseat">
@@ -26,6 +27,25 @@
 		</jar>
 	</target>
 	
+    <target name="bserver">
+    	 <mkdir dir="bin"/>
+		 <delete dir="bin"/>
+    	 <mkdir dir="bin"/>
+    	        
+    	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+    	  	<classpath refid="classpath.dependencies"/>
+    	 </javac>
+         <jar destfile="${dir.jarfile}/BackSeatServer.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Main-Class" value="pt.lsts.httpd.BackSeatServer"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="${dir.buildfile}/bin"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
+         </jar>
+    </target>
+
     <target name="drip">
     	 <mkdir dir="bin"/>
 		 <delete dir="bin"/>
@@ -43,6 +63,7 @@
             <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
          </jar>
     </target>
+
 
     <target name="arpao">
     	 <mkdir dir="bin"/>
