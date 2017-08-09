@@ -17,6 +17,7 @@ import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
+import pt.lsts.imc4j.msg.PlanControlState;
 import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.msg.Salinity;
 import pt.lsts.imc4j.msg.Sms;
@@ -108,6 +109,12 @@ public class RiverPlumeTracker extends TimedFSM {
 	}
 
 	public FSMState init(FollowRefState state) {
+		
+		if (get(PlanControlState.class).plan_id.equals("back_seat"))
+			print("Back seat driver is started");
+		else
+			return this::init;
+		
 		angle = start_ang;
 		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
 		if (!end_plan.isEmpty()) {
@@ -277,6 +284,7 @@ public class RiverPlumeTracker extends TimedFSM {
 	}
 	
 	public FSMState wait(FollowRefState ref) {
+		
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
