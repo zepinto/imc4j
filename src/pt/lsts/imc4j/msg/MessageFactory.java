@@ -173,6 +173,8 @@ public class MessageFactory {
 
 	public static final int ID_DevDataBinary = 274;
 
+	public static final int ID_Force = 275;
+
 	public static final int ID_SonarData = 276;
 
 	public static final int ID_Pulse = 277;
@@ -579,6 +581,8 @@ public class MessageFactory {
 
 	public static final int ID_ApmStatus = 906;
 
+	public static final int ID_SadcReadings = 907;
+
 	public static Message create(int mgid) {
 		switch(mgid) {
 			case ID_EntityState: {
@@ -835,6 +839,9 @@ public class MessageFactory {
 			}
 			case ID_DevDataBinary: {
 				return new DevDataBinary();
+			}
+			case ID_Force: {
+				return new Force();
 			}
 			case ID_SonarData: {
 				return new SonarData();
@@ -1445,6 +1452,9 @@ public class MessageFactory {
 			case ID_ApmStatus: {
 				return new ApmStatus();
 			}
+			case ID_SadcReadings: {
+				return new SadcReadings();
+			}
 			default: {
 				return null;
 			}
@@ -1711,6 +1721,9 @@ public class MessageFactory {
 			}
 			case "DevDataBinary": {
 				return ID_DevDataBinary;
+			}
+			case "Force": {
+				return ID_Force;
 			}
 			case "SonarData": {
 				return ID_SonarData;
@@ -2320,6 +2333,9 @@ public class MessageFactory {
 			}
 			case "ApmStatus": {
 				return ID_ApmStatus;
+			}
+			case "SadcReadings": {
+				return ID_SadcReadings;
 			}
 			default: {
 				return -1;
