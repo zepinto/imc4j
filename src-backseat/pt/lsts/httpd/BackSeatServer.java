@@ -17,17 +17,17 @@ import java.util.Properties;
 
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response.Status;
-import pt.lsts.backseat.BackSeatDriver;
 import pt.lsts.imc4j.annotations.Parameter;
+import pt.lsts.imc4j.net.TcpClient;
 import pt.lsts.imc4j.util.PeriodicCallbacks;
 import pt.lsts.imc4j.util.PojoConfig;
 
 public class BackSeatServer extends NanoHTTPD {
 
-	BackSeatDriver driver;
+    TcpClient driver;
 	File output;
 
-	public BackSeatServer(BackSeatDriver back_seat, int http_port) {
+	public BackSeatServer(TcpClient back_seat, int http_port) {
 		super(http_port);
 		this.driver = back_seat;
 		SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMdd_HHmmss");
@@ -203,20 +203,22 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 
 		sb.append("</form>\n");
+		
+        sb.append("</body>");
+        sb.append("</html>");
 
 		return newFixedLengthResponse(sb.toString());
-
 	}
 
 	public static void main(String[] args) throws Exception {
-		
 		if (args.length != 2) {
-			System.err.println("Usage: java -jar BackSeatServer.jar <class> <port>");
+            System.err.println("Usage: java -jar BackSeatServer.jar <class> <port>");
+            System.err.println("    <class> - The full class name to run");
+            System.err.println("    <port>  - The http server port for this service");
 			System.exit(1);
 		}
 		
-		new BackSeatServer((BackSeatDriver) Class.forName(args[0]).newInstance(), Integer.parseInt(args[1]));
+		new BackSeatServer((TcpClient) Class.forName(args[0]).newInstance(), Integer.parseInt(args[1]));
 		System.exit(0);
 	}
-
 }
