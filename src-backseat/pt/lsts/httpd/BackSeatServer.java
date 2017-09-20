@@ -24,8 +24,8 @@ import pt.lsts.imc4j.util.PojoConfig;
 
 public class BackSeatServer extends NanoHTTPD {
 
-    TcpClient driver;
-	File output;
+    protected TcpClient driver;
+    protected File output;
 
 	public BackSeatServer(TcpClient back_seat, int http_port) {
 		super(http_port);
@@ -63,7 +63,8 @@ public class BackSeatServer extends NanoHTTPD {
 
 		try {
 			start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);			
-        } catch (IOException ioe) {
+        }
+		catch (IOException ioe) {
             System.err.println("Couldn't start server:\n" + ioe);
             System.exit(-1);
         }
@@ -123,7 +124,8 @@ public class BackSeatServer extends NanoHTTPD {
 
 		try {
 			loadSettings(parms.get("settings"));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 		}
 
@@ -144,23 +146,26 @@ public class BackSeatServer extends NanoHTTPD {
 
 		switch (cmd) {
 		case "Start":
-			try {
-				startBackSeat();
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
+		    try {
+		        startBackSeat();
+		    }
+		    catch (Exception e1) {
+		        e1.printStackTrace();
+		    }
 			break;
 		case "Stop":
 			try {
 				stopBackSeat();
-			} catch (Exception e1) {
+			}
+			catch (Exception e1) {
 				e1.printStackTrace();
 			}
 			break;
 		case "Save":
 			try {
 				saveSettings(parms.get("settings"));
-			} catch (Exception e1) {
+			}
+			catch (Exception e1) {
 				e1.printStackTrace();
 			}
 			break;
@@ -171,7 +176,8 @@ public class BackSeatServer extends NanoHTTPD {
 		String settings = "";
 		try {
 			settings = settings();
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 		}
 
