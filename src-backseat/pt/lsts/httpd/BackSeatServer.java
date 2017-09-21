@@ -55,7 +55,6 @@ public class BackSeatServer extends NanoHTTPD {
 		        e.printStackTrace();
 		    }
 		}       
-
 		
 		this.driver = back_seat;
 		fillType();
@@ -106,6 +105,21 @@ public class BackSeatServer extends NanoHTTPD {
             System.err.println("Couldn't start server:\n" + ioe);
             System.exit(-1);
         }
+		
+		if (autoStartOnPowerOn) {
+            try {
+                Thread.sleep(5000);
+            }
+            catch (Exception e) {
+            }
+            
+            try {
+                startBackSeat();
+            }
+            catch (Exception e1) {
+                e1.printStackTrace();
+            }
+		}
 		
 		while(true) {
 			try {
@@ -208,13 +222,6 @@ public class BackSeatServer extends NanoHTTPD {
 	public Response serve(String uri, Method method, Map<String, String> headers, Map<String, String> parms,
 			Map<String, String> files) {
 
-//		try {
-//			loadSettings(parms.get("settings"));
-//		}
-//		catch (Exception e) {
-//			e.printStackTrace();
-//		}
-
 		if (uri.equals("/logbook")) {
 			try {
 				return newChunkedResponse(Status.OK, "text/plain", new FileInputStream(output));
@@ -246,7 +253,7 @@ public class BackSeatServer extends NanoHTTPD {
 
         if (uri.equals("/manifest.json")) {
             try (InputStream inStream = this.getClass().getResourceAsStream("manifest.json");
-                    Scanner s = new Scanner(inStream);) {
+                    Scanner s = new Scanner(inStream)) {
 		        s.useDelimiter("\\A");
 		        String manifest = s.hasNext() ? s.next() : "";
 
