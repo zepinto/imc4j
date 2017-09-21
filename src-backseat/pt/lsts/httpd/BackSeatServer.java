@@ -208,6 +208,16 @@ public class BackSeatServer extends NanoHTTPD {
 		    }
 		}
 
+		if (uri.equals("/util.js")) {
+		    try {
+		        InputStream stream = this.getClass().getResourceAsStream("util.js");
+		        return newChunkedResponse(Status.OK, "text/javascript", stream);
+		    }
+		    catch (Exception e) {
+		        e.printStackTrace();
+		    }
+		}
+
 		String cmd = "none";
 
 		if (parms.get("cmd") != null) {
@@ -257,6 +267,7 @@ public class BackSeatServer extends NanoHTTPD {
         sb.append("<head>");
         sb.append("<title>").append(name).append("</title>");
         sb.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\"/>");
+        sb.append("<script src=\"util.js\"></script>");
         sb.append("</head>");
         sb.append("<body>");
         sb.append("<h1>").append(name).append("</h1>");
