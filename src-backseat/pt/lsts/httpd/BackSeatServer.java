@@ -35,6 +35,7 @@ public class BackSeatServer extends NanoHTTPD {
     protected TcpClient driver;
     protected File output;
     protected BackSeatType type;
+    protected String name;
 
 	public BackSeatServer(TcpClient back_seat, int http_port) {
 		super(http_port);
@@ -98,6 +99,9 @@ public class BackSeatServer extends NanoHTTPD {
 	}
 
 	private void fillType() {
+	    name = driver.getClass().getSimpleName();
+	    name = name.replaceAll("([a-z0-9])([A-Z])", "$1 $2");
+
 	    if (driver instanceof BackSeatDriver)
 	        type = BackSeatType.BackSeatDriver;
 	    else if (driver instanceof MissionExecutive)
@@ -157,7 +161,7 @@ public class BackSeatServer extends NanoHTTPD {
 		File config = new File(driver.getClass().getSimpleName()+".ini");
 		Files.write(config.toPath(), settings.getBytes(), StandardOpenOption.CREATE);
 	}
-	
+
 	private void stopBackSeat() throws Exception {
 		PeriodicCallbacks.unregister(driver);
 		driver.disconnect();
@@ -237,19 +241,22 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 
 		StringBuilder sb = new StringBuilder();
-
-		sb.append("<html>");
-		sb.append("<head><title>" + driver.getClass().getSimpleName() + "</title></head>");
-		sb.append("<body>");
-		sb.append("<h1>" + driver.getClass().getSimpleName() + "</h1>");
-		sb.append("<form action=/ method='post'>\n");
+		
+        sb.append("<html>");
+        sb.append("<head>");
+        sb.append("<title>").append(name).append("</title>");
+        sb.append("</head>");
+        sb.append("<body>");
+        sb.append("<h1>").append(name).append("</h1>");
+        sb.append("<form action=/ method='post'>\n");
 		
 		if (!driver.isAlive())
 			sb.append("<input type='submit' name='cmd' value='Start' />");
 		else
 			sb.append("<input type='submit' name='cmd' value='Stop' />");
 		
-		sb.append(" &nbsp; <input type='submit' name='cmd' value='Save' />");
+		sb.append(" &nbsp; <input type='submit' name='cmd' id='save' value='Save' />");
+		
 		
 		sb.append("<br/>");
 		
