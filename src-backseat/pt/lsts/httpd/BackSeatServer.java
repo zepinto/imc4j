@@ -37,6 +37,8 @@ public class BackSeatServer extends NanoHTTPD {
     @Parameter(description = "Auto Start on Power On")
     public boolean autoStartOnPowerOn = false;
 
+    public String copyYear = new SimpleDateFormat("yyyy").format(new Date(System.currentTimeMillis()));
+    
     protected TcpClient driver;
     protected File output;
     protected BackSeatType type;
@@ -106,7 +108,7 @@ public class BackSeatServer extends NanoHTTPD {
             System.exit(-1);
         }
 		
-		if (autoStartOnPowerOn) {
+        if (autoStartOnPowerOn) {
             try {
                 Thread.sleep(5000);
             }
@@ -119,7 +121,7 @@ public class BackSeatServer extends NanoHTTPD {
             catch (Exception e1) {
                 e1.printStackTrace();
             }
-		}
+        }
 		
 		while(true) {
 			try {
@@ -356,6 +358,8 @@ public class BackSeatServer extends NanoHTTPD {
 
 		sb.append("</form>\n");
 		
+        sb.append("<br/><br/><br/><p id='copyText'>&copy; ").append(copyYear).append(" - LSTS</p>");
+        sb.append("<br/>");
         sb.append("</body>");
         sb.append("</html>");
 
