@@ -340,7 +340,7 @@ public class BackSeatServer extends NanoHTTPD {
 		String checkedAutoStart = autoStartOnPowerOn ? " checked=\"checked\"" : "";
 		sb.append(" &nbsp; <label for=\"autoStart\"><input type=\"checkbox\" id=\"autoStart\" name=\"autoStart\""
 		        + checkedAutoStart
-		        + " value=\"checked\"/>Auto Start on Power On</label>");
+		        + " value=\"checked\"/> Auto Start on Power On</label>");
 		
 		sb.append("<br/>");
 		

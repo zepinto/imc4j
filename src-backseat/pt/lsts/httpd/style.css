@@ -3,6 +3,7 @@ body {
   font-family: Tahoma,Arial,Helvetica,sans-serif;
   color: #FFFFFF;
 }
+
 h1, h2, h3, h4, h5, h6 {
 	font-family: "Trebuchet MS", "Trebuchet", "Nimbus Sans L", sans-serif;
 	color: #FFFFFF;
@@ -64,3 +65,31 @@ form {
 	padding : 3px; 
 }
 
+@media only screen and (device-width: 768px) and (orientation: landscape) {
+  /* rules for iPad in landscape orientation */
+}
+
+@media only screen and (min-device-width: 320px) and (max-device-width: 480px) {
+  /* iPhone, Android rules here */
+  body {
+    font-size: 200%;
+  }
+
+  input[type=submit] {
+    font-size: 150%;
+  }
+
+  input[type=button] {
+    font-size: 120%;
+  }
+
+  input[type=checkbox] {
+    transform: scale(3);
+    padding: 10px;
+  }
+
+  iframe {
+    background-color: white;
+    font-size: 200%;
+  }
+}
