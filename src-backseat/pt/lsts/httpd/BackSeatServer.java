@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -197,6 +198,16 @@ public class BackSeatServer extends NanoHTTPD {
 			}
 		}
 
+		if (uri.equals("/style.css")) {
+		    try {
+		        InputStream stream = this.getClass().getResourceAsStream("style.css");
+		        return newChunkedResponse(Status.OK, "text/css", stream);
+		    }
+		    catch (Exception e) {
+		        e.printStackTrace();
+		    }
+		}
+
 		String cmd = "none";
 
 		if (parms.get("cmd") != null) {
@@ -245,6 +256,7 @@ public class BackSeatServer extends NanoHTTPD {
         sb.append("<html>");
         sb.append("<head>");
         sb.append("<title>").append(name).append("</title>");
+        sb.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\"/>");
         sb.append("</head>");
         sb.append("<body>");
         sb.append("<h1>").append(name).append("</h1>");

@@ -1,0 +1,51 @@
+body {
+  background-color: #FFFFFF;
+  font-family: Tahoma,Arial,Helvetica,sans-serif;
+}
+h1, h2, h3, h4, h5, h6 {
+	font-family: "Trebuchet MS", "Trebuchet", "Nimbus Sans L", sans-serif;
+	color: #43C6DB;
+	margin: 1em 0 .3em;
+}
+p {
+	margin: 1em 0 .3em;
+}
+
+.changed {
+  color: #F88017;
+}
+
+.buttonChanged {
+  background-color: #F88017;
+  color: white
+}
+
+a {
+	color: #656565;
+}
+
+a:hover {
+  color: #43C6DB;
+}
+
+.clear {
+  clear: both;
+}
+
+#logo {
+  margin: 0;
+  padding: 0 0px 0.5em;
+  display: block;
+  top: 5px;
+  float: left;
+  position: relative;
+  left: 7px;
+  clear: none;
+  color: #43C6DB;
+}
+
+form { 
+	/*border : solid gray 1px;*/
+	padding : 3px; 
+}
+
