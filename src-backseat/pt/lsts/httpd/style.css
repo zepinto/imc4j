@@ -65,13 +65,14 @@ form {
 	padding : 3px; 
 }
 
+
 @media only screen and (device-width: 768px) and (orientation: landscape) {
   /* rules for iPad in landscape orientation */
 }
 
 @media only screen and (min-device-width: 320px) and (max-device-width: 480px) {
   /* iPhone, Android rules here */
-  body {
+/*  body {
     font-size: 200%;
   }
 
@@ -92,4 +93,5 @@ form {
     background-color: white;
     font-size: 200%;
   }
+  */
 }

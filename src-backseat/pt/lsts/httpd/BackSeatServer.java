@@ -325,6 +325,8 @@ public class BackSeatServer extends NanoHTTPD {
         sb.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\"/>");
         sb.append("<link rel=\"manifest\" href=\"/manifest.json\">");
         sb.append("<script src=\"util.js\"></script>");
+        sb.append("<meta name=\"theme-color\" content=\"#1589FF\">");
+        sb.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
         sb.append("</head>");
         sb.append("<body>");
         sb.append("<h1>").append(name).append("</h1>");
