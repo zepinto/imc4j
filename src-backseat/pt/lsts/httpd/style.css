@@ -1,10 +1,11 @@
 body {
-  background-color: #FFFFFF;
+  background-color: #1589FF; /* Dodger Blue */
   font-family: Tahoma,Arial,Helvetica,sans-serif;
+  color: #FFFFFF;
 }
 h1, h2, h3, h4, h5, h6 {
 	font-family: "Trebuchet MS", "Trebuchet", "Nimbus Sans L", sans-serif;
-	color: #43C6DB;
+	color: #FFFFFF;
 	margin: 1em 0 .3em;
 }
 p {
@@ -12,12 +13,21 @@ p {
 }
 
 .changed {
-  color: #F88017;
+  color: #F88017; /* Dark Orange */
+}
+
+.changedOverBackground {
+  background-color: #FF8A14; /* Orange Complementary color of Dodger Blue */
+  color: white
 }
 
 .buttonChanged {
-  background-color: #F88017;
+  background-color: #FF8A14; /* Orange Complementary color of Dodger Blue */
   color: white
+}
+
+iframe {
+  background-color: white;
 }
 
 a {

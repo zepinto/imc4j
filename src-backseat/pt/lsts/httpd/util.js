@@ -1,8 +1,11 @@
-window.setInterval("reloadIFrame();", 5000);
+// document.addEventListener('touchstart', onTouchStart, {passive: true});
+
+// window.setInterval("reloadLogbookFrame();", 5000);
 window.setInterval("changeDetect();", 1000);
 
-function reloadIFrame() {
-    //document.getElementById("logIframe").location.reload();
+function reloadLogbookFrame() {
+    logbook.location.reload(1);
+    setTimeout(function () {scrollToEnd();}, 1000);
 }
 
 function changeDetect() {
@@ -21,11 +24,11 @@ function changeDetect() {
     var autoStart = document.getElementById("autoStart");
     if (autoStart.checked != autoStart.defaultChecked) {
         someChange = true;
-        if (!autoStart.parentNode.className.includes(" changed"))
-            autoStart.parentNode.className += " changed";
+        if (!autoStart.parentNode.className.includes(" changedOverBackground"))
+            autoStart.parentNode.className += " changedOverBackground";
     }
     else {
-        autoStart.parentNode.className = autoStart.parentNode.className.replace(" changed", "");
+        autoStart.parentNode.className = autoStart.parentNode.className.replace(" changedOverBackground", "");
     }
 
     var save = document.getElementById("save");
@@ -37,3 +40,8 @@ function changeDetect() {
         save.className = save.className.replace(" buttonChanged", "");
     }
 }
+
+function scrollToEnd() { 
+    var frame = window.frames.logbook; 
+    frame.scrollTo(0, 10000000000000000); 
+} 

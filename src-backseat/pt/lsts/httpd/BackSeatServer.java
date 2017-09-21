@@ -224,8 +224,7 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 
 		if (uri.equals("/style.css")) {
-		    try {
-		        InputStream stream = this.getClass().getResourceAsStream("style.css");
+		    try (InputStream stream = this.getClass().getResourceAsStream("style.css")) {
 		        return newChunkedResponse(Status.OK, "text/css", stream);
 		    }
 		    catch (Exception e) {
@@ -234,8 +233,7 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 
 		if (uri.equals("/util.js")) {
-		    try {
-		        InputStream stream = this.getClass().getResourceAsStream("util.js");
+		    try (InputStream stream = this.getClass().getResourceAsStream("util.js")) {
 		        return newChunkedResponse(Status.OK, "text/javascript", stream);
 		    }
 		    catch (Exception e) {
@@ -293,7 +291,7 @@ public class BackSeatServer extends NanoHTTPD {
 
 		StringBuilder sb = new StringBuilder();
 		
-        sb.append("<html>");
+        sb.append("<html lang=\"en\">");
         sb.append("<head>");
         sb.append("<title>").append(name).append("</title>");
         sb.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\"/>");
@@ -317,14 +315,16 @@ public class BackSeatServer extends NanoHTTPD {
 		
 		sb.append("<br/>");
 		
-		sb.append("<h2>Settings:</h2>");
-		sb.append("<textarea class='settings' id='settings' name='settings' cols=100 rows=20>\n");
+		sb.append("<label for=\"settings\"><h2>Settings:</h2></label>");
+		sb.append("<textarea class='settings' id='settings' name='settings' cols='100' rows='20'>\n");
 		sb.append(settings);
 		sb.append("</textarea>");
 
 		if (driver.isAlive()) {
-			sb.append("<h2>Log book:</h2>");
-			sb.append("<iframe src='/logbook' width='600px'></iframe>");
+			sb.append("<h2><label for=\"logbook\">Log Book</label>:");
+			sb.append("&nbsp; <input id='reloadLogbook' name='reloadLogbook' type=\"button\" onclick=\"reloadLogbookFrame()\" value=\"Reload\"><br/>");
+            sb.append("</h2>");
+			sb.append("<iframe onload='scrollToEnd();' name='logbook' id='logbook' title='log book' src='/logbook' width='600px'></iframe>");
 		}
 
 		sb.append("</form>\n");
