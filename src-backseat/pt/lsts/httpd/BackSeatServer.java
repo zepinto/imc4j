@@ -17,6 +17,8 @@ import java.util.Properties;
 
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response.Status;
+import pt.lsts.autonomy.MissionExecutive;
+import pt.lsts.backseat.BackSeatDriver;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.net.TcpClient;
 import pt.lsts.imc4j.util.PeriodicCallbacks;
@@ -24,12 +26,29 @@ import pt.lsts.imc4j.util.PojoConfig;
 
 public class BackSeatServer extends NanoHTTPD {
 
+    protected enum BackSeatType {
+        None,
+        BackSeatDriver,
+        MissionExecutive
+    }
+    
     protected TcpClient driver;
     protected File output;
+    protected BackSeatType type;
 
 	public BackSeatServer(TcpClient back_seat, int http_port) {
 		super(http_port);
 		this.driver = back_seat;
+		fillType();
+		
+		switch (type) {
+            case MissionExecutive:
+                ((MissionExecutive) driver).setUseSystemExitOrStop(false);
+                break;
+            default:
+                break;
+        }
+		
 		SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMdd_HHmmss");
 		output = new File(sdf.format(new Date())+".log");
 		File config = new File(back_seat.getClass().getSimpleName()+".ini");
@@ -78,7 +97,16 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 	}
 
-	private String settings() throws Exception {
+	private void fillType() {
+	    if (driver instanceof BackSeatDriver)
+	        type = BackSeatType.BackSeatDriver;
+	    else if (driver instanceof MissionExecutive)
+	        type = BackSeatType.MissionExecutive;
+	    else
+	        type = BackSeatType.None;
+    }
+
+    private String settings() throws Exception {
 		StringBuilder sb = new StringBuilder();
 
 		for (Field f : driver.getClass().getDeclaredFields()) {
@@ -86,7 +114,10 @@ public class BackSeatServer extends NanoHTTPD {
 			f.setAccessible(true);
 			if (p != null) {
 				sb.append("# " + p.description() + "\n");
-				sb.append(f.getName() + "=" + f.get(driver) + "\n\n");
+				Object value = f.get(driver);
+				if (value instanceof String[])
+                    value = String.join(", ", ((String[]) value));
+				sb.append(f.getName() + "=" + value + "\n\n");
 			}
 		}
 
@@ -103,7 +134,23 @@ public class BackSeatServer extends NanoHTTPD {
 	}
 
 	private void startBackSeat() throws Exception {
-		driver.connect();
+		switch (type) {
+            case MissionExecutive:
+                ((MissionExecutive) driver).setup();
+                break;
+            default:
+                break;
+        }
+	    
+	    driver.connect();
+	    
+        switch (type) {
+            case MissionExecutive:
+                ((MissionExecutive) driver).launch();
+                break;
+            default:
+                break;
+        }
 	}
 
 	private void saveSettings(String settings) throws Exception {
@@ -115,7 +162,15 @@ public class BackSeatServer extends NanoHTTPD {
 		PeriodicCallbacks.unregister(driver);
 		driver.disconnect();
 		driver.interrupt();
+
 		driver = PojoConfig.create(driver.getClass(), PojoConfig.getProperties(driver));
+		switch (type) {
+		    case MissionExecutive:
+		        ((MissionExecutive) driver).setUseSystemExitOrStop(false);
+		        break;
+		    default:
+		        break;
+		}
 	}
 
 	@Override
