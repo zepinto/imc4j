@@ -182,12 +182,12 @@ public class BackSeatServer extends NanoHTTPD {
 	public Response serve(String uri, Method method, Map<String, String> headers, Map<String, String> parms,
 			Map<String, String> files) {
 
-		try {
-			loadSettings(parms.get("settings"));
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
+//		try {
+//			loadSettings(parms.get("settings"));
+//		}
+//		catch (Exception e) {
+//			e.printStackTrace();
+//		}
 
 		if (uri.equals("/logbook")) {
 			try {
