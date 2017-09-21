@@ -36,283 +36,323 @@ import pt.lsts.imc4j.util.WGS84Utilities;
 
 public class MissionExecutive extends TcpClient {
 
-	private LinkedHashMap<Integer, Message> msgs = new LinkedHashMap<>();
-	protected PlanControl planCommand = null;
-	protected int count = 1;
-	protected boolean useBroadcast = true;
+    private LinkedHashMap<Integer, Message> msgs = new LinkedHashMap<>();
+    protected PlanControl planCommand = null;
+    protected int count = 1;
+    protected boolean useBroadcast = true;
+    
+    protected boolean useSystemExitOrStop = true;
 
-	protected State state = null;
-	
-	protected String endPlan = null;
+    protected State state = null;
 
-	public MissionExecutive() {
-		super();
-		register(this);
-	}
+    protected String endPlan = null;
 
-	public final void setup() {
-	    setupChild();
-	}
+    public MissionExecutive() {
+        super();
+    }
 
-	/**
-	 * Overwrite this for extra setup, but CALL {@link #setup()}
-	 */
-	protected void setupChild() {
-	}
+    public boolean isUseSystemExitOrStop() {
+        return useSystemExitOrStop;
+    }
+    
+    public void setUseSystemExitOrStop(boolean useSystemExitOrStop) {
+        this.useSystemExitOrStop = useSystemExitOrStop;
+    }
+    
+    public final void setup() {
+        setupChild();
+    }
 
-	@Consume
-	protected void on(Message msg) {
-		if (msg.src == remoteSrc) {
-			synchronized (msgs) {
-				msgs.put(msg.mgid(), msg);
-			}
-		}
-	}
+    /**
+     * Overwrite this for extra setup, but CALL {@link #setup()}
+     */
+    protected void setupChild() {
+    }
 
-	@Consume
-	protected void on(Abort abort) {
-		System.err.println("Received ABORT. Terminating.");
-		System.exit(1);
-	}
+    public final void launch() {
+        register(this);
+        launchChild();
+    }
 
-	@SuppressWarnings("unchecked")
-	protected <T extends Message> T get(Class<T> clazz) {
-		int id = MessageFactory.idOf(clazz.getSimpleName());
-		synchronized (msgs) {
-			return (T) msgs.get(id);
-		}
-	}
+    /**
+     * Overwrite this for start the execution, but CALL {@link #launch()}
+     */
+    protected void launchChild() {
+    }
 
-	protected boolean ready() {
-		PlanControlState pcs = get(PlanControlState.class);
-		return pcs != null && pcs.state == STATE.PCS_READY;
-	}
+    @Consume
+    protected void on(Message msg) {
+        if (msg.src == remoteSrc) {
+            synchronized (msgs) {
+                msgs.put(msg.mgid(), msg);
+            }
+        }
+    }
 
-	protected boolean atSurface() {
-		VehicleMedium medium = get(VehicleMedium.class);
-		return medium != null && medium.medium.equals(VehicleMedium.MEDIUM.VM_WATER);
-	}
+    @Consume
+    protected void on(Abort abort) {
+        System.err.println("Received ABORT. Terminating.");
+        systemExit(1);
+    }
 
-	protected boolean hasGps() {
-		GpsFix fix = get(GpsFix.class);
-		return fix != null && fix.validity.contains(VALIDITY.GFV_VALID_POS);
-	}
+    @SuppressWarnings("unchecked")
+    protected <T extends Message> T get(Class<T> clazz) {
+        int id = MessageFactory.idOf(clazz.getSimpleName());
+        synchronized (msgs) {
+            return (T) msgs.get(id);
+        }
+    }
 
-	protected boolean imuIsAligned() {
-		AlignmentState state = get(AlignmentState.class);
-		return state != null && state.state == pt.lsts.imc4j.msg.AlignmentState.STATE.AS_ALIGNED;
-	}
-	
-	protected void setParam(String entity, String param, String value) {
-		SetEntityParameters params = new SetEntityParameters();
-		params.name = entity;
-		EntityParameter p = new EntityParameter();
-		p.name = param;
-		p.value = value;
-		params.params.add(p);
-		
-		try {
-			send(params);
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	protected void activate(String entity) {
-		setParam(entity, "Active", "true");
-	}
-	
-	protected void deactivate(String entity) {
-		setParam(entity, "Active", "false");
-	}
+    protected boolean ready() {
+        PlanControlState pcs = get(PlanControlState.class);
+        return pcs != null && pcs.state == STATE.PCS_READY;
+    }
 
-	protected void broadcast(Message msg) throws IOException {
-		DatagramSocket socket = new DatagramSocket();
-		msg.src = localSrc;
-		msg.timestamp = System.currentTimeMillis() / 1000.0;
-		InetAddress multicast = InetAddress.getByName("224.0.75.69");
-		InetAddress broadcast = InetAddress.getByName("255.255.255.255");
-		byte[] data = msg.serialize();
+    protected boolean atSurface() {
+        VehicleMedium medium = get(VehicleMedium.class);
+        return medium != null && medium.medium.equals(VehicleMedium.MEDIUM.VM_WATER);
+    }
 
-		for (int port = 30100; port < 30105; port++) {
-			socket.send(new DatagramPacket(data, data.length, multicast, port));
-			if (useBroadcast)
-				socket.send(new DatagramPacket(data, data.length, broadcast, port));
-		}
-		socket.close();
-	}
+    protected boolean hasGps() {
+        GpsFix fix = get(GpsFix.class);
+        return fix != null && fix.validity.contains(VALIDITY.GFV_VALID_POS);
+    }
 
-	public double[] position() {
-		return WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
-	}
+    protected boolean imuIsAligned() {
+        AlignmentState state = get(AlignmentState.class);
+        return state != null && state.state == pt.lsts.imc4j.msg.AlignmentState.STATE.AS_ALIGNED;
+    }
 
-	public PlanSpecification spec(Maneuver... maneuvers) {
-		PlanSpecification spec = new PlanSpecification();
-		spec.plan_id = "MExec_" + (count++);
+    protected void setParam(String entity, String param, String value) {
+        SetEntityParameters params = new SetEntityParameters();
+        params.name = entity;
+        EntityParameter p = new EntityParameter();
+        p.name = param;
+        p.value = value;
+        params.params.add(p);
 
-		for (int i = 0; i < maneuvers.length; i++) {
-			Maneuver m = maneuvers[i];
-			PlanManeuver pm = new PlanManeuver();
-			pm.data = m;
-			pm.maneuver_id = "" + (i + 1);
-			spec.maneuvers.add(pm);
+        try {
+            send(params);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-			if (i > 0) {
-				PlanTransition trans = new PlanTransition();
-				trans.conditions = "ManeuverIsDone";
-				trans.source_man = "" + i;
-				trans.dest_man = "" + (i + 1);
-				spec.transitions.add(trans);
-			}
-		}
-		spec.start_man_id = "1";
+    protected void activate(String entity) {
+        setParam(entity, "Active", "true");
+    }
 
-		return spec;
-	}
+    protected void deactivate(String entity) {
+        setParam(entity, "Active", "false");
+    }
 
-	public void exec(Maneuver... maneuvers) {
-		if (maneuvers.length == 0)
-			stopPlan();
-		else
-			exec(spec(maneuvers));
-	}
+    protected void broadcast(Message msg) throws IOException {
+        DatagramSocket socket = new DatagramSocket();
+        msg.src = localSrc;
+        msg.timestamp = System.currentTimeMillis() / 1000.0;
+        InetAddress multicast = InetAddress.getByName("224.0.75.69");
+        InetAddress broadcast = InetAddress.getByName("255.255.255.255");
+        byte[] data = msg.serialize();
 
-	void exec(PlanSpecification plan) {
-		PlanControl pc = new PlanControl();
-		pc.plan_id = plan.plan_id;
-		pc.arg = plan;
-		pc.op = OP.PC_START;
-		pc.type = TYPE.PC_REQUEST;
-		pc.dst = remoteSrc;
-		try {
-			send(pc);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+        for (int port = 30100; port < 30105; port++) {
+            socket.send(new DatagramPacket(data, data.length, multicast, port));
+            if (useBroadcast)
+                socket.send(new DatagramPacket(data, data.length, broadcast, port));
+        }
+        socket.close();
+    }
 
-	void startPlan(String id) {
-		PlanControl pc = new PlanControl();
-		pc.plan_id = id;
-		pc.arg = null;
-		pc.op = OP.PC_START;
-		pc.type = TYPE.PC_REQUEST;
-		pc.dst = remoteSrc;
-		try {
-			send(pc);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    public double[] position() {
+        return WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+    }
 
-	void stopPlan() {
-		PlanControl pc = new PlanControl();
-		pc.op = OP.PC_STOP;
-		pc.type = TYPE.PC_REQUEST;
-		pc.dst = remoteSrc;
-		try {
-			send(pc);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    public PlanSpecification spec(Maneuver... maneuvers) {
+        PlanSpecification spec = new PlanSpecification();
+        spec.plan_id = "MExec_" + (count++);
 
-	Thread multicastThread = null;
+        for (int i = 0; i < maneuvers.length; i++) {
+            Maneuver m = maneuvers[i];
+            PlanManeuver pm = new PlanManeuver();
+            pm.data = m;
+            pm.maneuver_id = "" + (i + 1);
+            spec.maneuvers.add(pm);
 
-	@Override
-	public void run() {
-		multicastThread = new Thread("multicast") {
-			@Override
-			public void run() {
-				MulticastSocket msock = null;
-				byte[] buffer = new byte[65535];
-				try {
-					for (int port = 30100; port < 30105; port++) {
-						try {
-							msock = new MulticastSocket(port);
-							msock.joinGroup(InetAddress.getByName("224.0.75.69"));
-							System.out.println("Listening on port " + port);
-							break;
-						} catch (Exception e) {
-						}
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-					return;
-				}
-				while (connected) {
-					try {
-						DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-						msock.receive(packet);
-						Message m = SerializationUtils.deserializeMessage(buffer);
-						if (m != null)
-							dispatch(m);
-					} catch (Exception e) {
-						e.printStackTrace();
-						break;
-					}
-				}
+            if (i > 0) {
+                PlanTransition trans = new PlanTransition();
+                trans.conditions = "ManeuverIsDone";
+                trans.source_man = "" + i;
+                trans.dest_man = "" + (i + 1);
+                spec.transitions.add(trans);
+            }
+        }
+        spec.start_man_id = "1";
 
-				try {
-					msock.close();
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
-		};
+        return spec;
+    }
 
-		multicastThread.start();
-		super.run();
-	}
+    public void exec(Maneuver... maneuvers) {
+        if (maneuvers.length == 0)
+            stopPlan();
+        else
+            exec(spec(maneuvers));
+    }
 
-	@Override
-	public void interrupt() {
-		super.interrupt();
-		if (multicastThread != null)
-			multicastThread.interrupt();
-	}
+    void exec(PlanSpecification plan) {
+        PlanControl pc = new PlanControl();
+        pc.plan_id = plan.plan_id;
+        pc.arg = plan;
+        pc.op = OP.PC_START;
+        pc.type = TYPE.PC_REQUEST;
+        pc.dst = remoteSrc;
+        try {
+            send(pc);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	public static void main(String[] args) throws Exception {
-		MissionExecutive executive = PojoConfig.create(MissionExecutive.class, args);
-		executive.setup();
-		executive.connect("127.0.0.1", 6003);
-		while (true) {
-			Thread.sleep(10000);
-			TextMessage m = new TextMessage();
-			m.text = "whaaat?";
-			executive.broadcast(m);
-		}
-	}
+    void startPlan(String id) {
+        PlanControl pc = new PlanControl();
+        pc.plan_id = id;
+        pc.arg = null;
+        pc.op = OP.PC_START;
+        pc.type = TYPE.PC_REQUEST;
+        pc.dst = remoteSrc;
+        try {
+            send(pc);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	@Periodic(1000)
-	public void update() {
-		if (state == null) {
-		    if (endPlan != null) {
-		        print("Starting execution of '" + endPlan + "'.");
-		        startPlan(endPlan);
+    void stopPlan() {
+        PlanControl pc = new PlanControl();
+        pc.op = OP.PC_STOP;
+        pc.type = TYPE.PC_REQUEST;
+        pc.dst = remoteSrc;
+        try {
+            send(pc);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-		        try {
-		            print("Waiting 5s to tidy thing up before exiting...");
-		            Thread.sleep(5000);
-		        }
-		        catch (InterruptedException e) {
-		            e.printStackTrace();
-		        }
-		    }
-		    else {
-		        print("No exit plan given. Exiting with nothing triggered");
-		    }
+    Thread multicastThread = null;
 
-			System.exit(0);
-		}
-		else {
-			state = state.step();
-		}
-	}
+    @Override
+    public void run() {
+        multicastThread = new Thread("multicast") {
+            @Override
+            public void run() {
+                MulticastSocket msock = null;
+                byte[] buffer = new byte[65535];
+                try {
+                    for (int port = 30100; port < 30105; port++) {
+                        try {
+                            msock = new MulticastSocket(port);
+                            msock.joinGroup(InetAddress.getByName("224.0.75.69"));
+                            System.out.println("Listening on port " + port);
+                            break;
+                        }
+                        catch (Exception e) {
+                        }
+                    }
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    return;
+                }
+                while (connected) {
+                    try {
+                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                        msock.receive(packet);
+                        Message m = SerializationUtils.deserializeMessage(buffer);
+                        if (m != null)
+                            dispatch(m);
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                        break;
+                    }
+                }
 
-	@FunctionalInterface
-	public static interface State {
-		public State step();
-	}
+                try {
+                    msock.close();
+                }
+                catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        };
+
+        multicastThread.start();
+        super.run();
+    }
+
+    @Override
+    public void interrupt() {
+        super.interrupt();
+        if (multicastThread != null)
+            multicastThread.interrupt();
+    }
+
+    public static void main(String[] args) throws Exception {
+        MissionExecutive executive = PojoConfig.create(MissionExecutive.class, args);
+        executive.setup();
+        executive.connect("127.0.0.1", 6003);
+        while (true) {
+            Thread.sleep(10000);
+            TextMessage m = new TextMessage();
+            m.text = "whaaat?";
+            executive.broadcast(m);
+        }
+    }
+
+    @Periodic(1000)
+    public void update() {
+        if (isInterrupted())
+            return;
+        
+        if (state == null) {
+            if (endPlan != null) {
+                print("Starting execution of '" + endPlan + "'.");
+                startPlan(endPlan);
+
+                try {
+                    print("Waiting 5s to tidy thing up before exiting...");
+                    Thread.sleep(5000);
+                }
+                catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
+                print("No exit plan given. Exiting with nothing triggered");
+            }
+
+            systemExit(0);
+        }
+        else {
+            state = state.step();
+        }
+    }
+
+    protected void systemExit(int exitStatus) {
+        if (useSystemExitOrStop) {
+            System.exit(exitStatus);
+        }
+        else {
+            disconnect();
+            interrupt();
+        }
+    }
+
+    @FunctionalInterface
+    public static interface State {
+        public State step();
+    }
 }

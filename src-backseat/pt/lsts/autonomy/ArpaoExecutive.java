@@ -77,6 +77,16 @@ public class ArpaoExecutive extends MissionExecutive {
         }
 	}
 	
+	@Override
+	protected void launchChild() {
+	    init();
+	}
+	
+	@Override
+	public void connect() throws Exception {
+	    connect(host, port);
+	}
+
 	public State init() {
 		if (!knowsEmergencyNumber()) {
 			QueryEntityParameters query = new QueryEntityParameters();
@@ -396,6 +406,6 @@ public class ArpaoExecutive extends MissionExecutive {
 		executive.setup();
 		executive.connect(executive.host, executive.port);
 		executive.join();
-		executive.init();
+		executive.launch();
 	}
 }
