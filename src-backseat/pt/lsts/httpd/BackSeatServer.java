@@ -33,13 +33,29 @@ public class BackSeatServer extends NanoHTTPD {
         MissionExecutive
     }
     
+    @Parameter(description = "Auto Start on Power On")
+    public boolean autoStartOnPowerOn = false;
+
     protected TcpClient driver;
     protected File output;
     protected BackSeatType type;
     protected String name;
 
+    protected File configServerFile = new File(this.getClass().getSimpleName()+".ini");
+
 	public BackSeatServer(TcpClient back_seat, int http_port) {
 		super(http_port);
+		
+		if (configServerFile.exists()) {
+		    try {
+		        loadServerSettings(new String(Files.readAllBytes(configServerFile.toPath())));
+		    }
+		    catch (Exception e) {
+		        e.printStackTrace();
+		    }
+		}       
+
+		
 		this.driver = back_seat;
 		fillType();
 		
@@ -128,6 +144,15 @@ public class BackSeatServer extends NanoHTTPD {
 
 		return sb.toString();
 	}
+
+    private void loadServerSettings(String settings) throws Exception {
+        if (settings == null || settings.isEmpty())
+            return;
+
+        Properties props = new Properties();
+        props.load(new ByteArrayInputStream(settings.getBytes()));
+        PojoConfig.setProperties(this, props);
+    }
 
 	private void loadSettings(String settings) throws Exception {
 		if (settings == null || settings.isEmpty())
@@ -244,6 +269,11 @@ public class BackSeatServer extends NanoHTTPD {
 		case "Save":
 			try {
 				saveSettings(parms.get("settings"));
+				
+				String checkAutoStart = parms.get("autoStart");
+				autoStartOnPowerOn = checkAutoStart != null && checkAutoStart.equalsIgnoreCase("checked");
+				System.out.println(checkAutoStart);
+				PojoConfig.writeProperties(this, configServerFile);
 			}
 			catch (Exception e1) {
 				e1.printStackTrace();
@@ -280,6 +310,10 @@ public class BackSeatServer extends NanoHTTPD {
 		
 		sb.append(" &nbsp; <input type='submit' name='cmd' id='save' value='Save' />");
 		
+		String checkedAutoStart = autoStartOnPowerOn ? " checked=\"checked\"" : "";
+		sb.append(" &nbsp; <label for=\"autoStart\"><input type=\"checkbox\" id=\"autoStart\" name=\"autoStart\""
+		        + checkedAutoStart
+		        + " value=\"checked\"/>Auto Start on Power On</label>");
 		
 		sb.append("<br/>");
 		
