@@ -225,7 +225,8 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 
 		if (uri.equals("/style.css")) {
-		    try (InputStream stream = this.getClass().getResourceAsStream("style.css")) {
+		    try {
+		        InputStream stream = this.getClass().getResourceAsStream("style.css");
 		        return newChunkedResponse(Status.OK, "text/css", stream);
 		    }
 		    catch (Exception e) {
@@ -234,7 +235,8 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 
 		if (uri.equals("/util.js")) {
-		    try (InputStream stream = this.getClass().getResourceAsStream("util.js")) {
+		    try {
+		        InputStream stream = this.getClass().getResourceAsStream("util.js");
 		        return newChunkedResponse(Status.OK, "text/javascript", stream);
 		    }
 		    catch (Exception e) {
