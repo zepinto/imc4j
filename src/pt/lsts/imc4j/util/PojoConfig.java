@@ -182,8 +182,12 @@ public class PojoConfig {
 	            f.setAccessible(true);
 	            Parameter p = f.getAnnotation(Parameter.class);
 	            if (p != null) {
+                    Object value = f.get(pojo);
+                    if (value instanceof String[]) {
+                        value = String.join(", ", ((String[]) value));
+                    }
 	                writer.write("#" + p.description() + nl);
-	                writer.write(f.getName() + "=" + f.get(pojo) + nl + nl);                    
+	                writer.write(f.getName() + "=" + value + nl + nl);                    
 	            }
 	        }
 	        System.out.println("Wrote default properties to " + file.getAbsolutePath());
