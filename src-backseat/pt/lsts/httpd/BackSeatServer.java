@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
 
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response.Status;
@@ -241,6 +242,22 @@ public class BackSeatServer extends NanoHTTPD {
 		    }
 		}
 
+        if (uri.equals("/manifest.json")) {
+            try (InputStream inStream = this.getClass().getResourceAsStream("manifest.json");
+                    Scanner s = new Scanner(inStream);) {
+		        s.useDelimiter("\\A");
+		        String manifest = s.hasNext() ? s.next() : "";
+
+		        manifest = manifest.replaceFirst("\\$\\$SHORTNAME\\$\\$", name.replace(" ", "").substring(0, 12));
+		        manifest = manifest.replaceFirst("\\$\\$NAME\\$\\$", name);
+		        
+		        return newChunkedResponse(Status.OK, "text/json", new ByteArrayInputStream(manifest.getBytes()));
+		    }
+		    catch (Exception e) {
+		        e.printStackTrace();
+		    }
+		}
+
 		String cmd = "none";
 
 		if (parms.get("cmd") != null) {
@@ -295,6 +312,7 @@ public class BackSeatServer extends NanoHTTPD {
         sb.append("<head>");
         sb.append("<title>").append(name).append("</title>");
         sb.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\"/>");
+        sb.append("<link rel=\"manifest\" href=\"/manifest.json\">");
         sb.append("<script src=\"util.js\"></script>");
         sb.append("</head>");
         sb.append("<body>");
