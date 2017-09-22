@@ -2,6 +2,17 @@
 
 // window.setInterval("reloadLogbookFrame();", 5000);
 window.setInterval("changeDetect();", 1000);
+window.setInterval("isRunning();", 2000);
+
+function httpGetAsync(theUrl, callback) {
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() { 
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+            callback(xmlHttp.responseText);
+    }
+    xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+    xmlHttp.send(null);
+}
 
 function reloadLogbookFrame() {
     logbook.location.reload(1);
@@ -45,3 +56,24 @@ function scrollToEnd() {
     var frame = window.frames.logbook; 
     frame.scrollTo(0, 10000000000000000); 
 } 
+
+
+function isRunning() {
+    httpGetAsync(window.location.href + "state", updateStartStopState);
+}
+
+function updateStartStopState(state) {
+    var isStarted = state === true || state === "true";
+    var startStop = document.getElementById("startStop");
+    
+    var newValue = isStarted ? "Stop" : "Start";
+    var isTheSame = startStop.value === newValue;
+    startStop.value = newValue;
+
+    // console.log(" '" + startStop.value + " '" + newValue + "'  " + isTheSame);
+    if (!isTheSame) {
+        console.log("RELOAD: " + window.location.pathname + window.location.hash);
+
+        window.location.assign(window.location.pathname + window.location.hash);
+    }
+}

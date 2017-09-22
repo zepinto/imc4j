@@ -180,6 +180,11 @@ public class BackSeatServer extends NanoHTTPD {
 	}
 
 	private void startBackSeat() throws Exception {
+	    if (driver.isAlive()) {
+	        System.out.println("Trying to starting a running " + name + ", please stop it first.");
+	        return;
+	    }
+	    
         System.out.println("Starting " + name + "...");
 
         try {
@@ -248,6 +253,16 @@ public class BackSeatServer extends NanoHTTPD {
 	@Override
 	public Response serve(String uri, Method method, Map<String, String> headers, Map<String, String> parms,
 			Map<String, String> files) {
+
+	    if (uri.equals("/state")) {
+            try {
+                return newChunkedResponse(Status.OK, "text/plain",
+                        new ByteArrayInputStream(String.valueOf(driver.isAlive()).getBytes()));
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+	    }
 
 		if (uri.equals("/logbook")) {
 			try {
@@ -364,9 +379,9 @@ public class BackSeatServer extends NanoHTTPD {
         sb.append("<form action=/ method='post'>\n");
 		
 		if (!driver.isAlive())
-			sb.append("<input type='submit' name='cmd' value='Start' />\n");
+			sb.append("<input type='submit' id='startStop' name='cmd' value='Start' />\n");
 		else
-			sb.append("<input type='submit' name='cmd' value='Stop' />\n");
+			sb.append("<input type='submit' id='startStop' name='cmd' value='Stop' />\n");
 		
 		sb.append(" &nbsp; <input type='submit' name='cmd' id='save' value='Save' />\n");
 		
