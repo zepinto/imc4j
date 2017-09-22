@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -181,6 +180,8 @@ public class BackSeatServer extends NanoHTTPD {
 	}
 
 	private void startBackSeat() throws Exception {
+        System.out.println("Starting " + name + "...");
+
 		switch (type) {
             case MissionExecutive:
                 ((MissionExecutive) driver).setup();
@@ -198,6 +199,8 @@ public class BackSeatServer extends NanoHTTPD {
             default:
                 break;
         }
+
+        System.out.println("Started " + name);
 	}
 
 	private void saveSettings() throws Exception {
@@ -206,7 +209,9 @@ public class BackSeatServer extends NanoHTTPD {
 	}
 
 	private void stopBackSeat() throws Exception {
-		PeriodicCallbacks.unregister(driver);
+        System.out.println("Stopping " + name + "...");
+
+        PeriodicCallbacks.unregister(driver);
 		driver.disconnect();
 		driver.interrupt();
 
@@ -218,6 +223,8 @@ public class BackSeatServer extends NanoHTTPD {
 		    default:
 		        break;
 		}
+		
+        System.out.println("Stopped " + name);
 	}
 
 	@Override
@@ -304,7 +311,7 @@ public class BackSeatServer extends NanoHTTPD {
 				
 				String checkAutoStart = parms.get("autoStart");
 				autoStartOnPowerOn = checkAutoStart != null && checkAutoStart.equalsIgnoreCase("checked");
-				System.out.println(checkAutoStart);
+                System.out.println("Auto start on power on " + (autoStartOnPowerOn ? "enabled" : "disabled"));
 				PojoConfig.writeProperties(this, configServerFile);
 			}
 			catch (Exception e1) {
@@ -325,51 +332,50 @@ public class BackSeatServer extends NanoHTTPD {
 
 		StringBuilder sb = new StringBuilder();
 		
-        sb.append("<html lang=\"en\">");
-        sb.append("<head>");
-        sb.append("<title>").append(name).append("</title>");
-        sb.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\"/>");
-        sb.append("<link rel=\"manifest\" href=\"/manifest.json\">");
-        sb.append("<script src=\"util.js\"></script>");
-        sb.append("<meta name=\"theme-color\" content=\"#1589FF\">");
-        sb.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-        sb.append("</head>");
-        sb.append("<body>");
-        sb.append("<h1>").append(name).append("</h1>");
+        sb.append("<html lang=\"en\">\n");
+        sb.append("<head>\n");
+        sb.append("<title>").append(name).append("</title>\n");
+        sb.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\"/>\n");
+        sb.append("<link rel=\"manifest\" href=\"/manifest.json\">\n");
+        sb.append("<script src=\"util.js\"></script>\n");
+        sb.append("<meta name=\"theme-color\" content=\"#1589FF\">\n");
+        sb.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
+        sb.append("</head>\n");
+        sb.append("<body>\n");
+        sb.append("<h1>").append(name).append("</h1>\n");
         sb.append("<form action=/ method='post'>\n");
 		
 		if (!driver.isAlive())
-			sb.append("<input type='submit' name='cmd' value='Start' />");
+			sb.append("<input type='submit' name='cmd' value='Start' />\n");
 		else
-			sb.append("<input type='submit' name='cmd' value='Stop' />");
+			sb.append("<input type='submit' name='cmd' value='Stop' />\n");
 		
-		sb.append(" &nbsp; <input type='submit' name='cmd' id='save' value='Save' />");
+		sb.append(" &nbsp; <input type='submit' name='cmd' id='save' value='Save' />\n");
 		
 		String checkedAutoStart = autoStartOnPowerOn ? " checked=\"checked\"" : "";
 		sb.append(" &nbsp; <label for=\"autoStart\"><input type=\"checkbox\" id=\"autoStart\" name=\"autoStart\""
 		        + checkedAutoStart
-		        + " value=\"checked\"/> Auto Start on Power On</label>");
+		        + " value=\"checked\"/> Auto Start on Power On</label>\n");
 		
-		sb.append("<br/>");
+		sb.append("<br/>\n");
 		
-		sb.append("<label for=\"settings\"><h2>Settings:</h2></label>");
+		sb.append("<label for=\"settings\"><h2>Settings:</h2></label>\n");
 		sb.append("<textarea class='settings' id='settings' name='settings' cols='100' rows='20'>\n");
 		sb.append(settings);
-		sb.append("</textarea>");
+		sb.append("</textarea>\n");
 
 		if (driver.isAlive()) {
-			sb.append("<h2><label for=\"logbook\">Log Book</label>:");
+			sb.append("<h2><label for=\"logbook\">Log Book</label>:\n");
 			sb.append("&nbsp; <input id='reloadLogbook' name='reloadLogbook' type=\"button\" onclick=\"reloadLogbookFrame()\" value=\"Reload\"><br/>");
-            sb.append("</h2>");
-			sb.append("<iframe onload='scrollToEnd();' name='logbook' id='logbook' title='log book' src='/logbook' width='600px'></iframe>");
+            sb.append("</h2>\n");
+			sb.append("<iframe onload='scrollToEnd();' name='logbook' id='logbook' title='log book' src='/logbook' width='600px'></iframe>\n");
 		}
 
 		sb.append("</form>\n");
 		
-        sb.append("<br/><br/><br/><p id='copyText'>&copy; ").append(copyYear).append(" - LSTS</p>");
-        sb.append("<br/>");
-        sb.append("</body>");
-        sb.append("</html>");
+        sb.append("<p id='copyText'>&copy; ").append(copyYear).append(" - LSTS</p>\n");
+        sb.append("</body>\n");
+        sb.append("</html>\n");
 
 		return newFixedLengthResponse(sb.toString());
 	}
