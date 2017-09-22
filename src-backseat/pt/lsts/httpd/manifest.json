@@ -1,0 +1,8 @@
+{
+  "short_name": "$$SHORTNAME$$",
+  "name": "$$NAME$$",
+  "display": "browser",
+  "background_color": "#1589FF",
+  "theme_color": "#1589FF",
+  "start_url": "/"
+}

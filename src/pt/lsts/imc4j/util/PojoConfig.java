@@ -97,14 +97,7 @@ public class PojoConfig {
 				value = DatatypeConverter.printHexBinary((byte[])value);
 			}
 			else if (value instanceof String[]) {
-				// value = String.join(", ", (String[])value); Not Java 7!
-			    StringBuilder tmpValue = new StringBuilder();
-			    for (String field : (String[]) value) {
-                    if (tmpValue.length() != 0)
-                        tmpValue.append(", ");
-                    
-                    tmpValue.append(field);
-                }
+				value = String.join(", ", (String[])value);
 			}
 			
 			props.setProperty(key, String.valueOf(value));
@@ -189,8 +182,12 @@ public class PojoConfig {
 	            f.setAccessible(true);
 	            Parameter p = f.getAnnotation(Parameter.class);
 	            if (p != null) {
+                    Object value = f.get(pojo);
+                    if (value instanceof String[]) {
+                        value = String.join(", ", ((String[]) value));
+                    }
 	                writer.write("#" + p.description() + nl);
-	                writer.write(f.getName() + "=" + f.get(pojo) + nl + nl);                    
+	                writer.write(f.getName() + "=" + value + nl + nl);                    
 	            }
 	        }
 	        System.out.println("Wrote default properties to " + file.getAbsolutePath());

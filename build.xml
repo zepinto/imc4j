@@ -35,6 +35,18 @@
     	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
     	  	<classpath refid="classpath.dependencies"/>
     	 </javac>
+         <copy todir="bin" overwrite="true">
+            <fileset dir="src-backseat">
+                <include name="**/*.css" />
+                <include name="**/*.js" />
+                <include name="**/*.json" />
+            </fileset>
+            <fileset dir="src-backseat">
+                <include name="**/*.css" />
+                <include name="**/*.js" />
+                <include name="**/*.json" />
+            </fileset>
+        </copy>
          <jar destfile="${dir.jarfile}/BackSeatServer.jar" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="pt.lsts.httpd.BackSeatServer"/>
@@ -54,6 +66,18 @@
     	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
     	  	<classpath refid="classpath.dependencies"/>
     	 </javac>
+         <copy todir="bin" overwrite="true">
+            <fileset dir="src-backseat">
+                <include name="**/*.css" />
+                <include name="**/*.js" />
+                <include name="**/*.json" />
+            </fileset>
+            <fileset dir="src-backseat">
+                <include name="**/*.css" />
+                <include name="**/*.js" />
+                <include name="**/*.json" />
+            </fileset>
+        </copy>
          <jar destfile="${dir.jarfile}/drip/Drip.jar" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="pt.lsts.backseat.drip.RiverPlumeTracker"/>
@@ -73,6 +97,18 @@
     	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
     	  	<classpath refid="classpath.dependencies"/>
     	 </javac>
+         <copy todir="bin" overwrite="true">
+            <fileset dir="src-backseat">
+                <include name="**/*.css" />
+                <include name="**/*.js" />
+                <include name="**/*.json" />
+            </fileset>
+            <fileset dir="src-backseat">
+                <include name="**/*.css" />
+                <include name="**/*.js" />
+                <include name="**/*.json" />
+            </fileset>
+        </copy>
          <jar destfile="${dir.jarfile}/arpao/ArpaoExec.jar" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="pt.lsts.autonomy.ArpaoExecutive"/>
@@ -80,6 +116,7 @@
             </manifest>
             <fileset dir="${dir.buildfile}/bin"/>
             <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
          </jar>
     </target>
 
@@ -92,6 +129,18 @@
         <javac encoding="${compile-encoding}" srcdir="src;src-backseat" destdir="bin" includes="**/*.java" fork="false">
             <classpath refid="classpath.dependencies"/>
         </javac>
+        <copy todir="bin" overwrite="true">
+            <fileset dir="src-backseat">
+                <include name="**/*.css" />
+                <include name="**/*.js" />
+                <include name="**/*.json" />
+            </fileset>
+            <fileset dir="src-backseat">
+                <include name="**/*.css" />
+                <include name="**/*.js" />
+                <include name="**/*.json" />
+            </fileset>
+        </copy>
         <jar destfile="${dir.jarfile}/distress/Distress.jar" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="pt.lsts.backseat.distress.DistressSurvey"/>

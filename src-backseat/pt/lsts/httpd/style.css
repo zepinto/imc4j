@@ -1,0 +1,97 @@
+body {
+  background-color: #1589FF; /* Dodger Blue */
+  font-family: Tahoma,Arial,Helvetica,sans-serif;
+  color: #FFFFFF;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-family: "Trebuchet MS", "Trebuchet", "Nimbus Sans L", sans-serif;
+	color: #FFFFFF;
+	margin: 1em 0 .3em;
+}
+
+p {
+	margin: 1em 0 .3em;
+}
+
+#copytext {
+  font-size: small;
+}
+
+.changed {
+  color: #F88017; /* Dark Orange */
+}
+
+.changedOverBackground {
+  background-color: #FF8A14; /* Orange Complementary color of Dodger Blue */
+  color: white
+}
+
+.buttonChanged {
+  background-color: #FF8A14; /* Orange Complementary color of Dodger Blue */
+  color: white
+}
+
+iframe {
+  background-color: white;
+}
+
+a {
+	color: #656565;
+}
+
+a:hover {
+  color: #43C6DB;
+}
+
+.clear {
+  clear: both;
+}
+
+#logo {
+  margin: 0;
+  padding: 0 0px 0.5em;
+  display: block;
+  top: 5px;
+  float: left;
+  position: relative;
+  left: 7px;
+  clear: none;
+  color: #43C6DB;
+}
+
+form { 
+	/*border : solid gray 1px;*/
+	padding : 3px; 
+}
+
+
+@media only screen and (device-width: 768px) and (orientation: landscape) {
+  /* rules for iPad in landscape orientation */
+}
+
+@media only screen and (min-device-width: 320px) and (max-device-width: 480px) {
+  /* iPhone, Android rules here */
+/*  body {
+    font-size: 200%;
+  }
+
+  input[type=submit] {
+    font-size: 150%;
+  }
+
+  input[type=button] {
+    font-size: 120%;
+  }
+
+  input[type=checkbox] {
+    transform: scale(3);
+    padding: 10px;
+  }
+
+  iframe {
+    background-color: white;
+    font-size: 200%;
+  }
+  */
+}

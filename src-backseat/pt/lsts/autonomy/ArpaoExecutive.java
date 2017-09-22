@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Properties;
 
 import pt.lsts.imc4j.annotations.Consume;
@@ -18,6 +19,11 @@ import pt.lsts.imc4j.msg.EntityParameters;
 import pt.lsts.imc4j.msg.Goto;
 import pt.lsts.imc4j.msg.PlanControlState;
 import pt.lsts.imc4j.msg.PlanControlState.LAST_OUTCOME;
+import pt.lsts.imc4j.msg.PlanDB;
+import pt.lsts.imc4j.msg.PlanDBState;
+import pt.lsts.imc4j.msg.PlanDB.OP;
+import pt.lsts.imc4j.msg.PlanDB.TYPE;
+import pt.lsts.imc4j.msg.PlanDBInformation;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.PopUp;
 import pt.lsts.imc4j.msg.PopUp.FLAGS;
@@ -29,7 +35,7 @@ import pt.lsts.imc4j.util.WGS84Utilities;
 public class ArpaoExecutive extends MissionExecutive {
 
 	@Parameter(description = "Sequence of plans to execute after the vehicle is ready")
-	public String[] plans = new String[] { "plan1", "plan2" };
+	public String[] plans = new String[] { };
 
 	@Parameter(description = "DUNE hostname")
 	public String host = "127.0.0.1";
@@ -53,7 +59,7 @@ public class ArpaoExecutive extends MissionExecutive {
 	public int compass_calib_mins = 15;
 	
 	@Parameter(description = "GSM Number where to send reports. Leave empty to use the emergency number.")
-	public String gsm_number = "+351914785889";
+	public String gsm_number = "";
 	
 	@Parameter(description = "Send status over SMS")
 	public boolean sms_updates = false;
@@ -61,11 +67,14 @@ public class ArpaoExecutive extends MissionExecutive {
     @Parameter(description = "DUNE plan to execute right after termination (empty for not use)")
     private String endPlanToUse = "";
 
-	long time = 0;
-	String plan = null;
-	int plan_index = 0;
+    protected int requestIdConter = 0;
+    protected long time = 0;
+    protected String plan = null;
+    protected int plan_index = 0;
 	private String emergencyNumber = null;
 	private String alignManeuverId = "";
+	
+	private PlanDB planDBListMsg = null;
 	
 	public ArpaoExecutive() {
 		state = this::init;
@@ -77,6 +86,16 @@ public class ArpaoExecutive extends MissionExecutive {
         }
 	}
 	
+	@Override
+	protected void launchChild() {
+	    init();
+	}
+	
+	@Override
+	public void connect() throws Exception {
+	    connect(host, port);
+	}
+
 	public State init() {
 		if (!knowsEmergencyNumber()) {
 			QueryEntityParameters query = new QueryEntityParameters();
@@ -101,6 +120,40 @@ public class ArpaoExecutive extends MissionExecutive {
 		if (!hasGps()) {
 			print("Waiting for GPS...");
 			return this::init;
+		}
+		
+		if (plans == null || plans.length == 0) {
+		    print("Plan list is empty...");
+		    sendMessage("Plan list is empty... Exiting.");
+		    prepExitNoEndPlan();
+		    systemExit(-240);
+            return null;
+		}
+		
+		{
+		    if (planDBListMsg == null) {
+		        PlanDB query = new PlanDB();
+		        query.type = PlanDB.TYPE.DBT_REQUEST;
+		        query.op = PlanDB.OP.DBOP_GET_STATE;
+		        query.request_id = requestIdConter++;;
+		        try {
+		            send(query);    
+		        }
+		        catch (Exception e) {
+		            e.printStackTrace();
+		        }
+		        print("Waiting to get PlanDB plan list...");
+	            return this::init;
+		    }
+		    else {
+		        if (!isPlanListAndEndPlanOnVehicle()) {
+		            print("Plan list (including end plan) not on the vehicle...");
+		            sendMessage("Plan list (including end plan) not on the vehicle... Exiting.");
+		            prepExitNoEndPlan();
+		            systemExit(-241);
+		            return null;
+		        }
+		    }
 		}
 		
 		if (!ready()) {
@@ -132,7 +185,47 @@ public class ArpaoExecutive extends MissionExecutive {
 		}
 	}
 	
-	protected void sendMessage(String message) {
+	private boolean isPlanListAndEndPlanOnVehicle() {
+	    if (planDBListMsg == null)
+	        return false;
+	    
+	    PlanDB pdb = planDBListMsg;
+	    if (pdb.arg != null && pdb.arg instanceof PlanDBState) {
+	        PlanDBState planDBState = (PlanDBState) pdb.arg;
+	        ArrayList<PlanDBInformation> planInfoMsgList = planDBState.plans_info;
+	        if (planInfoMsgList.isEmpty()) {
+	            return false;
+	        }
+	        int planExistCounter = 0;
+	        for (PlanDBInformation pdbi : planInfoMsgList) {
+                for (String pl : plans) {
+                    if (pdbi.plan_id.trim().equals(pl.trim())) {
+                        planExistCounter++;
+                        break;
+                    }
+                }
+	            if (endPlanToUse != null && !endPlanToUse.isEmpty()) {
+	                if (pdbi.plan_id.trim().equals(endPlanToUse.trim())) {
+                        planExistCounter++;
+                        break;
+                    }
+	            }
+            }
+	        int planNumberToCheck = plans.length + (endPlanToUse != null && !endPlanToUse.isEmpty() ? 1 : 0);
+	        if (planNumberToCheck == planExistCounter)
+	            return true;
+	        else
+	            return false;
+	    }
+	    
+	    return false;
+    }
+
+    private void prepExitNoEndPlan() {
+        endPlan = "";
+    }
+
+    protected void sendMessage(String message) {
 		Sms sms = new Sms();
 		sms.contents = message;
 		sms.number = emergencyNumber;
@@ -161,6 +254,15 @@ public class ArpaoExecutive extends MissionExecutive {
 		}
 	}
 
+	@Consume
+    protected void on(PlanDB msg) {
+	    if (msg.type == TYPE.DBT_SUCCESS) {
+	        if (msg.op == OP.DBOP_GET_STATE) {
+	            planDBListMsg = msg;
+	        }
+	    }
+	}
+	
 	public State compass_calib() {
 		print("compass_calib");
 
@@ -396,6 +498,6 @@ public class ArpaoExecutive extends MissionExecutive {
 		executive.setup();
 		executive.connect(executive.host, executive.port);
 		executive.join();
-		executive.init();
+		executive.launch();
 	}
 }
