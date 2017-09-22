@@ -182,25 +182,37 @@ public class BackSeatServer extends NanoHTTPD {
 	private void startBackSeat() throws Exception {
         System.out.println("Starting " + name + "...");
 
-		switch (type) {
-            case MissionExecutive:
-                ((MissionExecutive) driver).setup();
-                break;
-            default:
-                break;
-        }
-	    
-	    driver.connect();
-	    
-        switch (type) {
-            case MissionExecutive:
-                ((MissionExecutive) driver).launch();
-                break;
-            default:
-                break;
-        }
+        try {
+            switch (type) {
+                case MissionExecutive:
+                    ((MissionExecutive) driver).setup();
+                    break;
+                default:
+                    break;
+            }
+            
+            driver.connect();
+            
+            switch (type) {
+                case MissionExecutive:
+                    ((MissionExecutive) driver).launch();
+                    break;
+                default:
+                    break;
+            }
 
-        System.out.println("Started " + name);
+            System.out.println("Started " + name);
+        }
+        catch (Exception e) {
+            System.out.println("Error Starting " + name);
+            try {
+                stopBackSeat();
+            }
+            catch (Exception e2) {
+                e2.printStackTrace();
+            }
+            throw e;
+        }
 	}
 
 	private void saveSettings() throws Exception {
@@ -211,20 +223,26 @@ public class BackSeatServer extends NanoHTTPD {
 	private void stopBackSeat() throws Exception {
         System.out.println("Stopping " + name + "...");
 
-        PeriodicCallbacks.unregister(driver);
-		driver.disconnect();
-		driver.interrupt();
+        try {
+            PeriodicCallbacks.unregister(driver);
+            driver.disconnect();
+            driver.interrupt();
 
-		driver = PojoConfig.create(driver.getClass(), PojoConfig.getProperties(driver));
-		switch (type) {
-		    case MissionExecutive:
-		        ((MissionExecutive) driver).setUseSystemExitOrStop(false);
-		        break;
-		    default:
-		        break;
-		}
-		
-        System.out.println("Stopped " + name);
+            driver = PojoConfig.create(driver.getClass(), PojoConfig.getProperties(driver));
+            switch (type) {
+                case MissionExecutive:
+                    ((MissionExecutive) driver).setUseSystemExitOrStop(false);
+                    break;
+                default:
+                    break;
+            }
+            
+            System.out.println("Stopped " + name);
+        }
+        catch (Exception e) {
+            System.out.println("Error Stopping " + name);
+            throw e;
+        }
 	}
 
 	@Override
@@ -364,7 +382,7 @@ public class BackSeatServer extends NanoHTTPD {
 		sb.append(settings);
 		sb.append("</textarea>\n");
 
-		if (driver.isAlive()) {
+		{
 			sb.append("<h2><label for=\"logbook\">Log Book</label>:\n");
 			sb.append("&nbsp; <input id='reloadLogbook' name='reloadLogbook' type=\"button\" onclick=\"reloadLogbookFrame()\" value=\"Reload\"><br/>");
             sb.append("</h2>\n");
