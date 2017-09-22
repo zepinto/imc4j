@@ -200,9 +200,9 @@ public class BackSeatServer extends NanoHTTPD {
         }
 	}
 
-	private void saveSettings(String settings) throws Exception {
+	private void saveSettings() throws Exception {
 		File config = new File(driver.getClass().getSimpleName()+".ini");
-		Files.write(config.toPath(), settings.getBytes(), StandardOpenOption.CREATE);
+		PojoConfig.writeProperties(driver, config);
 	}
 
 	private void stopBackSeat() throws Exception {
@@ -294,7 +294,13 @@ public class BackSeatServer extends NanoHTTPD {
 			break;
 		case "Save":
 			try {
-				saveSettings(parms.get("settings"));
+				try {
+				    loadSettings(parms.get("settings"));
+				    saveSettings();
+				}
+				catch (Exception e) {
+				    e.printStackTrace();
+				}
 				
 				String checkAutoStart = parms.get("autoStart");
 				autoStartOnPowerOn = checkAutoStart != null && checkAutoStart.equalsIgnoreCase("checked");
