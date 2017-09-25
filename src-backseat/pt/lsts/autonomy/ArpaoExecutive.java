@@ -52,6 +52,9 @@ public class ArpaoExecutive extends MissionExecutive {
 	@Parameter(description = "Time, in minutes, to spend calibrating the compass")
 	public int compass_calib_mins = 15;
 	
+	@Parameter(description = "Number of tries to calibrate the compass (min=1)")
+    public int compass_calib_tries = 2;
+	
 	@Parameter(description = "If set ot true, the vehicle will align IMU prior to mission execution")
 	public boolean align_imu = true;
 	
@@ -61,11 +64,14 @@ public class ArpaoExecutive extends MissionExecutive {
 	@Parameter(description = "Bearing of IMU alignment track")
 	public double imu_align_bearing = -110;
 
+    @Parameter(description = "Number of tries to align IMU (min=1)")
+    public int imu_align_tries = 2;
+
     @Parameter(description = "Send status over SMS")
     public boolean sms_updates = false;
     
     @Parameter(description = "GSM Number where to send reports. Leave empty to use the emergency number.")
-	public String gsm_number = "";
+    public String gsm_number = "";
 	
     protected int requestIdConter = 0;
     protected long time = 0;
@@ -73,6 +79,8 @@ public class ArpaoExecutive extends MissionExecutive {
     protected int plan_index = 0;
 	private String emergencyNumber = null;
 	private String alignManeuverId = "";
+	private int compassCalibrationTriesCounter = 0;
+	private int imuAlignTriesCounter = 0;
 	
 	private PlanDB planDBListMsg = null;
 	
@@ -84,6 +92,9 @@ public class ArpaoExecutive extends MissionExecutive {
         if (!endPlanToUse.isEmpty()) {
             endPlan = endPlanToUse;
         }
+        
+        compassCalibrationTriesCounter = Math.max(1, compass_calib_tries);
+        imuAlignTriesCounter = Math.max(1, imu_align_tries);
 	}
 	
 	@Override
@@ -171,7 +182,8 @@ public class ArpaoExecutive extends MissionExecutive {
 			time = System.currentTimeMillis();
 			sendMessage("Starting compass calibration ("+compass_calib_mins+" mins).");
 			exec(spec);
-			return compass_calib();
+			compassCalibrationTriesCounter--;
+			return this::compass_calib;
 		} 
 		else if (align_imu) {
 			PlanSpecification spec = imu();
@@ -179,6 +191,7 @@ public class ArpaoExecutive extends MissionExecutive {
 			time = System.currentTimeMillis();
 			sendMessage("Starting IMU alignment.");
 			exec(spec);
+	        imuAlignTriesCounter--;
 			return this::imu_align;
 		} 
 		else {
@@ -279,15 +292,23 @@ public class ArpaoExecutive extends MissionExecutive {
 					time = System.currentTimeMillis();
 					sendMessage("Starting IMU alignment.");
 					exec(spec);
+					imuAlignTriesCounter--;
 					return this::imu_align;
-				} else {
+				}
+				else {
 					plan = "";
 					time = System.currentTimeMillis();
 					sendMessage("Starting plan sequence execution.");
 					return this::plan_exec;
 				}
-			} else
+			}
+			else if (compassCalibrationTriesCounter > 0) {
 				return this::init;
+			}
+			else {
+			    sendMessage("Calibration not successful... terminating...");
+			    return null;
+			}
 		}
 
 		return this::compass_calib;
@@ -314,6 +335,11 @@ public class ArpaoExecutive extends MissionExecutive {
 		}
 
 		if (ready()) {
+		    if (imuAlignTriesCounter <= 0) {
+		        sendMessage("IMU alignment not successful... terminating...");
+		        return null;
+		    }
+		    
 			print("Deactivating IMU");
 			deactivate("IMU");
 			PlanSpecification spec = imu();
@@ -321,6 +347,7 @@ public class ArpaoExecutive extends MissionExecutive {
 			time = System.currentTimeMillis();
 			sendMessage("Restarting IMU alignment.");
 			exec(spec);
+			imuAlignTriesCounter--;
 			return this::imu_align;
 		}
 
@@ -337,19 +364,22 @@ public class ArpaoExecutive extends MissionExecutive {
 			if (pcs.plan_id.equals(plan)) {
 				 if (pcs.last_outcome.equals(LAST_OUTCOME.LPO_SUCCESS)) {
 					 plan_index++;
-					 sendMessage(plan+" finished successfully.");
+					 sendMessage(plan + " finished successfully.");
 				 }
 				 else {
-					 print(plan+" was not completed. Retrying...");
+					 print(plan + " was not completed. Terminating...");
+					 sendMessage(plan + " was not completed. Terminating...");
+					 return null;
 				 }
 			}
 				
 			if (plan_index >= plans.length) {
 				sendMessage("All plans have finished successfully! Terminating.");
 				return null;
-			} else {
+			}
+			else {
 				plan = plans[plan_index];
-				sendMessage("Starting execution of '"+plan+"'...");
+				sendMessage("Starting execution of '" + plan + "'...");
 				startPlan(plan);
 
 				time = System.currentTimeMillis();
