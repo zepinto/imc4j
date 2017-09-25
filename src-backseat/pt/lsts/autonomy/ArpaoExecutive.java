@@ -61,11 +61,11 @@ public class ArpaoExecutive extends MissionExecutive {
 	@Parameter(description = "Bearing of IMU alignment track")
 	public double imu_align_bearing = -110;
 
-	@Parameter(description = "GSM Number where to send reports. Leave empty to use the emergency number.")
+    @Parameter(description = "Send status over SMS")
+    public boolean sms_updates = false;
+    
+    @Parameter(description = "GSM Number where to send reports. Leave empty to use the emergency number.")
 	public String gsm_number = "";
-	
-	@Parameter(description = "Send status over SMS")
-	public boolean sms_updates = false;
 	
     protected int requestIdConter = 0;
     protected long time = 0;
