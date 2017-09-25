@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.lang.Thread.State;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -187,6 +188,10 @@ public class BackSeatServer extends NanoHTTPD {
 	    
         System.out.println("Starting " + name + "...");
 
+        if (driver.getState() == State.TERMINATED) {
+            createNewDriverAndConfigure();
+        }
+        
         try {
             switch (type) {
                 case MissionExecutive:
@@ -233,14 +238,7 @@ public class BackSeatServer extends NanoHTTPD {
             driver.disconnect();
             driver.interrupt();
 
-            driver = PojoConfig.create(driver.getClass(), PojoConfig.getProperties(driver));
-            switch (type) {
-                case MissionExecutive:
-                    ((MissionExecutive) driver).setUseSystemExitOrStop(false);
-                    break;
-                default:
-                    break;
-            }
+            createNewDriverAndConfigure();
             
             System.out.println("Stopped " + name);
         }
@@ -249,6 +247,20 @@ public class BackSeatServer extends NanoHTTPD {
             throw e;
         }
 	}
+
+    /**
+     * @throws Exception
+     */
+    private void createNewDriverAndConfigure() throws Exception {
+        driver = PojoConfig.create(driver.getClass(), PojoConfig.getProperties(driver));
+        switch (type) {
+            case MissionExecutive:
+                ((MissionExecutive) driver).setUseSystemExitOrStop(false);
+                break;
+            default:
+                break;
+        }
+    }
 
 	@Override
 	public Response serve(String uri, Method method, Map<String, String> headers, Map<String, String> parms,
