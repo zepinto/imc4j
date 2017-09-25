@@ -39,6 +39,8 @@ public class BackSeatServer extends NanoHTTPD {
 
     public String copyYear = new SimpleDateFormat("yyyy").format(new Date(System.currentTimeMillis()));
     
+    protected boolean allowHotConfig = false;
+    
     protected TcpClient driver;
     protected File output;
     protected BackSeatType type;
@@ -46,8 +48,10 @@ public class BackSeatServer extends NanoHTTPD {
 
     protected File configServerFile = new File(this.getClass().getSimpleName()+".ini");
 
-	public BackSeatServer(TcpClient back_seat, int http_port) {
+	public BackSeatServer(TcpClient back_seat, int http_port, boolean allowHotConfig) {
 		super(http_port);
+		
+		this.allowHotConfig = allowHotConfig;
 		
 		if (configServerFile.exists()) {
 		    try {
@@ -346,13 +350,15 @@ public class BackSeatServer extends NanoHTTPD {
 			break;
 		case "Save":
 			try {
-				try {
-				    loadSettings(parms.get("settings"));
-				    saveSettings();
-				}
-				catch (Exception e) {
-				    e.printStackTrace();
-				}
+			    if (!driver.isAlive() || allowHotConfig) {
+			        try {
+			            loadSettings(parms.get("settings"));
+			            saveSettings();
+			        }
+			        catch (Exception e) {
+			            e.printStackTrace();
+			        }
+			    }
 				
 				String checkAutoStart = parms.get("autoStart");
 				autoStartOnPowerOn = checkAutoStart != null && checkAutoStart.equalsIgnoreCase("checked");
@@ -426,14 +432,16 @@ public class BackSeatServer extends NanoHTTPD {
 	}
 
 	public static void main(String[] args) throws Exception {
-		if (args.length != 2) {
+		if (args.length < 2) {
             System.err.println("Usage: java -jar BackSeatServer.jar <class> <port>");
-            System.err.println("    <class> - The full class name to run");
-            System.err.println("    <port>  - The http server port for this service");
+            System.err.println("    <class>         - The full class name to run");
+            System.err.println("    <port>          - The http server port for this service");
+            System.err.println("    <--hot-config>  - To allow change of config while running");            
 			System.exit(1);
 		}
 		
-		new BackSeatServer((TcpClient) Class.forName(args[0]).newInstance(), Integer.parseInt(args[1]));
+		new BackSeatServer((TcpClient) Class.forName(args[0]).newInstance(), Integer.parseInt(args[1]),
+		        args.length > 2 && "--hot-config".equalsIgnoreCase(args[2].trim()) ? true : false);
 		System.exit(0);
 	}
 }
