@@ -17,6 +17,7 @@ import pt.lsts.imc4j.msg.CompassCalibration.DIRECTION;
 import pt.lsts.imc4j.msg.EntityParameter;
 import pt.lsts.imc4j.msg.EntityParameters;
 import pt.lsts.imc4j.msg.Goto;
+import pt.lsts.imc4j.msg.Maneuver;
 import pt.lsts.imc4j.msg.PlanControlState;
 import pt.lsts.imc4j.msg.PlanControlState.LAST_OUTCOME;
 import pt.lsts.imc4j.msg.PlanDB;
@@ -61,6 +62,9 @@ public class ArpaoExecutive extends MissionExecutive {
 	@Parameter(description = "Length of IMU alignment track")
 	public double imu_align_length = 250;
 
+	@Parameter(description = "Length of transit before IMU alignment track")
+	public double imu_transit_before_align_length = 0;
+
 	@Parameter(description = "Bearing of IMU alignment track")
 	public double imu_align_bearing = -110;
 
@@ -83,6 +87,16 @@ public class ArpaoExecutive extends MissionExecutive {
 	private int imuAlignTriesCounter = 0;
 	
 	private PlanDB planDBListMsg = null;
+	
+	private class Offset {
+	    public double x;
+	    public double y;
+	    
+	    public Offset(double x, double y) {
+	        this.x = x;
+	        this.y = y;
+        }
+	}
 	
 	public ArpaoExecutive() {
 		state = this::init;
@@ -432,6 +446,8 @@ public class ArpaoExecutive extends MissionExecutive {
 		if (pos == null)
 			return null;
 
+		ArrayList<Maneuver> maneuvers = new ArrayList<>();
+		
 		PopUp popup = new PopUp();
 		popup.lat = Math.toRadians(pos[0]);
 		popup.lon = Math.toRadians(pos[1]);
@@ -441,41 +457,51 @@ public class ArpaoExecutive extends MissionExecutive {
 		popup.duration = 30;
 		popup.z = 0;
 		popup.z_units = ZUnits.DEPTH;
+		
+		maneuvers.add(popup);
 
-		double offsetX = Math.cos(Math.toRadians(imu_align_bearing)) * 40;
-		double offsetY = Math.sin(Math.toRadians(imu_align_bearing)) * 40;
+		double offTrans = Math.max(0, imu_transit_before_align_length);
+		double offAlign = Math.max(0, imu_align_length);
+		double off40 = Math.min(40, offTrans > 0 ? offTrans : offAlign);
+		
+		double offsetX40m = Math.cos(Math.toRadians(imu_align_bearing)) * off40;
+		double offsetY40m = Math.sin(Math.toRadians(imu_align_bearing)) * off40;
 
-		double[] loc1 = WGS84Utilities.WGS84displace(pos[0], pos[1], 0, offsetX, offsetY, 0);
-		Goto man1 = new Goto();
-		man1.lat = Math.toRadians(loc1[0]);
-		man1.lon = Math.toRadians(loc1[1]);
-		man1.speed = 1;
-		man1.speed_units = SpeedUnits.METERS_PS;
-		man1.z = 0;
-		man1.z_units = ZUnits.DEPTH;
+        double offsetXTransit = offTrans > 0 ? Math.cos(Math.toRadians(imu_align_bearing)) * offTrans : 0;
+        double offsetYTransit = offTrans > 0 ? Math.sin(Math.toRadians(imu_align_bearing)) * offTrans : 0;
 
-		offsetX = Math.cos(Math.toRadians(imu_align_bearing)) * imu_align_length;
-		offsetY = Math.sin(Math.toRadians(imu_align_bearing)) * imu_align_length;
+	    double offsetXAlign = Math.cos(Math.toRadians(imu_align_bearing)) * offAlign;
+	    double offsetYAlign = Math.sin(Math.toRadians(imu_align_bearing)) * offAlign;
 
-		double[] loc2 = WGS84Utilities.WGS84displace(pos[0], pos[1], 0, offsetX, offsetY, 0);
-		Goto man2 = new Goto();
-		man2.lat = Math.toRadians(loc2[0]);
-		man2.lon = Math.toRadians(loc2[1]);
-		man2.speed = 1;
-		man2.speed_units = SpeedUnits.METERS_PS;
-		man2.z = 0;
-		man2.z_units = ZUnits.DEPTH;
+	    ArrayList<Offset> locsOffsets = new ArrayList<>();
+	    if (offTrans > 0) {
+	        locsOffsets.add(new Offset(offsetX40m, offsetY40m));
+	        locsOffsets.add(new Offset(offsetXTransit, offsetYTransit));
+	        locsOffsets.add(new Offset(offsetXAlign, offsetYAlign));
+	        locsOffsets.add(new Offset(offsetXTransit, offsetYTransit));
+	    }
+	    else {
+            locsOffsets.add(new Offset(offsetX40m, offsetY40m));
+            locsOffsets.add(new Offset(offsetXAlign, offsetYAlign));
+            locsOffsets.add(new Offset(0, 0));
+	    }
 
-		Goto man3 = new Goto();
-		man3.lat = Math.toRadians(pos[0]);
-		man3.lon = Math.toRadians(pos[1]);
-		man3.speed = 1;
-		man3.speed_units = SpeedUnits.METERS_PS;
-		man3.z = 0;
-		man3.z_units = ZUnits.DEPTH;
+	    for (Offset offset : locsOffsets) {
+            double[] loc1 = offset.x == 0 && offset.y == 0 ? pos
+                    : WGS84Utilities.WGS84displace(pos[0], pos[1], 0, offset.x, offset.y, 0);
+	        Goto man1 = new Goto();
+	        man1.lat = Math.toRadians(loc1[0]);
+	        man1.lon = Math.toRadians(loc1[1]);
+	        man1.speed = 1;
+	        man1.speed_units = SpeedUnits.METERS_PS;
+	        man1.z = 0;
+	        man1.z_units = ZUnits.DEPTH;
+	        
+	        maneuvers.add(man1);
+        }
 
-		PlanSpecification spec = spec(popup, man1, man2, man3);
-		alignManeuverId = spec.maneuvers.get(2).maneuver_id;
+		PlanSpecification spec = spec(maneuvers.toArray(new Maneuver[maneuvers.size()]));
+		alignManeuverId = spec.maneuvers.get(2 + (offTrans > 0 ? 1 : 0)).maneuver_id;
 		return spec;
 	}
 		
