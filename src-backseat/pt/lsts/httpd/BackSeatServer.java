@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.lang.Thread.State;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -38,6 +39,8 @@ public class BackSeatServer extends NanoHTTPD {
 
     public String copyYear = new SimpleDateFormat("yyyy").format(new Date(System.currentTimeMillis()));
     
+    protected boolean allowHotConfig = false;
+    
     protected TcpClient driver;
     protected File output;
     protected BackSeatType type;
@@ -45,8 +48,10 @@ public class BackSeatServer extends NanoHTTPD {
 
     protected File configServerFile = new File(this.getClass().getSimpleName()+".ini");
 
-	public BackSeatServer(TcpClient back_seat, int http_port) {
+	public BackSeatServer(TcpClient back_seat, int http_port, boolean allowHotConfig) {
 		super(http_port);
+		
+		this.allowHotConfig = allowHotConfig;
 		
 		if (configServerFile.exists()) {
 		    try {
@@ -97,7 +102,7 @@ public class BackSeatServer extends NanoHTTPD {
 		    }
 		}));
 		
-        System.out.println("Listening on port "+http_port+"...\n");
+        System.out.println("Listening on port " + http_port + "...\n");
 
 		try {
 			start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);			
@@ -187,6 +192,10 @@ public class BackSeatServer extends NanoHTTPD {
 	    
         System.out.println("Starting " + name + "...");
 
+        if (driver.getState() == State.TERMINATED) {
+            createNewDriverAndConfigure();
+        }
+        
         try {
             switch (type) {
                 case MissionExecutive:
@@ -233,14 +242,7 @@ public class BackSeatServer extends NanoHTTPD {
             driver.disconnect();
             driver.interrupt();
 
-            driver = PojoConfig.create(driver.getClass(), PojoConfig.getProperties(driver));
-            switch (type) {
-                case MissionExecutive:
-                    ((MissionExecutive) driver).setUseSystemExitOrStop(false);
-                    break;
-                default:
-                    break;
-            }
+            createNewDriverAndConfigure();
             
             System.out.println("Stopped " + name);
         }
@@ -249,6 +251,20 @@ public class BackSeatServer extends NanoHTTPD {
             throw e;
         }
 	}
+
+    /**
+     * @throws Exception
+     */
+    private void createNewDriverAndConfigure() throws Exception {
+        driver = PojoConfig.create(driver.getClass(), PojoConfig.getProperties(driver));
+        switch (type) {
+            case MissionExecutive:
+                ((MissionExecutive) driver).setUseSystemExitOrStop(false);
+                break;
+            default:
+                break;
+        }
+    }
 
 	@Override
 	public Response serve(String uri, Method method, Map<String, String> headers, Map<String, String> parms,
@@ -316,43 +332,45 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 
 		switch (cmd) {
-		case "Start":
-		    try {
-		        startBackSeat();
-		    }
-		    catch (Exception e1) {
-		        e1.printStackTrace();
-		    }
-			break;
-		case "Stop":
-			try {
-				stopBackSeat();
-			}
-			catch (Exception e1) {
-				e1.printStackTrace();
-			}
-			break;
-		case "Save":
-			try {
-				try {
-				    loadSettings(parms.get("settings"));
-				    saveSettings();
-				}
-				catch (Exception e) {
-				    e.printStackTrace();
-				}
-				
-				String checkAutoStart = parms.get("autoStart");
-				autoStartOnPowerOn = checkAutoStart != null && checkAutoStart.equalsIgnoreCase("checked");
-                System.out.println("Auto start on power on " + (autoStartOnPowerOn ? "enabled" : "disabled"));
-				PojoConfig.writeProperties(this, configServerFile);
-			}
-			catch (Exception e1) {
-				e1.printStackTrace();
-			}
-			break;
-		default:
-			break;
+    		case "Start":
+    		    try {
+    		        startBackSeat();
+    		    }
+    		    catch (Exception e1) {
+    		        e1.printStackTrace();
+    		    }
+    			break;
+    		case "Stop":
+    			try {
+    				stopBackSeat();
+    			}
+    			catch (Exception e1) {
+    				e1.printStackTrace();
+    			}
+    			break;
+    		case "Save":
+    			try {
+    			    if (!driver.isAlive() || allowHotConfig) {
+    			        try {
+    			            loadSettings(parms.get("settings"));
+    			            saveSettings();
+    			        }
+    			        catch (Exception e) {
+    			            e.printStackTrace();
+    			        }
+    			    }
+    				
+    				String checkAutoStart = parms.get("autoStart");
+    				autoStartOnPowerOn = checkAutoStart != null && checkAutoStart.equalsIgnoreCase("checked");
+                    System.out.println("Auto start on power on " + (autoStartOnPowerOn ? "enabled" : "disabled"));
+    				PojoConfig.writeProperties(this, configServerFile);
+    			}
+    			catch (Exception e1) {
+    				e1.printStackTrace();
+    			}
+    			break;
+    		default:
+    			break;
 		}
 
 		String settings = "";
@@ -414,14 +432,16 @@ public class BackSeatServer extends NanoHTTPD {
 	}
 
 	public static void main(String[] args) throws Exception {
-		if (args.length != 2) {
+		if (args.length < 2) {
             System.err.println("Usage: java -jar BackSeatServer.jar <class> <port>");
-            System.err.println("    <class> - The full class name to run");
-            System.err.println("    <port>  - The http server port for this service");
+            System.err.println("    <class>         - The full class name to run");
+            System.err.println("    <port>          - The http server port for this service");
+            System.err.println("    <--hot-config>  - To allow change of config while running");            
 			System.exit(1);
 		}
 		
-		new BackSeatServer((TcpClient) Class.forName(args[0]).newInstance(), Integer.parseInt(args[1]));
+		new BackSeatServer((TcpClient) Class.forName(args[0]).newInstance(), Integer.parseInt(args[1]),
+		        args.length > 2 && "--hot-config".equalsIgnoreCase(args[2].trim()) ? true : false);
 		System.exit(0);
 	}
 }
