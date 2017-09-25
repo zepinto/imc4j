@@ -8,24 +8,24 @@ import pt.lsts.imc4j.msg.ScheduledGoto;
 public class SoiWaypoint implements Comparable<SoiWaypoint> {
 
 	private int id;
-	private double latitude, longitude, duration = 0;
-	private Date arrivalTime = new Date();
-	private double periodicity = 0;
+	private float latitude, longitude, duration = 0;
+	private Date arrivalTime = null;
+	private float periodicity = 0;
 
 	public SoiWaypoint(int id, ScheduledGoto man) {
 		this.id = id;
-		this.latitude = Math.toDegrees(man.lat);
-		this.longitude = Math.toDegrees(man.lon);
+		this.latitude = (float) Math.toDegrees(man.lat);
+		this.longitude = (float) Math.toDegrees(man.lon);
 		this.arrivalTime = new Date((long) (man.arrival_time * 1000));
 	}
 
 	public SoiWaypoint(int id, Maneuver man) throws Exception {
 		this.id = id;
-		this.latitude = Math.toDegrees(man.getDouble("lat"));
-		this.longitude = Math.toDegrees(man.getDouble("lon"));
+		this.latitude = (float) Math.toDegrees(man.getDouble("lat"));
+		this.longitude = (float )Math.toDegrees(man.getDouble("lon"));
 	}
 
-	public SoiWaypoint(int id, double lat, double lon) {
+	public SoiWaypoint(int id, float lat, float lon) {
 		this.latitude = lat;
 		this.longitude = lon;
 		this.id = id;
@@ -35,7 +35,7 @@ public class SoiWaypoint implements Comparable<SoiWaypoint> {
 		return duration;
 	}
 
-	public void setDuration(double duration) {
+	public void setDuration(float duration) {
 		this.duration = duration;
 	}
 
@@ -51,7 +51,7 @@ public class SoiWaypoint implements Comparable<SoiWaypoint> {
 		return periodicity;
 	}
 
-	public void setPeriodicity(double periodicity) {
+	public void setPeriodicity(float periodicity) {
 		this.periodicity = periodicity;
 	}
 
@@ -69,6 +69,10 @@ public class SoiWaypoint implements Comparable<SoiWaypoint> {
 
 	@Override
 	public int compareTo(SoiWaypoint o) {
+		
+		if (arrivalTime == null && o.arrivalTime == null)
+			return new Long(getId()).compareTo(new Long(o.getId()));
+		
 		if (arrivalTime == null && o.arrivalTime != null)
 			return 1;
 

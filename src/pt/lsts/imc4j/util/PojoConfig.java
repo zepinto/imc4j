@@ -116,6 +116,14 @@ public class PojoConfig {
 		}
 	}
 	
+	public static void setValue(Object pojo, String field, String value) throws Exception {
+		Field f = pojo.getClass().getDeclaredField(field);
+		if (f.getAnnotation(Parameter.class) == null)
+			throw new NoSuchFieldException(field+" is not annotated with @Parameter");
+		f.setAccessible(true);
+		setValue(pojo, value, f);
+	}
+	
 	private static void setValue(Object pojo, String value, Field f) throws Exception {
 		switch (f.getType().getSimpleName()) {
 		case "Double":

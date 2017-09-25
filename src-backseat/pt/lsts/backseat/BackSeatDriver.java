@@ -11,6 +11,7 @@ import pt.lsts.imc4j.msg.Abort;
 import pt.lsts.imc4j.msg.DesiredSpeed;
 import pt.lsts.imc4j.msg.DesiredZ;
 import pt.lsts.imc4j.msg.EntityParameter;
+import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.FollowReference;
 import pt.lsts.imc4j.msg.GpsFix;
@@ -31,6 +32,7 @@ import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.msg.VehicleState;
 import pt.lsts.imc4j.msg.VehicleState.OP_MODE;
 import pt.lsts.imc4j.net.TcpClient;
+import pt.lsts.imc4j.util.WGS84Utilities;
 
 public abstract class BackSeatDriver extends TcpClient {
 
@@ -161,7 +163,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	}
 
 	private boolean shouldStart() {
-		return !finished && !executing && (System.currentTimeMillis() - startCommandTime) > 3000;
+		return !finished && !executing && (System.currentTimeMillis() - startCommandTime) > 3000 && get(EstimatedState.class) != null;
 	}
 
 	public void startPlan(String id) {
@@ -181,6 +183,10 @@ public abstract class BackSeatDriver extends TcpClient {
 	}
 	
 	private void startExecution() {
+		
+		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+		setLocation(pos[0], pos[1]);
+		
 		PlanControl pc = new PlanControl();
 		pc.plan_id = PLAN_NAME;
 		pc.op = OP.PC_START;
@@ -193,7 +199,7 @@ public abstract class BackSeatDriver extends TcpClient {
 		man.loiter_radius = 10;
 		man.timeout = 15;
 		man.altitude_interval = 0.5f;
-
+		
 		PlanManeuver pm = new PlanManeuver();
 		pm.maneuver_id = "1";
 		pm.data = man;
