@@ -134,8 +134,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		    systemExit(-240);
             return null;
 		}
-		
-		{
+		else {
 		    if (planDBListMsg == null) {
 		        PlanDB query = new PlanDB();
 		        query.type = PlanDB.TYPE.DBT_REQUEST;
