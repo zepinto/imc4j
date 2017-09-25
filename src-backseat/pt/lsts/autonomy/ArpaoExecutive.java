@@ -205,13 +205,11 @@ public class ArpaoExecutive extends MissionExecutive {
                 for (String pl : plans) {
                     if (pdbi.plan_id.trim().equals(pl.trim())) {
                         planExistCounter++;
-                        break;
                     }
                 }
 	            if (endPlanToUse != null && !endPlanToUse.isEmpty()) {
 	                if (pdbi.plan_id.trim().equals(endPlanToUse.trim())) {
                         planExistCounter++;
-                        break;
                     }
 	            }
             }
