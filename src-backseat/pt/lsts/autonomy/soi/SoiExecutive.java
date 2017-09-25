@@ -17,6 +17,7 @@ import pt.lsts.imc4j.msg.EntityParameter;
 import pt.lsts.imc4j.msg.EntityParameters;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
+import pt.lsts.imc4j.msg.FuelLevel;
 import pt.lsts.imc4j.msg.PlanDB;
 import pt.lsts.imc4j.msg.PlanDB.TYPE;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
@@ -28,10 +29,6 @@ import pt.lsts.imc4j.msg.Sms;
 import pt.lsts.imc4j.msg.VehicleMedium;
 
 public class SoiExecutive extends TimedFSM {
-
-	private SoiPlan plan = new SoiPlan();
-	private SoiWaypoint currentWaypoint = null;
-	private int secs_underwater = 0, count_secs = 0;
 
 	@Parameter(description = "Nominal Speed")
 	double speed = 1;
@@ -57,20 +54,26 @@ public class SoiExecutive extends TimedFSM {
 	@Parameter(description = "Minutes before termination")
 	int mins_timeout = 60;
 
-	@Parameter(description = "DUNE plan to execute right after termination")
-	String end_plan = "rendezvous";
-
 	@Parameter(description = "Maximum time underwater")
-	int mins_underwater = 15;
+	int mins_under = 10;
 
 	@Parameter(description = "Number where to send reports")
-	String sms_recipient = "";
+	String sms_number = "+351914785889";
 
 	@Parameter(description = "Seconds to idle at each vertex")
 	int wait_secs = 60;
 
 	@Parameter(description = "SOI plan identifier")
 	String soi_plan_id = "soi_plan";
+	
+	@Parameter(description = "Cyclic execution")
+	boolean cycle = true;
+	
+	private SoiPlan plan = new SoiPlan();
+	private PlanSpecification spec = null;
+	private SoiWaypoint currentWaypoint = null;
+	private int secs_underwater = 0, count_secs = 0;
+	private String waypoint = "-";
 
 	public SoiExecutive() {
 		state = this::init;
@@ -78,9 +81,19 @@ public class SoiExecutive extends TimedFSM {
 
 	@Consume
 	public void on(PlanDB planDb) {
-		if (planDb.op == PlanDB.OP.DBOP_SET && planDb.type == TYPE.DBT_REQUEST) {
+		if (planDb.op == PlanDB.OP.DBOP_DEL && planDb.type == TYPE.DBT_REQUEST) {
 			if (planDb.plan_id.equals(soi_plan_id)) {
-				plan = SoiPlan.parse((PlanSpecification) planDb.arg);
+				print("Stop execution (SOI plan removed)");
+				spec = null;
+				plan = null;
+				currentWaypoint = null;
+				state = this::idleAtSurface;
+			}
+		}
+		if (planDb.op == PlanDB.OP.DBOP_SET && planDb.type == TYPE.DBT_REQUEST) {
+			
+			if (planDb.plan_id.equals(soi_plan_id)) {
+				spec = (PlanSpecification) planDb.arg;
 				currentWaypoint = null;
 				state = this::loadPlan;
 			}
@@ -101,12 +114,25 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 
+	private String createReport() {
+		EstimatedState state = get(EstimatedState.class);
+		FuelLevel flevel = get(FuelLevel.class);
+		
+		String pos = "?,?";
+		if (state != null) {
+			double[] loc = WGS84Utilities.toLatLonDepth(state);
+			pos = (float)loc[0]+","+(float)loc[1];
+		}
+		String fuel = flevel == null? "?" : ""+(int)flevel.value;
+		return remoteSrc+","+pos+","+waypoint+","+fuel; 
+	}
+	
 	public FSMState init(FollowRefState state) {
+		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
 		return this::idleAtSurface;
 	}
 
 	public FSMState idleAtSurface(FollowRefState state) {
-		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
@@ -114,12 +140,16 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState idle(FollowRefState state) {
-		System.out.println("Waiting for plan...");
+		print("Waiting for plan...");
+		waypoint = "-";
 		return this::idle;
 	}
 
 	public FSMState loadPlan(FollowRefState state) {
-		return this::exec;
+		plan = SoiPlan.parse(spec);
+		print("Start executing this plan:");
+		print(""+plan);
+		return this::start_waiting;
 	}
 
 	public FSMState exec(FollowRefState state) {
@@ -130,18 +160,22 @@ public class SoiExecutive extends TimedFSM {
 			waypoint = currentWaypoint = plan.pollWaypoint();
 
 		if (waypoint == null) {
-			System.out.println("Finished executing plan.");
-			return this::idleAtSurface;
+			print("Finished executing plan.");
+			if (spec != null && cycle)
+				return this::loadPlan;
+			else
+				return this::idleAtSurface;
 		}
 
-		System.out.println("Executing wpt " + waypoint.getId());
+		this.waypoint = ""+waypoint.getId();
+		print("Executing wpt " + waypoint.getId());
 
 		setLocation(waypoint.getLatitude(), waypoint.getLongitude());
 		setSpeed();
 
 		return this::descend;
 	}
-
+	
 	public void setSpeed() {
 		SoiWaypoint waypoint = currentWaypoint;
 		double speed = this.speed;
@@ -155,9 +189,8 @@ public class SoiExecutive extends TimedFSM {
 					pos[1]);
 			double secs = (waypoint.getArrivalTime().getTime() - System.currentTimeMillis()) / 1000.0;
 			speed = Math.min(max_speed, dist / secs);
-			speed = Math.max(min_speed, max_speed);
+			speed = Math.max(min_speed, speed);
 		}
-
 		setSpeed(speed, SpeedUnits.METERS_PS);
 	}
 
@@ -171,6 +204,7 @@ public class SoiExecutive extends TimedFSM {
 			return this::start_waiting;
 		}
 		if (arrivedZ()) {
+			setSpeed();
 			if (min_depth < max_depth)
 				print("Now ascending.");
 			return this::ascend;
@@ -182,7 +216,7 @@ public class SoiExecutive extends TimedFSM {
 		setDepth(min_depth);
 		secs_underwater++;
 
-		if (secs_underwater / 60 >= mins_underwater) {
+		if (secs_underwater / 60 >= mins_under) {
 			print("Periodic surface");
 			return this::start_waiting;
 		}
@@ -194,10 +228,11 @@ public class SoiExecutive extends TimedFSM {
 		}
 
 		if (min_depth > 0 && arrivedZ() || !isUnderwater()) {
-			if (secs_underwater / 60 >= mins_underwater) {
+			if (secs_underwater / 60 >= mins_under) {
 				print("Periodic surface");
 				return this::start_waiting;
 			} else {
+				setSpeed();
 				if (max_depth != min_depth)
 					print("Now descending (underwater for " + secs_underwater + " seconds).");
 				return this::descend;
@@ -205,6 +240,13 @@ public class SoiExecutive extends TimedFSM {
 
 		} else
 			return this::ascend;
+	}
+	
+	public void sendSms(String number, String text, int timeout) {
+		Sms sms = new Sms();
+		sms.timeout = timeout;
+		sms.contents = text;
+		sms.number = number;
 	}
 
 	public FSMState communicate(FollowRefState ref) {
@@ -215,14 +257,14 @@ public class SoiExecutive extends TimedFSM {
 			sendReport(itfs);
 		}
 
-		if (count_secs == 30 && !sms_recipient.isEmpty()) {
+		if (count_secs == 30 && !sms_number.isEmpty()) {
 
 			Sms sms = new Sms();
 			sms.timeout = wait_secs - count_secs;
-			sms.contents = String.format("Soi Executive is running!");
-			sms.number = sms_recipient;
+			sms.contents = "SOI: "+createReport();
+			sms.number = sms_number;
 			try {
-				print("Sending executive state to " + sms_recipient + " (" + sms.contents + ")");
+				print("Sending executive state to " + sms_number + " (" + sms.contents + ")");
 				send(sms);
 			} catch (Exception e) {
 				e.printStackTrace();
