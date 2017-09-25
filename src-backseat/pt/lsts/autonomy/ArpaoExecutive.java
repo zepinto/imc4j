@@ -37,36 +37,36 @@ public class ArpaoExecutive extends MissionExecutive {
 	@Parameter(description = "Sequence of plans to execute after the vehicle is ready")
 	public String[] plans = new String[] { };
 
+    @Parameter(description = "DUNE plan to execute right after termination (empty for not use)")
+    private String endPlanToUse = "";
+
 	@Parameter(description = "DUNE hostname")
 	public String host = "127.0.0.1";
 
 	@Parameter(description = "DUNE TCP port")
 	public int port = 6003;
 
+	@Parameter(description = "If set to true, the vehicle will calibrate the compass prior to mission execution")
+	public boolean calibrate_compass = true;
+	
+	@Parameter(description = "Time, in minutes, to spend calibrating the compass")
+	public int compass_calib_mins = 15;
+	
+	@Parameter(description = "If set ot true, the vehicle will align IMU prior to mission execution")
+	public boolean align_imu = true;
+	
 	@Parameter(description = "Length of IMU alignment track")
 	public double imu_align_length = 250;
 
 	@Parameter(description = "Bearing of IMU alignment track")
 	public double imu_align_bearing = -110;
 
-	@Parameter(description = "If set ot true, the vehicle will align IMU prior to mission execution")
-	public boolean align_imu = true;
-
-	@Parameter(description = "If set to true, the vehicle will calibrate the compass prior to mission execution")
-	public boolean calibrate_compass = true;
-
-	@Parameter(description = "Time, in minutes, to spend calibrating the compass")
-	public int compass_calib_mins = 15;
-	
 	@Parameter(description = "GSM Number where to send reports. Leave empty to use the emergency number.")
 	public String gsm_number = "";
 	
 	@Parameter(description = "Send status over SMS")
 	public boolean sms_updates = false;
 	
-    @Parameter(description = "DUNE plan to execute right after termination (empty for not use)")
-    private String endPlanToUse = "";
-
     protected int requestIdConter = 0;
     protected long time = 0;
     protected String plan = null;
