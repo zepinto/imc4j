@@ -97,19 +97,24 @@ public class ArpaoExecutive extends MissionExecutive {
 	}
 
 	public State init() {
-		if (!knowsEmergencyNumber()) {
-			QueryEntityParameters query = new QueryEntityParameters();
-			query.name = "Emergency Monitor";
-			query.scope = "global";
-			query.visibility = "user";
-			try {
-				send(query);	
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-			print("Waiting to get GSM emergency number...");
-			return this::init;
+		if (sms_updates) {
+		    if (!knowsEmergencyNumber()) {
+		        QueryEntityParameters query = new QueryEntityParameters();
+		        query.name = "Emergency Monitor";
+		        query.scope = "global";
+		        query.visibility = "user";
+		        try {
+		            send(query);	
+		        }
+		        catch (Exception e) {
+		            e.printStackTrace();
+		        }
+		        print("Waiting to get GSM emergency number...");
+		        return this::init;
+		    }
+		}
+		else {
+		    print("SMS updates disabled...");
 		}
 		
 		if (!atSurface()) {
