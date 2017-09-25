@@ -230,20 +230,18 @@ public class ArpaoExecutive extends MissionExecutive {
     }
 
     protected void sendMessage(String message) {
-		Sms sms = new Sms();
-		sms.contents = message;
-		sms.number = emergencyNumber;
-		sms.timeout = 60;
-		
 		try {
 			if (sms_updates) {
+			    Sms sms = new Sms();
+			    sms.contents = message;
+			    sms.number = emergencyNumber;
+			    sms.timeout = 60;
 				print("Sending SMS to '"+emergencyNumber+"'with contents: '"+message+"'.");
 				send(sms);	
 			}
 			else {
 				print(message+" - Not sending SMS -");
 			}
-			
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -277,7 +275,6 @@ public class ArpaoExecutive extends MissionExecutive {
 
 		if (pcs != null && pcs.plan_id.equals(plan) && ready()) {
 			if (pcs.last_outcome == LAST_OUTCOME.LPO_SUCCESS) {
-
 				if (align_imu) {
 					PlanSpecification spec = imu();
 					plan = spec.plan_id;
