@@ -102,7 +102,7 @@ public class BackSeatServer extends NanoHTTPD {
 		    }
 		}));
 		
-        System.out.println("Listening on port "+http_port+"...\n");
+        System.out.println("Listening on port " + http_port + "...\n");
 
 		try {
 			start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);			
@@ -332,45 +332,45 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 
 		switch (cmd) {
-		case "Start":
-		    try {
-		        startBackSeat();
-		    }
-		    catch (Exception e1) {
-		        e1.printStackTrace();
-		    }
-			break;
-		case "Stop":
-			try {
-				stopBackSeat();
-			}
-			catch (Exception e1) {
-				e1.printStackTrace();
-			}
-			break;
-		case "Save":
-			try {
-			    if (!driver.isAlive() || allowHotConfig) {
-			        try {
-			            loadSettings(parms.get("settings"));
-			            saveSettings();
-			        }
-			        catch (Exception e) {
-			            e.printStackTrace();
-			        }
-			    }
-				
-				String checkAutoStart = parms.get("autoStart");
-				autoStartOnPowerOn = checkAutoStart != null && checkAutoStart.equalsIgnoreCase("checked");
-                System.out.println("Auto start on power on " + (autoStartOnPowerOn ? "enabled" : "disabled"));
-				PojoConfig.writeProperties(this, configServerFile);
-			}
-			catch (Exception e1) {
-				e1.printStackTrace();
-			}
-			break;
-		default:
-			break;
+    		case "Start":
+    		    try {
+    		        startBackSeat();
+    		    }
+    		    catch (Exception e1) {
+    		        e1.printStackTrace();
+    		    }
+    			break;
+    		case "Stop":
+    			try {
+    				stopBackSeat();
+    			}
+    			catch (Exception e1) {
+    				e1.printStackTrace();
+    			}
+    			break;
+    		case "Save":
+    			try {
+    			    if (!driver.isAlive() || allowHotConfig) {
+    			        try {
+    			            loadSettings(parms.get("settings"));
+    			            saveSettings();
+    			        }
+    			        catch (Exception e) {
+    			            e.printStackTrace();
+    			        }
+    			    }
+    				
+    				String checkAutoStart = parms.get("autoStart");
+    				autoStartOnPowerOn = checkAutoStart != null && checkAutoStart.equalsIgnoreCase("checked");
+                    System.out.println("Auto start on power on " + (autoStartOnPowerOn ? "enabled" : "disabled"));
+    				PojoConfig.writeProperties(this, configServerFile);
+    			}
+    			catch (Exception e1) {
+    				e1.printStackTrace();
+    			}
+    			break;
+    		default:
+    			break;
 		}
 
 		String settings = "";
