@@ -424,6 +424,14 @@ public class BackSeatServer extends NanoHTTPD {
 
 		sb.append("</form>\n");
 		
+		try {
+            if (Integer.parseInt(copyYear) < 2017)
+                copyYear = new SimpleDateFormat("yyyy").format(new Date(System.currentTimeMillis()));
+        }
+        catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
+		
         sb.append("<p id='copyText'>&copy; ").append(copyYear).append(" - LSTS</p>\n");
         sb.append("</body>\n");
         sb.append("</html>\n");
