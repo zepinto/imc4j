@@ -66,7 +66,7 @@ public class ArpaoExecutive extends MissionExecutive {
 	public double imu_transit_before_align_length = 0;
 
 	@Parameter(description = "Bearing of IMU alignment track")
-	public double imu_align_bearing = -110;
+	public double imu_align_bearing = 250;
 
     @Parameter(description = "Number of tries to align IMU (min=1)")
     public int imu_align_tries = 2;
