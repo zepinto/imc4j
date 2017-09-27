@@ -460,8 +460,10 @@ public class ArpaoExecutive extends MissionExecutive {
 		
 		maneuvers.add(popup);
 
-		double offTrans = Math.max(0, imu_transit_before_align_length);
-		double offAlign = Math.max(0, imu_align_length);
+		int maxTries = Math.max(1, imu_align_tries);
+		
+		double offTrans = imuAlignTriesCounter != maxTries ? 0 : Math.max(0, imu_transit_before_align_length);
+		double offAlign = Math.max(0, imu_align_length + offTrans);
 		double off40 = Math.min(40, offTrans > 0 ? offTrans : offAlign);
 		
 		double offsetX40m = Math.cos(Math.toRadians(imu_align_bearing)) * off40;
