@@ -22,6 +22,7 @@ import fi.iki.elonen.NanoHTTPD.Response.Status;
 import pt.lsts.autonomy.MissionExecutive;
 import pt.lsts.backseat.BackSeatDriver;
 import pt.lsts.imc4j.annotations.Parameter;
+import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.net.TcpClient;
 import pt.lsts.imc4j.util.PeriodicCallbacks;
 import pt.lsts.imc4j.util.PojoConfig;
@@ -73,8 +74,6 @@ public class BackSeatServer extends NanoHTTPD {
                 break;
         }
 		
-		SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMdd_HHmmss");
-		output = new File(sdf.format(new Date())+".log");
 		File config = new File(back_seat.getClass().getSimpleName()+".ini");
 		if (config.exists()) {
 			try {
@@ -85,20 +84,14 @@ public class BackSeatServer extends NanoHTTPD {
 			}
 		}		
 		
-		try {
-			System.out.println("Redirecting output to "+output.getAbsolutePath());
-			PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(output)), true);
-			System.setOut(ps);
-			System.setErr(ps);
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
+		createAndRedirectOutputLog();
+		PeriodicCallbacks.register(this);
         
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 		    public void run() {
 		    	stop();
 		        System.out.println("Server is stopped.\n");
+		        PeriodicCallbacks.unregister(this);
 		    }
 		}));
 		
@@ -135,6 +128,43 @@ public class BackSeatServer extends NanoHTTPD {
 			}
 		}
 	}
+
+    @Periodic(1000)
+    public void checkDateAndRedirectLog() {
+        try {
+            if (Integer.parseInt(copyYear) < 2017)
+                copyYear = new SimpleDateFormat("yyyy").format(new Date(System.currentTimeMillis()));
+        }
+        catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            String yearStr = output.getName().substring(0, 4);
+            int year = Integer.parseInt(yearStr);
+            if (year != Integer.parseInt(copyYear)) {
+                createAndRedirectOutputLog();
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createAndRedirectOutputLog() {
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMdd_HHmmss");
+		output = new File(sdf.format(new Date())+".log");
+		try {
+			System.out.println("Redirecting output to " + output.getAbsolutePath());
+			PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(output)), true);
+			System.setOut(ps);
+			System.setErr(ps);
+            System.out.println("Done redirecting output to " + output.getAbsolutePath());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+    }
 
 	private void fillType() {
 	    name = driver.getClass().getSimpleName();
@@ -423,14 +453,6 @@ public class BackSeatServer extends NanoHTTPD {
 		}
 
 		sb.append("</form>\n");
-		
-		try {
-            if (Integer.parseInt(copyYear) < 2017)
-                copyYear = new SimpleDateFormat("yyyy").format(new Date(System.currentTimeMillis()));
-        }
-        catch (NumberFormatException e) {
-            e.printStackTrace();
-        }
 		
         sb.append("<p id='copyText'>&copy; ").append(copyYear).append(" - LSTS</p>\n");
         sb.append("</body>\n");
