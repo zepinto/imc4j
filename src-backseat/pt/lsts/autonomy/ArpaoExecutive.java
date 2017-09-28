@@ -35,8 +35,10 @@ import pt.lsts.imc4j.util.WGS84Utilities;
 
 public class ArpaoExecutive extends MissionExecutive {
 
-	@Parameter(description = "Sequence of plans to execute after the vehicle is ready")
-	public String[] plans = new String[] { };
+	private static final double MIN_SPEED = 0.2;
+
+    @Parameter(description = "Sequence of plans to execute after the vehicle is ready")
+    public String[] plans = new String[] { };
 
     @Parameter(description = "DUNE plan to execute right after termination (empty for not use)")
     private String endPlanToUse = "";
@@ -46,6 +48,9 @@ public class ArpaoExecutive extends MissionExecutive {
 
 	@Parameter(description = "DUNE TCP port")
 	public int port = 6003;
+
+	@Parameter(description = "Speed for the generated maneuvers (in m/s)")
+	public double speed_for_generated_maneuvers = 1;
 
 	@Parameter(description = "If set to true, the vehicle will calibrate the compass prior to mission execution")
 	public boolean calibrate_compass = true;
@@ -418,7 +423,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		PopUp popup = new PopUp();
 		popup.lat = Math.toRadians(pos[0]);
 		popup.lon = Math.toRadians(pos[1]);
-		popup.speed = 1;
+		popup.speed = (float) Math.min(MIN_SPEED, speed_for_generated_maneuvers);
 		popup.speed_units = SpeedUnits.METERS_PS;
 		popup.flags.add(FLAGS.FLG_CURR_POS);
 		popup.duration = 30;
@@ -428,7 +433,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		CompassCalibration ccalib = new CompassCalibration();
 		ccalib.lat = Math.toRadians(pos[0]);
 		ccalib.lon = Math.toRadians(pos[1]);
-		ccalib.speed = 1;
+		ccalib.speed = (float) Math.min(MIN_SPEED, speed_for_generated_maneuvers);
 		ccalib.speed_units = SpeedUnits.METERS_PS;
 		ccalib.direction = DIRECTION.LD_CLOCKW;
 		ccalib.amplitude = 0;
@@ -451,7 +456,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		PopUp popup = new PopUp();
 		popup.lat = Math.toRadians(pos[0]);
 		popup.lon = Math.toRadians(pos[1]);
-		popup.speed = 1;
+		popup.speed = (float) Math.min(MIN_SPEED, speed_for_generated_maneuvers);
 		popup.speed_units = SpeedUnits.METERS_PS;
 		popup.flags.add(FLAGS.FLG_CURR_POS);
 		popup.duration = 30;
@@ -494,7 +499,7 @@ public class ArpaoExecutive extends MissionExecutive {
 	        Goto man1 = new Goto();
 	        man1.lat = Math.toRadians(loc1[0]);
 	        man1.lon = Math.toRadians(loc1[1]);
-	        man1.speed = 1;
+	        man1.speed = (float) Math.min(MIN_SPEED, speed_for_generated_maneuvers);
 	        man1.speed_units = SpeedUnits.METERS_PS;
 	        man1.z = 0;
 	        man1.z_units = ZUnits.DEPTH;
