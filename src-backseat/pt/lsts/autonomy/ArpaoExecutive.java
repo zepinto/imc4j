@@ -49,7 +49,7 @@ public class ArpaoExecutive extends MissionExecutive {
 	@Parameter(description = "DUNE TCP port")
 	public int port = 6003;
 
-	@Parameter(description = "Speed for the generated maneuvers (in m/s)")
+	@Parameter(description = "Speed for the generated maneuvers (in m/s), except compass calibration")
 	public double speed_for_generated_maneuvers = 1;
 
 	@Parameter(description = "If set to true, the vehicle will calibrate the compass prior to mission execution")
@@ -433,7 +433,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		CompassCalibration ccalib = new CompassCalibration();
 		ccalib.lat = Math.toRadians(pos[0]);
 		ccalib.lon = Math.toRadians(pos[1]);
-		ccalib.speed = (float) Math.min(MIN_SPEED, speed_for_generated_maneuvers);
+		ccalib.speed = 1;
 		ccalib.speed_units = SpeedUnits.METERS_PS;
 		ccalib.direction = DIRECTION.LD_CLOCKW;
 		ccalib.amplitude = 0;
