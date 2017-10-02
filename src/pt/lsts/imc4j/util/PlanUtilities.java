@@ -44,7 +44,7 @@ public class PlanUtilities {
 	 * @param plan
 	 *            The plan to parsed.         
 	 * @return a maneuver sequence.
-	 * @see #getManeuverSequence(PlanSpecification)
+	 * @see #getFirstManeuverSequence(PlanSpecification)
 	 */
 	public static List<Maneuver> getManeuverCycleOrSequence(PlanSpecification plan) {
 		ArrayList<Maneuver> ret = new ArrayList<Maneuver>();
@@ -87,7 +87,7 @@ public class PlanUtilities {
 	 *            The plan to parsed.
 	 * @return a maneuver sequence.
 	 */
-	public static List<Maneuver> getManeuverSequence(PlanSpecification plan) {
+	public static List<Maneuver> getFirstManeuverSequence(PlanSpecification plan) {
 		ArrayList<Maneuver> ret = new ArrayList<Maneuver>();
 
 		LinkedHashMap<String, Maneuver> maneuvers = new LinkedHashMap<String, Maneuver>();
@@ -110,7 +110,6 @@ public class PlanUtilities {
 
 		while (man != null) {
 			if (visited.contains(man)) {
-				System.err.println("This should not be used in cyclic plans");
 				return ret;
 			}
 			visited.add(man);

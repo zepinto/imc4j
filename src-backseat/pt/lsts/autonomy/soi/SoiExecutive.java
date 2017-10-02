@@ -52,7 +52,7 @@ public class SoiExecutive extends TimedFSM {
 	int host_port = 6006;
 
 	@Parameter(description = "Minutes before termination")
-	int mins_timeout = 60;
+	int mins_timeout = 600;
 
 	@Parameter(description = "Maximum time underwater")
 	int mins_under = 10;
@@ -69,7 +69,7 @@ public class SoiExecutive extends TimedFSM {
 	@Parameter(description = "Cyclic execution")
 	boolean cycle = true;
 	
-	private SoiPlan plan = new SoiPlan();
+	private SoiPlan plan = new SoiPlan("idle");
 	private PlanSpecification spec = null;
 	private SoiWaypoint currentWaypoint = null;
 	private int secs_underwater = 0, count_secs = 0;
@@ -147,6 +147,7 @@ public class SoiExecutive extends TimedFSM {
 
 	public FSMState loadPlan(FollowRefState state) {
 		plan = SoiPlan.parse(spec);
+		plan.scheduleWaypoints(System.currentTimeMillis(), speed);
 		print("Start executing this plan:");
 		print(""+plan);
 		return this::start_waiting;
@@ -188,8 +189,14 @@ public class SoiExecutive extends TimedFSM {
 			double dist = WGS84Utilities.distance(currentWaypoint.getLatitude(), currentWaypoint.getLongitude(), pos[0],
 					pos[1]);
 			double secs = (waypoint.getArrivalTime().getTime() - System.currentTimeMillis()) / 1000.0;
-			speed = Math.min(max_speed, dist / secs);
-			speed = Math.max(min_speed, speed);
+			if (secs < 0) {
+				speed = max_speed;
+			}
+			else {
+				speed = Math.min(max_speed, dist / secs);
+				speed = Math.max(min_speed, speed);	
+			}
+			
 		}
 		setSpeed(speed, SpeedUnits.METERS_PS);
 	}
@@ -282,6 +289,7 @@ public class SoiExecutive extends TimedFSM {
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
+		setSpeed(speed, SpeedUnits.METERS_PS);
 
 		return this::wait;
 	}

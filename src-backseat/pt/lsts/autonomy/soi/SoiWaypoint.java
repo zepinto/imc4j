@@ -10,8 +10,7 @@ public class SoiWaypoint implements Comparable<SoiWaypoint> {
 	private int id;
 	private float latitude, longitude, duration = 0;
 	private Date arrivalTime = null;
-	private float periodicity = 0;
-
+	
 	public SoiWaypoint(int id, ScheduledGoto man) {
 		this.id = id;
 		this.latitude = (float) Math.toDegrees(man.lat);
@@ -47,14 +46,6 @@ public class SoiWaypoint implements Comparable<SoiWaypoint> {
 		this.arrivalTime = arrivalTime;
 	}
 
-	public double getPeriodicity() {
-		return periodicity;
-	}
-
-	public void setPeriodicity(float periodicity) {
-		this.periodicity = periodicity;
-	}
-
 	public int getId() {
 		return id;
 	}
@@ -83,30 +74,13 @@ public class SoiWaypoint implements Comparable<SoiWaypoint> {
 	}
 
 	private Date nextSchedule() {
-
-		if (arrivalTime == null)
-			return null;
-
-		long firstEta = arrivalTime.getTime();
-		long curTime = new Date().getTime();
-		long period = (long) (periodicity * 1000);
-
-		if (curTime < firstEta)
-			return arrivalTime;
-
-		if (periodicity <= 0)
-			return arrivalTime;
-
-		long count = (curTime - firstEta) / period + 1;
-
-		return new Date(firstEta + count * period);
+		return arrivalTime;
 	}
 
 	@SuppressWarnings("deprecation")
 	public static void main(String[] args) {
 		SoiWaypoint wpt = new SoiWaypoint(0, 41, -8);
 		wpt.arrivalTime = new Date(17, 8, 24, 17, 42, 00);
-		wpt.periodicity = 120;
 		System.out.println(wpt.nextSchedule());
 	}
 
