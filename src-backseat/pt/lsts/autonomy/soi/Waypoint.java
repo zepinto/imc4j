@@ -5,36 +5,36 @@ import java.util.Date;
 import pt.lsts.imc4j.msg.Maneuver;
 import pt.lsts.imc4j.msg.ScheduledGoto;
 
-public class SoiWaypoint implements Comparable<SoiWaypoint> {
+public class Waypoint implements Comparable<Waypoint> {
 
-	private int id;
-	private float latitude, longitude, duration = 0;
+	private int id, duration = 0;
+	private float latitude, longitude;
 	private Date arrivalTime = null;
 	
-	public SoiWaypoint(int id, ScheduledGoto man) {
+	public Waypoint(int id, ScheduledGoto man) {
 		this.id = id;
 		this.latitude = (float) Math.toDegrees(man.lat);
 		this.longitude = (float) Math.toDegrees(man.lon);
 		this.arrivalTime = new Date((long) (man.arrival_time * 1000));
 	}
 
-	public SoiWaypoint(int id, Maneuver man) throws Exception {
+	public Waypoint(int id, Maneuver man) throws Exception {
 		this.id = id;
 		this.latitude = (float) Math.toDegrees(man.getDouble("lat"));
 		this.longitude = (float )Math.toDegrees(man.getDouble("lon"));
 	}
 
-	public SoiWaypoint(int id, float lat, float lon) {
+	public Waypoint(int id, float lat, float lon) {
 		this.latitude = lat;
 		this.longitude = lon;
 		this.id = id;
 	}
 
-	public double getDuration() {
+	public int getDuration() {
 		return duration;
 	}
 
-	public void setDuration(float duration) {
+	public void setDuration(int duration) {
 		this.duration = duration;
 	}
 
@@ -50,16 +50,16 @@ public class SoiWaypoint implements Comparable<SoiWaypoint> {
 		return id;
 	}
 
-	public double getLatitude() {
+	public float getLatitude() {
 		return latitude;
 	}
 
-	public double getLongitude() {
+	public float getLongitude() {
 		return longitude;
 	}
 
 	@Override
-	public int compareTo(SoiWaypoint o) {
+	public int compareTo(Waypoint o) {
 		
 		if (arrivalTime == null && o.arrivalTime == null)
 			return new Long(getId()).compareTo(new Long(o.getId()));
@@ -79,7 +79,7 @@ public class SoiWaypoint implements Comparable<SoiWaypoint> {
 
 	@SuppressWarnings("deprecation")
 	public static void main(String[] args) {
-		SoiWaypoint wpt = new SoiWaypoint(0, 41, -8);
+		Waypoint wpt = new Waypoint(0, 41, -8);
 		wpt.arrivalTime = new Date(17, 8, 24, 17, 42, 00);
 		System.out.println(wpt.nextSchedule());
 	}

@@ -551,6 +551,10 @@ public class MessageFactory {
 
 	public static final int ID_SoiPlan = 851;
 
+	public static final int ID_SoiCommand = 852;
+
+	public static final int ID_SoiState = 853;
+
 	public static final int ID_MessagePart = 877;
 
 	public static final int ID_NeptusBlob = 888;
@@ -1416,6 +1420,12 @@ public class MessageFactory {
 			}
 			case ID_SoiPlan: {
 				return new SoiPlan();
+			}
+			case ID_SoiCommand: {
+				return new SoiCommand();
+			}
+			case ID_SoiState: {
+				return new SoiState();
 			}
 			case ID_MessagePart: {
 				return new MessagePart();
@@ -2313,6 +2323,12 @@ public class MessageFactory {
 			}
 			case "SoiPlan": {
 				return ID_SoiPlan;
+			}
+			case "SoiCommand": {
+				return ID_SoiCommand;
+			}
+			case "SoiState": {
+				return ID_SoiState;
 			}
 			case "MessagePart": {
 				return ID_MessagePart;

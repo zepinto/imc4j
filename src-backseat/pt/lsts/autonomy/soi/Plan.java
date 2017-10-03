@@ -1,22 +1,23 @@
 package pt.lsts.autonomy.soi;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 
 import pt.lsts.imc4j.msg.Goto;
 import pt.lsts.imc4j.msg.Maneuver;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.ScheduledGoto;
+import pt.lsts.imc4j.msg.SoiPlan;
+import pt.lsts.imc4j.msg.SoiWaypoint;
 import pt.lsts.imc4j.util.PlanUtilities;
+import pt.lsts.imc4j.util.SerializationUtils;
 import pt.lsts.imc4j.util.WGS84Utilities;
 
-public class SoiPlan {
+public class Plan {
 
 	private final String planId;
 	private boolean cyclic = false;
-	private ArrayList<SoiWaypoint> waypoints = new ArrayList<>();
-	private double comms_duration = 60;
+	private ArrayList<Waypoint> waypoints = new ArrayList<>();
 	
 	/**
 	 * @return the planId
@@ -39,19 +40,19 @@ public class SoiPlan {
 		this.cyclic = cyclic;
 	}
 
-	public SoiPlan(String id) {
+	public Plan(String id) {
 		this.planId = id;
 	}
 
-	public static SoiPlan parse(PlanSpecification spec) {
-		SoiPlan plan = new SoiPlan(spec.plan_id);
+	public static Plan parse(PlanSpecification spec) {
+		Plan plan = new Plan(spec.plan_id);
 		int id = 1;
 		for (Maneuver m : PlanUtilities.getFirstManeuverSequence(spec)) {
 			if (m instanceof ScheduledGoto)
-				plan.addWaypoint(new SoiWaypoint(id++, (ScheduledGoto) m));
+				plan.addWaypoint(new Waypoint(id++, (ScheduledGoto) m));
 			else {
 				try {
-					plan.addWaypoint(new SoiWaypoint(id++, m));
+					plan.addWaypoint(new Waypoint(id++, m));
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -63,48 +64,65 @@ public class SoiPlan {
 		
 		return plan;
 	}
-
-	public void addWaypoint(SoiWaypoint waypoint) {
-		synchronized (waypoints) {
-			waypoints.add(waypoint);
-			Collections.sort(waypoints);
+	
+	public static Plan parse(SoiPlan spec) {
+		Plan plan = new Plan("soi_"+spec.plan_id);
+		int id = 1;
+		for (SoiWaypoint wpt : spec.waypoints) {
+			Waypoint soiWpt = new Waypoint(id++, wpt.lat, wpt.lon);
+			soiWpt.setDuration(wpt.duration);
+			if (wpt.eta > 0)
+				soiWpt.setArrivalTime(new Date(1000 * wpt.eta));
+			plan.addWaypoint(soiWpt);
 		}
+		return plan;		
+	}
+	
+	public SoiPlan asImc() {
+		SoiPlan plan = new SoiPlan();
+		for (Waypoint wpt : waypoints) {
+			SoiWaypoint waypoint = new SoiWaypoint();
+			waypoint.eta = wpt.getArrivalTime().getTime() / 1000;
+			waypoint.lat = wpt.getLatitude();
+			waypoint.lon = wpt.getLongitude();
+			waypoint.duration = wpt.getDuration();
+			plan.waypoints.add(waypoint);
+		}
+		byte[] data = plan.serializeFields();
+		plan.plan_id = SerializationUtils.crc16(data, 2, data.length-2);
+		return plan;
+	}
+	
+	public int checksum() {
+		byte[] data = asImc().serializeFields();
+		return SerializationUtils.crc16(data, 2, data.length-2);
 	}
 
-	public SoiWaypoint pollWaypoint() {
+	public void addWaypoint(Waypoint waypoint) {
 		synchronized (waypoints) {
-			if (waypoints.isEmpty())
-				return null;
-			SoiWaypoint wpt = waypoints.get(0);
-			waypoints.remove(0);
-			return wpt;
+			waypoints.add(waypoint);			
 		}
 	}
-
-	public SoiWaypoint currentWaypoint() {
-		synchronized (waypoints) {
-			return waypoints.get(0);
-		}
+	
+	public Waypoint waypoint(int index) {
+		if (index < 0 || index >= waypoints.size())
+			return null;
+		return waypoints.get(index);
 	}
 
-	public void remove(int waypoint) {
+	public void remove(int index) {
 		synchronized (waypoints) {
-			for (int i = 0; i < waypoints.size(); i++)
-				if (waypoints.get(i).getId() == waypoint) {
-					waypoints.remove(i);
-					return;
-				}
+			waypoints.remove(index);
 		}
 	}
 
 	public void scheduleWaypoints(long startTime, double lat, double lon, double speed) {
-		double duration = comms_duration;
-		long curTime = startTime + (long)(comms_duration * 1000.0);
+		long curTime = startTime;
 		synchronized (waypoints) {
-			for (SoiWaypoint waypoint : waypoints) {
+			for (Waypoint waypoint : waypoints) {
 				double distance = WGS84Utilities.distance(lat, lon, waypoint.getLatitude(), waypoint.getLongitude());
 				double timeToReach = distance / speed;
-				curTime += (long) (1000.0 * (timeToReach + duration + comms_duration));
+				curTime += (long) (1000.0 * (timeToReach + waypoint.getDuration()));
 				waypoint.setArrivalTime(new Date(curTime));
 				lat = waypoint.getLatitude();
 				lon = waypoint.getLongitude();
@@ -116,7 +134,7 @@ public class SoiPlan {
 		if (waypoints.isEmpty())
 			return;
 
-		SoiWaypoint start = waypoints.get(0);
+		Waypoint start = waypoints.get(0);
 		scheduleWaypoints(startTime, start.getLatitude(), start.getLongitude(), speed);
 	}
 
@@ -124,7 +142,7 @@ public class SoiPlan {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Plan '"+planId+"'"+(cyclic? " (cyclic):\n": ":\n"));
 		synchronized (waypoints) {
-			for (SoiWaypoint wpt : waypoints) {
+			for (Waypoint wpt : waypoints) {
 				sb.append("\t"+wpt.getId() + ", " + (float) wpt.getLatitude() + ", " + (float) wpt.getLongitude() + ", "
 						+ wpt.getArrivalTime() + ", "+wpt.getDuration()+"\n");
 			}
@@ -134,12 +152,12 @@ public class SoiPlan {
 
 	}
 
-	public void remove(SoiWaypoint waypoint) {
+	public void remove(Waypoint waypoint) {
 		remove(waypoint.getId());
 	}
-
+	
 	public static void main(String[] args) throws Exception {
-		SoiPlan plan = new SoiPlan("test");
+		Plan plan = new Plan("test");
 		ScheduledGoto goto1 = new ScheduledGoto();
 		goto1.lat = Math.toRadians(41);
 		goto1.lon = Math.toRadians(-8);
@@ -158,10 +176,10 @@ public class SoiPlan {
 		goto4.lat = Math.toRadians(41.4);
 		goto4.lon = Math.toRadians(-8.4);
 
-		plan.addWaypoint(new SoiWaypoint(1, goto1));
-		plan.addWaypoint(new SoiWaypoint(2, goto2));
-		plan.addWaypoint(new SoiWaypoint(3, goto3));
-		plan.addWaypoint(new SoiWaypoint(4, goto4));
+		plan.addWaypoint(new Waypoint(1, goto1));
+		plan.addWaypoint(new Waypoint(2, goto2));
+		plan.addWaypoint(new Waypoint(3, goto3));
+		plan.addWaypoint(new Waypoint(4, goto4));
 
 		System.out.println(plan);
 	}

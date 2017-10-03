@@ -2,6 +2,10 @@ package pt.lsts.backseat;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Periodic;
@@ -27,6 +31,9 @@ import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.Reference;
 import pt.lsts.imc4j.msg.Reference.FLAGS;
 import pt.lsts.imc4j.msg.SetEntityParameters;
+import pt.lsts.imc4j.msg.TransmissionRequest;
+import pt.lsts.imc4j.msg.TransmissionRequest.DATA_MODE;
+import pt.lsts.imc4j.msg.TransmissionStatus;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.msg.VehicleState;
@@ -42,6 +49,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	protected String endPlan = null;
 	protected static final String PLAN_NAME = "back_seat";
 	private Reference reference = new Reference();
+	private ExecutorService executor = Executors.newCachedThreadPool();
 		
 	public void setLocation(double latDegs, double lonDegs) {
 		reference.lat = Math.toRadians(latDegs);
@@ -329,5 +337,106 @@ public abstract class BackSeatDriver extends TcpClient {
 
 	protected void deactivate(String entity) {
 	    setParam(entity, "Active", "false");
+	}
+	
+	private LinkedHashMap<Integer, Message> requests_sent = new LinkedHashMap<>();
+	private int request_id = 1;
+	
+	@Consume
+	public void on(TransmissionStatus status) {
+		if (status.src != remoteSrc)
+			return;
+		
+		synchronized (requests_sent) {
+			if (requests_sent.containsKey(status.req_id)) {
+				requests_sent.put(status.req_id, status);
+			}
+		}
+	}
+	
+	protected TransmissionRequest createRequest(Message msg, TransmissionRequest.COMM_MEAN mean, int ttl) {
+		TransmissionRequest request = new TransmissionRequest();
+		request.data_mode = DATA_MODE.DMODE_INLINEMSG;
+		request.msg_data = msg;
+		request.comm_mean = mean;
+		request.destination = "broadcast";
+		request.deadline = System.currentTimeMillis()/1000.0 + ttl;
+		request.req_id = ++request_id;
+		return request;
+	}
+	
+	protected TransmissionRequest createRequest(String text, TransmissionRequest.COMM_MEAN mean, int ttl) {
+		TransmissionRequest request = new TransmissionRequest();
+		request.data_mode = DATA_MODE.DMODE_TEXT;
+		request.txt_data = text;
+		request.comm_mean = mean;
+		request.destination = "broadcast";
+		request.deadline = System.currentTimeMillis()/1000.0 + ttl;
+		request.req_id = ++request_id;
+		return request;
+	}
+	
+	protected void sendBlocking(TransmissionRequest request) throws Exception {
+		requests_sent.put(request.req_id, request);
+		send(request);	
+		long deadline = (long) (request.deadline * 1000.0);
+		while (System.currentTimeMillis() < deadline) {
+			Thread.sleep(100);
+			synchronized (requests_sent) {
+				if (requests_sent.get(request.req_id) instanceof TransmissionStatus) {
+					TransmissionStatus status = (TransmissionStatus) requests_sent.get(request.req_id);
+					switch (status.status) {
+					case TSTAT_DELIVERED:
+					case TSTAT_SENT:
+					case TSTAT_MAYBE_DELIVERED:
+						requests_sent.remove(request.req_id);
+						return;
+					case TSTAT_INPUT_FAILURE:
+					case TSTAT_TEMPORARY_FAILURE:
+					case TSTAT_PERMANENT_FAILURE:
+						requests_sent.remove(request.req_id);
+						throw new Exception(status.info);
+					default:
+						break;
+					}							
+				}
+			}
+		}
+		requests_sent.remove(request.req_id);
+		throw new Exception("Transmission timed out.");		
+	}
+	
+	protected Future<Void> sendVia(Message msg, TransmissionRequest.COMM_MEAN mean, int ttl) {
+		final TransmissionRequest request = createRequest(msg, mean, ttl);
+		return executor.submit(new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				sendBlocking(request);
+				return null;
+			}
+		});
+	}
+	
+	protected Future<Void> sendVia(String text, TransmissionRequest.COMM_MEAN mean, int ttl) {
+		final TransmissionRequest request = createRequest(text, mean, ttl);
+		return executor.submit(new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				sendBlocking(request);
+				return null;
+			}
+		});
+	}
+	
+	protected Future<Void> sendViaIridium(Message msg, int ttl) {
+		return sendVia(msg, TransmissionRequest.COMM_MEAN.CMEAN_SATELLITE, ttl);		
+	}
+	
+	protected Future<Void> sendViaIridium(String text, int ttl) {
+		return sendVia(text, TransmissionRequest.COMM_MEAN.CMEAN_SATELLITE, ttl);		
+	}
+	
+	protected Future<Void> sendViaSms(String text, int ttl) {
+		return sendVia(text, TransmissionRequest.COMM_MEAN.CMEAN_GSM, ttl);		
 	}
 }

@@ -82,6 +82,12 @@ public class PojoConfig {
 		}		
 	}
 	
+	public static void setProperty(Object pojo, String field, String value) throws Exception {
+		Field f = pojo.getClass().getDeclaredField(field);
+		f.setAccessible(true);
+		setValue(pojo, value, f);		
+	}
+	
 	public static Properties getProperties(Object pojo) throws Exception {
 		validate(pojo);
 		ArrayList<Field> fields = loadFields(pojo);
