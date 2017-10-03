@@ -433,6 +433,12 @@ public class MessageFactory {
 
 	public static final int ID_ReportControl = 513;
 
+	public static final int ID_StateReport = 514;
+
+	public static final int ID_TransmissionRequest = 515;
+
+	public static final int ID_TransmissionStatus = 516;
+
 	public static final int ID_Abort = 550;
 
 	public static final int ID_PlanSpecification = 551;
@@ -540,6 +546,10 @@ public class MessageFactory {
 	public static final int ID_FormationControlParams = 822;
 
 	public static final int ID_FormationEvaluation = 823;
+
+	public static final int ID_SoiWaypoint = 850;
+
+	public static final int ID_SoiPlan = 851;
 
 	public static final int ID_MessagePart = 877;
 
@@ -1230,6 +1240,15 @@ public class MessageFactory {
 			case ID_ReportControl: {
 				return new ReportControl();
 			}
+			case ID_StateReport: {
+				return new StateReport();
+			}
+			case ID_TransmissionRequest: {
+				return new TransmissionRequest();
+			}
+			case ID_TransmissionStatus: {
+				return new TransmissionStatus();
+			}
 			case ID_Abort: {
 				return new Abort();
 			}
@@ -1391,6 +1410,12 @@ public class MessageFactory {
 			}
 			case ID_FormationEvaluation: {
 				return new FormationEvaluation();
+			}
+			case ID_SoiWaypoint: {
+				return new SoiWaypoint();
+			}
+			case ID_SoiPlan: {
+				return new SoiPlan();
 			}
 			case ID_MessagePart: {
 				return new MessagePart();
@@ -2112,6 +2137,15 @@ public class MessageFactory {
 			case "ReportControl": {
 				return ID_ReportControl;
 			}
+			case "StateReport": {
+				return ID_StateReport;
+			}
+			case "TransmissionRequest": {
+				return ID_TransmissionRequest;
+			}
+			case "TransmissionStatus": {
+				return ID_TransmissionStatus;
+			}
 			case "Abort": {
 				return ID_Abort;
 			}
@@ -2273,6 +2307,12 @@ public class MessageFactory {
 			}
 			case "FormationEvaluation": {
 				return ID_FormationEvaluation;
+			}
+			case "SoiWaypoint": {
+				return ID_SoiWaypoint;
+			}
+			case "SoiPlan": {
+				return ID_SoiPlan;
 			}
 			case "MessagePart": {
 				return ID_MessagePart;
