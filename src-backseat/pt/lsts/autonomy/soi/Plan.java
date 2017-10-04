@@ -48,15 +48,11 @@ public class Plan {
 		Plan plan = new Plan(spec.plan_id);
 		int id = 1;
 		for (Maneuver m : PlanUtilities.getFirstManeuverSequence(spec)) {
-			if (m instanceof ScheduledGoto)
-				plan.addWaypoint(new Waypoint(id++, (ScheduledGoto) m));
-			else {
-				try {
-					plan.addWaypoint(new Waypoint(id++, m));
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
+			try {
+				plan.addWaypoint(new Waypoint(id++, m));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}			
 		}
 
 		if (PlanUtilities.isCyclic(spec))
