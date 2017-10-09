@@ -10,11 +10,15 @@ public class TimedFSM extends FSMController {
 	
 	@Override
 	public void update(FollowRefState fref) {
-		if (deadline.getTime() < System.currentTimeMillis()) {
+		if (deadline != null && deadline.getTime() < System.currentTimeMillis()) {
 			print("Deadline reached, terminating.");
 			end();
 		}
 		else
 			super.update(fref);
+	}
+	
+	public void setDeadline(Date date) {
+		this.deadline = date;
 	}
 }

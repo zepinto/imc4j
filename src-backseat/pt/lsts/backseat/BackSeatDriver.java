@@ -36,8 +36,6 @@ import pt.lsts.imc4j.msg.TransmissionRequest.DATA_MODE;
 import pt.lsts.imc4j.msg.TransmissionStatus;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
-import pt.lsts.imc4j.msg.VehicleState;
-import pt.lsts.imc4j.msg.VehicleState.OP_MODE;
 import pt.lsts.imc4j.net.TcpClient;
 import pt.lsts.imc4j.util.WGS84Utilities;
 
@@ -45,9 +43,9 @@ public abstract class BackSeatDriver extends TcpClient {
 
 	protected LinkedHashMap<Integer, Message> state = new LinkedHashMap<>();
 	protected long startCommandTime = 0;
-	protected boolean executing = false, finished = false;
-	protected String endPlan = null;
-	protected static final String PLAN_NAME = "back_seat";
+	protected boolean paused = true, finished = false;
+	protected String endPlan = null, plan_name = "back_seat";
+	//protected static final String PLAN_NAME = "back_seat";
 	private Reference reference = new Reference();
 	private ExecutorService executor = Executors.newCachedThreadPool();
 		
@@ -82,6 +80,20 @@ public abstract class BackSeatDriver extends TcpClient {
 			
 	}
 	
+	/**
+	 * @return the plan_name
+	 */
+	public final String getPlanName() {
+		return plan_name;
+	}
+
+	/**
+	 * @param plan_name the plan_name to set
+	 */
+	public final void setPlanName(String plan_name) {
+		this.plan_name = plan_name;
+	}
+
 	public void end() {
 		reference.flags.add(FLAGS.FLAG_MANDONE);
 		finished = true;
@@ -133,16 +145,7 @@ public abstract class BackSeatDriver extends TcpClient {
 			return false;
 		}
 	}
-	
-	@Consume
-	protected void on(VehicleState msg) {
-		if (msg.src == remoteSrc) {
-			if (msg.op_mode == OP_MODE.VS_SERVICE && shouldStart()) {
-				startExecution();
-			}
-		}
-	}
-
+ 
 	@Consume
 	protected void on(Message msg) {
 		if (msg.src == remoteSrc) {
@@ -151,15 +154,15 @@ public abstract class BackSeatDriver extends TcpClient {
 			}
 		}
 	}
-
-	@Consume
-	protected void on(PlanControlState msg) {
-		if (msg.src == remoteSrc) {
-			if (msg.state == STATE.PCS_EXECUTING && msg.plan_id.equals(PLAN_NAME))
-				executing = true;
-			else
-				executing = false;
-		}
+	
+	protected boolean isControlling() {
+		PlanControlState msg = get(PlanControlState.class);
+		return (msg != null && msg.state == STATE.PCS_EXECUTING && msg.plan_id.equals(plan_name));
+	}
+	
+	protected boolean isIdle() {
+		PlanControlState msg = get(PlanControlState.class);
+		return (msg != null && msg.state == STATE.PCS_READY);
 	}
 
 	@Consume
@@ -171,7 +174,27 @@ public abstract class BackSeatDriver extends TcpClient {
 	}
 
 	private boolean shouldStart() {
-		return !finished && !executing && (System.currentTimeMillis() - startCommandTime) > 3000 && get(EstimatedState.class) != null;
+		return !finished && !paused && isIdle() && (System.currentTimeMillis() - startCommandTime) > 3000
+				&& get(EstimatedState.class) != null;
+	}
+	
+	public void setPaused(boolean paused) {
+		this.paused = paused;		
+	}
+	
+	public void stopExecution() {
+		PlanControl pc = new PlanControl();
+		pc.plan_id = plan_name;
+		pc.op = OP.PC_STOP;
+		pc.type = TYPE.PC_REQUEST;
+		pc.request_id = 679;
+		
+		try {
+			send(pc);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
 	}
 
 	public void startPlan(String id) {
@@ -196,7 +219,7 @@ public abstract class BackSeatDriver extends TcpClient {
 		setLocation(pos[0], pos[1]);
 		
 		PlanControl pc = new PlanControl();
-		pc.plan_id = PLAN_NAME;
+		pc.plan_id = plan_name;
 		pc.op = OP.PC_START;
 		pc.type = TYPE.PC_REQUEST;
 		pc.request_id = 678;
@@ -213,7 +236,7 @@ public abstract class BackSeatDriver extends TcpClient {
 		pm.data = man;
 
 		PlanSpecification ps = new PlanSpecification();
-		ps.plan_id = PLAN_NAME;
+		ps.plan_id = plan_name;
 		ps.start_man_id = "1";
 		ps.maneuvers.add(pm);
 		pc.arg = ps;
@@ -228,8 +251,8 @@ public abstract class BackSeatDriver extends TcpClient {
 	}
 
 	@Periodic(1000)
-	public final void sendRef() {
-
+	public final void controlLoop() {
+		
 		if (finished) {
 			if (endPlan != null) {
 			    print("Starting execution of '"+endPlan+"'.");
@@ -242,27 +265,30 @@ public abstract class BackSeatDriver extends TcpClient {
                 catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-			}
-			else {
-	             print("No exit plan given. Exiting with nothing triggered");
-			}
-			
+			}			
 			disconnect();			
 		}
-		
-		if (executing) {
-			FollowRefState curState = get(FollowRefState.class);
-			if (curState == null)
-				return;
-
-			update(curState);
-			
-			try {
-				send(reference);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		else if (shouldStart()) {
+			startExecution();
 		}
+		else if (isControlling()) {
+			if (paused) {
+				stopExecution();
+			}
+			else {
+				FollowRefState curState = get(FollowRefState.class);
+				if (curState == null)
+					return;
+
+				update(curState);
+				
+				try {
+					send(reference);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}		
 	}
 
 	@SuppressWarnings("unchecked")

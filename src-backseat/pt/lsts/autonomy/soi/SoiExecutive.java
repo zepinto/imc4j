@@ -23,7 +23,6 @@ import pt.lsts.imc4j.msg.PlanDB;
 import pt.lsts.imc4j.msg.PlanDB.TYPE;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.ReportControl;
-import pt.lsts.imc4j.msg.Sms;
 import pt.lsts.imc4j.msg.SoiCommand;
 import pt.lsts.imc4j.msg.SoiState;
 import pt.lsts.imc4j.msg.SoiState.STATE;
@@ -75,14 +74,17 @@ public class SoiExecutive extends TimedFSM {
 	String soi_plan_id = "soi_plan";
 
 	@Parameter(description = "Cyclic execution")
-	boolean cycle = true;
+	boolean cycle = false;
 
 	private Plan plan = new Plan("idle");
 	private PlanSpecification spec = null;
 	private int secs_underwater = 0, count_secs = 0;
 	private int wpt_index = 0;
+	private Future<Void> ongoingIridium = null;
+	
 	
 	public SoiExecutive() {
+		setPlanName(soi_plan_id);
 		state = this::init;
 	}
 
@@ -121,7 +123,7 @@ public class SoiExecutive extends TimedFSM {
 	public void on(SoiCommand cmd) {
 		if (cmd.type != SoiCommand.TYPE.SOITYPE_REQUEST)
 			return;
-
+		System.out.println("SoiCommand!\n"+cmd);
 		SoiCommand reply = new SoiCommand();
 		reply.command = cmd.command;
 		reply.type = SoiCommand.TYPE.SOITYPE_ERROR;
@@ -176,10 +178,8 @@ public class SoiExecutive extends TimedFSM {
 			
 		case SOICMD_STOP:
 			print("CMD: Stop execution!");
-			spec = null;
-			plan = null;
-			wpt_index = 0;
-			state = this::idleAtSurface;
+			setPaused(true);
+			state = this::start_waiting;
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
 			
@@ -190,7 +190,12 @@ public class SoiExecutive extends TimedFSM {
 			break;
 			
 		case SOICMD_RESUME:
-			
+			print("CMD: Resume execution!");
+			if (paused) {
+				setPaused(false);
+				state = this::start_waiting;
+				return;
+			}
 			break;
 		default:
 			break;
@@ -362,18 +367,10 @@ public class SoiExecutive extends TimedFSM {
 		} else
 			return this::ascend;
 	}
-
-	public void sendSms(String number, String text, int timeout) {
-		Sms sms = new Sms();
-		sms.timeout = timeout;
-		sms.contents = text;
-		sms.number = number;
-	}
-
-	Future<Void> ongoingIridium = null;
 	 
 	public FSMState communicate(FollowRefState ref) {
 
+		// Send "DUNE" report
 		if (count_secs == 0) {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
