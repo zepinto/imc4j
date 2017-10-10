@@ -119,8 +119,12 @@ public class TcpClient extends Thread {
 	}
 
 	public void send(Message m) throws IOException {
-		m.dst = remoteSrc;
-		m.src = localSrc;
+		if (m.dst == 0xFFFF)
+			m.dst = remoteSrc;
+		
+		if (m.src == 0xFFFF)
+			m.src = localSrc;
+		
 		m.timestamp = System.currentTimeMillis()/1000.0;
 		
 		synchronized (lock) {

@@ -81,8 +81,7 @@ public class SoiExecutive extends TimedFSM {
 	private int secs_underwater = 0, count_secs = 0;
 	private int wpt_index = 0;
 	private Future<Void> ongoingIridium = null;
-	
-	
+
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
 		state = this::init;
@@ -106,13 +105,12 @@ public class SoiExecutive extends TimedFSM {
 				EstimatedState s = get(EstimatedState.class);
 				if (s != null) {
 					double[] pos = WGS84Utilities.toLatLonDepth(s);
-					plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);	
-				}
-				else
+					plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
+				} else
 					plan.scheduleWaypoints(System.currentTimeMillis(), speed);
-				
+
 				print("Received soi plan:");
-				print(""+plan);
+				print("" + plan);
 				wpt_index = 0;
 				state = this::start_waiting;
 			}
@@ -123,30 +121,32 @@ public class SoiExecutive extends TimedFSM {
 	public void on(SoiCommand cmd) {
 		if (cmd.type != SoiCommand.TYPE.SOITYPE_REQUEST)
 			return;
-		System.out.println("SoiCommand!\n"+cmd);
+		System.out.println("SoiCommand!\n" + cmd);
 		SoiCommand reply = new SoiCommand();
 		reply.command = cmd.command;
 		reply.type = SoiCommand.TYPE.SOITYPE_ERROR;
+		reply.src = remoteSrc;
+		reply.dst = cmd.src;
+		reply.dst_ent = cmd.src_ent;
 
 		switch (cmd.command) {
-		
+
 		case SOICMD_EXEC:
 			print("CMD: Exec plan!");
 			plan = Plan.parse(cmd.plan);
 			EstimatedState s = get(EstimatedState.class);
 			if (s != null) {
 				double[] pos = WGS84Utilities.toLatLonDepth(s);
-				plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);	
-			}
-			else
-				plan.scheduleWaypoints(System.currentTimeMillis(), speed);			
+				plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
+			} else
+				plan.scheduleWaypoints(System.currentTimeMillis(), speed);
 			wpt_index = 0;
 			print("Start executing this plan:");
 			print("" + plan);
 			state = this::start_waiting;
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
-			
+
 		case SOICMD_GET_PARAMS:
 			print("CMD: Get Params!");
 			for (Field f : getClass().getDeclaredFields()) {
@@ -163,7 +163,7 @@ public class SoiExecutive extends TimedFSM {
 			}
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
-			
+
 		case SOICMD_SET_PARAMS:
 			print("CMD: Set Params!");
 			try {
@@ -175,20 +175,20 @@ public class SoiExecutive extends TimedFSM {
 			}
 
 			break;
-			
+
 		case SOICMD_STOP:
 			print("CMD: Stop execution!");
 			setPaused(true);
 			state = this::start_waiting;
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
-			
+
 		case SOICMD_GET_PLAN:
 			print("CMD: Get plan!");
 			reply.plan = plan.asImc();
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
-			
+
 		case SOICMD_RESUME:
 			print("CMD: Resume execution!");
 			if (paused) {
@@ -199,9 +199,15 @@ public class SoiExecutive extends TimedFSM {
 			break;
 		default:
 			break;
-		}		
-		//FIXME make sure we wait for reply transmission...
-		ongoingIridium = sendViaIridium(reply, 60);		
+		}
+
+		try {
+			send(reply);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		// FIXME make sure we wait for reply transmission...
+		ongoingIridium = sendViaIridium(reply, 60);
 	}
 
 	@Consume
@@ -223,19 +229,18 @@ public class SoiExecutive extends TimedFSM {
 		if (plan != null && plan.waypoint(wpt_index) != null) {
 			state.state = STATE.SOISTATE_EXEC;
 			state.plan_id = plan.checksum();
-		}
-		else {
+		} else {
 			state.state = STATE.SOISTATE_IDLE;
 			state.plan_id = 0;
 		}
-		
+
 		state.wpt_id = wpt_index;
 		state.settings_chk = 0;
-		
+
 		return state;
-		
-		
+
 	}
+
 	private String createReport() {
 		EstimatedState state = get(EstimatedState.class);
 		FuelLevel flevel = get(FuelLevel.class);
@@ -280,13 +285,11 @@ public class SoiExecutive extends TimedFSM {
 				EstimatedState s = get(EstimatedState.class);
 				if (s != null) {
 					double[] pos = WGS84Utilities.toLatLonDepth(s);
-					plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);	
-				}
-				else
+					plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
+				} else
 					plan.scheduleWaypoints(System.currentTimeMillis(), speed);
 				return this::exec;
-			} 
-			else
+			} else
 				return this::idleAtSurface;
 		}
 
@@ -308,7 +311,7 @@ public class SoiExecutive extends TimedFSM {
 			double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 			double dist = WGS84Utilities.distance(wpt.getLatitude(), wpt.getLongitude(), pos[0], pos[1]);
 			double secs = (wpt.getArrivalTime().getTime() - System.currentTimeMillis()) / 1000.0;
-			
+
 			if (secs < 0) {
 				speed = max_speed;
 			} else {
@@ -316,7 +319,7 @@ public class SoiExecutive extends TimedFSM {
 				speed = Math.max(min_speed, speed);
 			}
 		}
-		
+
 		setSpeed(speed, SpeedUnits.METERS_PS);
 	}
 
@@ -325,7 +328,7 @@ public class SoiExecutive extends TimedFSM {
 		secs_underwater++;
 
 		if (arrivedXY()) {
-			print("Arrived at waypoint "+wpt_index);
+			print("Arrived at waypoint " + wpt_index);
 			wpt_index++;
 			return this::start_waiting;
 		}
@@ -367,7 +370,7 @@ public class SoiExecutive extends TimedFSM {
 		} else
 			return this::ascend;
 	}
-	 
+
 	public FSMState communicate(FollowRefState ref) {
 
 		// Send "DUNE" report
@@ -377,18 +380,17 @@ public class SoiExecutive extends TimedFSM {
 			sendReport(itfs);
 			sendViaSms(createReport(), wait_secs - count_secs - 1);
 		}
-		
+
 		if (wait_secs > count_secs && ongoingIridium == null) {
-			ongoingIridium = sendViaIridium(createSoiState(), wait_secs - count_secs - 1);	
+			ongoingIridium = sendViaIridium(createSoiState(), wait_secs - count_secs - 1);
 		}
-		
+
 		if (ongoingIridium != null && ongoingIridium.isDone()) {
 			try {
 				ongoingIridium.get();
 				print("Report was sent via iridium!");
 				return this::exec;
-			} 
-			catch (Exception e) {
+			} catch (Exception e) {
 				print("Error transmitting over Iridium: " + e.getMessage());
 				ongoingIridium = null;
 			}
