@@ -133,17 +133,24 @@ public class SoiExecutive extends TimedFSM {
 
 		case SOICMD_EXEC:
 			print("CMD: Exec plan!");
-			plan = Plan.parse(cmd.plan);
-			EstimatedState s = get(EstimatedState.class);
-			if (s != null) {
-				double[] pos = WGS84Utilities.toLatLonDepth(s);
-				plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
-			} else
-				plan.scheduleWaypoints(System.currentTimeMillis(), speed);
-			wpt_index = 0;
-			print("Start executing this plan:");
-			print("" + plan);
-			state = this::start_waiting;
+			if (cmd.plan == null) {
+				plan = null;
+				state = this::idleAtSurface;
+			}
+			else {
+				plan = Plan.parse(cmd.plan);
+				
+				EstimatedState s = get(EstimatedState.class);
+				if (s != null) {
+					double[] pos = WGS84Utilities.toLatLonDepth(s);
+					plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
+				} else
+					plan.scheduleWaypoints(System.currentTimeMillis(), speed);
+				wpt_index = 0;
+				print("Start executing this plan:");
+				print("" + plan);
+				state = this::start_waiting;				
+			}
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
 
@@ -276,6 +283,9 @@ public class SoiExecutive extends TimedFSM {
 
 	public FSMState exec(FollowRefState state) {
 
+		if (plan == null)
+			return this::idleAtSurface;
+		
 		Waypoint wpt = plan.waypoint(wpt_index);
 
 		if (wpt == null) {
