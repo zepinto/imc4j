@@ -391,6 +391,7 @@ public class SoiExecutive extends TimedFSM {
 			sendViaSms(createReport(), wait_secs - count_secs - 1);
 		}
 
+		/*
 		if (wait_secs > count_secs && ongoingIridium == null) {
 			ongoingIridium = sendViaIridium(createSoiState(), wait_secs - count_secs - 1);
 		}
@@ -405,6 +406,7 @@ public class SoiExecutive extends TimedFSM {
 				ongoingIridium = null;
 			}
 		}
+		*/
 
 		if (count_secs >= wait_secs) {
 			return this::exec;
