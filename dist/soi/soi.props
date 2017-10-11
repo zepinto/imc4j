@@ -1,0 +1,41 @@
+#SOI Executive settings
+
+#Nominal Speed
+speed=1.0
+
+#Maximum Depth
+max_depth=10.0
+
+#Minimum Depth
+min_depth=0.0
+
+#Maximum Speed
+max_speed=1.5
+
+#Minimum Speed
+min_speed=0.7
+
+#DUNE Host Address
+host_addr=10.0.10.120
+
+#DUNE Host Port (TCP)
+host_port=6006
+
+#Minutes before termination
+mins_timeout=750
+
+#Maximum time underwater
+mins_under=15
+
+#Number where to send reports
+sms_number=+351914785889
+
+#Seconds to idle at each vertex
+wait_secs=60
+
+#SOI plan identifier
+soi_plan_id=soi_plan
+
+#Cyclic execution
+cycle=false
+

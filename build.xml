@@ -87,6 +87,36 @@
             <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
          </jar>
     </target>
+	
+	<target name="soi">
+	    	 <mkdir dir="bin"/>
+			 <delete dir="bin"/>
+	    	 <mkdir dir="bin"/>
+	    	        
+	    	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+	    	  	<classpath refid="classpath.dependencies"/>
+	    	 </javac>
+	         <copy todir="bin" overwrite="true">
+	            <fileset dir="src-backseat">
+	                <include name="**/*.css" />
+	                <include name="**/*.js" />
+	                <include name="**/*.json" />
+	            </fileset>
+	            <fileset dir="src-backseat">
+	                <include name="**/*.css" />
+	                <include name="**/*.js" />
+	                <include name="**/*.json" />
+	            </fileset>
+	        </copy>
+	         <jar destfile="${dir.jarfile}/soi/SoiExecutive.jar" filesetmanifest="mergewithoutmain">
+	            <manifest>
+	                <attribute name="Main-Class" value="pt.lsts.autonomy.soi.SoiExecutive"/>
+	                <attribute name="Class-Path" value="."/>
+	            </manifest>
+	            <fileset dir="${dir.buildfile}/bin"/>
+	            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+	         </jar>
+	    </target>
 
 
     <target name="arpao">

@@ -477,6 +477,8 @@ public class SoiExecutive extends TimedFSM {
 		Properties props = new Properties();
 		props.load(new FileInputStream(file));
 
+		
+		
 		SoiExecutive tracker = PojoConfig.create(SoiExecutive.class, props);
 
 		System.out.println("Executive started with settings:");
