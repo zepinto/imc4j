@@ -136,7 +136,7 @@ public class SoiExecutive extends TimedFSM {
 			}
 			else {
 				plan = Plan.parse(cmd.plan);
-				
+
 				EstimatedState s = get(EstimatedState.class);
 				if (s != null) {
 					double[] pos = WGS84Utilities.toLatLonDepth(s);
@@ -282,7 +282,7 @@ public class SoiExecutive extends TimedFSM {
 
 		if (plan == null)
 			return this::idleAtSurface;
-		
+
 		Waypoint wpt = plan.waypoint(wpt_index);
 
 		if (wpt == null) {
@@ -386,10 +386,6 @@ public class SoiExecutive extends TimedFSM {
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
 			sendViaSms(createReport(), wait_secs - count_secs - 1);
-		}
-
-		/*
-		if (wait_secs > count_secs && ongoingIridium == null) {
 			ongoingIridium = sendViaIridium(createSoiState(), wait_secs - count_secs - 1);
 		}
 
@@ -400,10 +396,9 @@ public class SoiExecutive extends TimedFSM {
 				return this::exec;
 			} catch (Exception e) {
 				print("Error transmitting over Iridium: " + e.getMessage());
-				ongoingIridium = null;
 			}
 		}
-		*/
+
 
 		if (count_secs >= wait_secs) {
 			return this::exec;
@@ -411,17 +406,6 @@ public class SoiExecutive extends TimedFSM {
 			count_secs++;
 			return this::communicate;
 		}
-
-		/*
-		 * if (count_secs == 30 && !sms_number.isEmpty()) {
-		 * 
-		 * Sms sms = new Sms(); sms.timeout = wait_secs - count_secs; sms.contents =
-		 * "SOI: " + createReport(); sms.number = sms_number; try {
-		 * print("Sending executive state to " + sms_number + " (" + sms.contents +
-		 * ")"); send(sms); } catch (Exception e) { e.printStackTrace(); } } if
-		 * (count_secs >= wait_secs) { return this::exec; } else { count_secs++; return
-		 * this::communicate; }
-		 */
 	}
 
 	public FSMState start_waiting(FollowRefState ref) {
@@ -474,8 +458,8 @@ public class SoiExecutive extends TimedFSM {
 		Properties props = new Properties();
 		props.load(new FileInputStream(file));
 
-		
-		
+
+
 		SoiExecutive tracker = PojoConfig.create(SoiExecutive.class, props);
 
 		System.out.println("Executive started with settings:");

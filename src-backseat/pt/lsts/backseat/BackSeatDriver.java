@@ -366,7 +366,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	}
 	
 	private LinkedHashMap<Integer, Message> requests_sent = new LinkedHashMap<>();
-	private int request_id = 1;
+	private int request_id = 10000;
 	
 	@Consume
 	public void on(TransmissionStatus status) {
