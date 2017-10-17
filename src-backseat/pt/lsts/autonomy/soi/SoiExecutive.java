@@ -395,12 +395,15 @@ public class SoiExecutive extends TimedFSM {
 				print("Report was sent via iridium!");
 				return this::exec;
 			} catch (Exception e) {
-				print("Error transmitting over Iridium: " + e.getMessage());
+				print("Error transmitting over Iridium: " + e.getMessage());				
 			}
+			ongoingIridium = null;
+		}		
+
+		if (count_secs >= wait_secs / 2 && ongoingIridium == null) {
+			return this::exec;
 		}
-
-
-		if (count_secs >= wait_secs) {
+		else if (count_secs >= wait_secs) {
 			return this::exec;
 		} else {
 			count_secs++;
