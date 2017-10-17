@@ -259,7 +259,7 @@ public abstract class BackSeatDriver extends TcpClient {
 				startPlan(endPlan);
 				
 				try {
-				    print("Waiting 5s to tidy thing up before exiting...");
+				    print("Waiting 5s to tidy everything up before exiting...");
                     Thread.sleep(5000);
                 }
                 catch (InterruptedException e) {

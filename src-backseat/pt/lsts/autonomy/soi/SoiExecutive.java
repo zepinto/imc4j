@@ -33,15 +33,12 @@ import pt.lsts.imc4j.util.WGS84Utilities;
 
 public class SoiExecutive extends TimedFSM {
 
-	@SoiParameter
 	@Parameter(description = "Nominal Speed")
 	double speed = 1;
 
-	@SoiParameter
 	@Parameter(description = "Maximum Depth")
 	double max_depth = 10;
 
-	@SoiParameter
 	@Parameter(description = "Minimum Depth")
 	double min_depth = 0.0;
 
@@ -66,7 +63,6 @@ public class SoiExecutive extends TimedFSM {
 	@Parameter(description = "Number where to send reports")
 	String sms_number = "+351914785889";
 
-	@SoiParameter
 	@Parameter(description = "Seconds to idle at each vertex")
 	int wait_secs = 60;
 
@@ -159,7 +155,7 @@ public class SoiExecutive extends TimedFSM {
 			print("CMD: Get Params!");
 			for (Field f : getClass().getDeclaredFields()) {
 				f.setAccessible(true);
-				SoiParameter p = f.getAnnotation(SoiParameter.class);
+				Parameter p = f.getAnnotation(Parameter.class);
 				if (p == null)
 					continue;
 				String name = f.getName();
