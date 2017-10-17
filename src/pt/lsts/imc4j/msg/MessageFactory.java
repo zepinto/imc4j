@@ -439,6 +439,10 @@ public class MessageFactory {
 
 	public static final int ID_TransmissionStatus = 516;
 
+	public static final int ID_SmsRequest = 517;
+
+	public static final int ID_SmsStatus = 518;
+
 	public static final int ID_Abort = 550;
 
 	public static final int ID_PlanSpecification = 551;
@@ -1252,6 +1256,12 @@ public class MessageFactory {
 			}
 			case ID_TransmissionStatus: {
 				return new TransmissionStatus();
+			}
+			case ID_SmsRequest: {
+				return new SmsRequest();
+			}
+			case ID_SmsStatus: {
+				return new SmsStatus();
 			}
 			case ID_Abort: {
 				return new Abort();
@@ -2155,6 +2165,12 @@ public class MessageFactory {
 			}
 			case "TransmissionStatus": {
 				return ID_TransmissionStatus;
+			}
+			case "SmsRequest": {
+				return ID_SmsRequest;
+			}
+			case "SmsStatus": {
+				return ID_SmsStatus;
 			}
 			case "Abort": {
 				return ID_Abort;
