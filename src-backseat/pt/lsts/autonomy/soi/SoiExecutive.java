@@ -84,6 +84,7 @@ public class SoiExecutive extends TimedFSM {
 
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
+		setDeadline(new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000));
 		state = this::init;
 	}
 
