@@ -152,6 +152,18 @@ public class Plan {
 		remove(waypoint.getId());
 	}
 	
+	public boolean scheduledInTheFuture() {
+		long present = System.currentTimeMillis();
+		synchronized (waypoints) {
+			for (Waypoint wpt : waypoints) {
+				if (wpt.getArrivalTime().getTime() < present)
+					return false;
+			}
+		}
+		
+		return true;
+	}
+	
 	public static void main(String[] args) throws Exception {
 		Plan plan = new Plan("test");
 		ScheduledGoto goto1 = new ScheduledGoto();

@@ -137,12 +137,14 @@ public class SoiExecutive extends TimedFSM {
 			else {
 				plan = Plan.parse(cmd.plan);
 
-				EstimatedState s = get(EstimatedState.class);
-				if (s != null) {
-					double[] pos = WGS84Utilities.toLatLonDepth(s);
-					plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
-				} else
-					plan.scheduleWaypoints(System.currentTimeMillis(), speed);
+				if (!plan.scheduledInTheFuture()) {
+					EstimatedState s = get(EstimatedState.class);
+					if (s != null) {
+						double[] pos = WGS84Utilities.toLatLonDepth(s);
+						plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
+					} else
+						plan.scheduleWaypoints(System.currentTimeMillis(), speed);
+				}					
 				wpt_index = 0;
 				print("Start executing this plan:");
 				print("" + plan);
