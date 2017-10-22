@@ -424,7 +424,7 @@ public class SoiExecutive extends TimedFSM {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
-			sendViaSms(createSmsReport(), seconds - count_secs - 1);
+			//sendViaSms(createSmsReport(), seconds - count_secs - 1);
 			ongoingIridium = sendViaIridium(createStateReport(), seconds - count_secs - 1);
 			
 			print("Will wait "+seconds+" seconds");
