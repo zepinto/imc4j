@@ -19,13 +19,13 @@ import pt.lsts.imc4j.msg.EntityParameters;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.FuelLevel;
+import pt.lsts.imc4j.msg.PlanControlState;
 import pt.lsts.imc4j.msg.PlanDB;
 import pt.lsts.imc4j.msg.PlanDB.TYPE;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.msg.SoiCommand;
-import pt.lsts.imc4j.msg.SoiState;
-import pt.lsts.imc4j.msg.SoiState.STATE;
+import pt.lsts.imc4j.msg.StateReport;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.util.PojoConfig;
@@ -230,24 +230,7 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 
-	private SoiState createSoiState() {
-		SoiState state = new SoiState();
-		if (plan != null && plan.waypoint(wpt_index) != null) {
-			state.state = STATE.SOISTATE_EXEC;
-			state.plan_id = plan.checksum();
-		} else {
-			state.state = STATE.SOISTATE_IDLE;
-			state.plan_id = 0;
-		}
-
-		state.wpt_id = wpt_index;
-		state.settings_chk = 0;
-
-		return state;
-
-	}
-
-	private String createReport() {
+	private String createSmsReport() {
 		EstimatedState state = get(EstimatedState.class);
 		FuelLevel flevel = get(FuelLevel.class);
 		String plan_chk = "-";
@@ -262,6 +245,56 @@ public class SoiExecutive extends TimedFSM {
 		String fuel = flevel == null ? "?" : "" + (int) flevel.value;
 		return remoteSrc + "," + pos + "," + plan_chk + "," + wpt_index + "," + fuel;
 	}
+	
+	private StateReport createStateReport() {
+		EstimatedState estate = get(EstimatedState.class);
+		FuelLevel flevel = get(FuelLevel.class);
+		PlanControlState pcs = get(PlanControlState.class);
+		
+		StateReport report = new StateReport();
+		report.depth = estate == null || estate.depth == -1 ? 0xFFFF : (int) (estate.depth * 10);
+		report.altitude = estate == null || estate.alt == -1 ? 0xFFFF : (int) (estate.alt * 10);
+		report.speed = estate == null ? 0xFFFF : (int) (estate.u * 100);
+		report.fuel = flevel == null ? 255 : (int)flevel.value;
+		
+		if (estate != null) {
+			double[] loc = WGS84Utilities.toLatLonDepth(estate);
+			report.latitude = (float) loc[0];
+			report.longitude = (float) loc[1];
+			double rads = estate.psi;
+			while (rads < 0)
+				rads += (Math.PI * 2);
+			report.heading = (int) ((rads / (Math.PI * 2)) * 65535);
+		}				
+		
+		report.exec_state = -2;
+		if (pcs != null) {
+			switch (pcs.state) {
+			case PCS_EXECUTING:
+				report.exec_state = (int) pcs.plan_progress;
+				break;
+			case PCS_READY:
+				report.exec_state = -1;
+				break;
+			case PCS_INITIALIZING:
+				report.exec_state = -3;
+				break;				
+			case PCS_BLOCKED:
+				report.exec_state = -4;
+				break;
+			default:
+				break;
+			}
+		}
+		
+		if (plan != null)
+			report.plan_checksum = plan.checksum();
+		
+		report.stime = (int) (System.currentTimeMillis() / 1000);
+		return report;
+		
+	}
+	
 
 	public FSMState init(FollowRefState state) {
 		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
@@ -387,8 +420,8 @@ public class SoiExecutive extends TimedFSM {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
-			sendViaSms(createReport(), wait_secs - count_secs - 1);
-			ongoingIridium = sendViaIridium(createSoiState(), wait_secs - count_secs - 1);
+			sendViaSms(createSmsReport(), wait_secs - count_secs - 1);
+			ongoingIridium = sendViaIridium(createStateReport(), wait_secs - count_secs - 1);
 		}
 
 		if (ongoingIridium != null && ongoingIridium.isDone()) {
