@@ -18,7 +18,7 @@ public class Plan {
 	private final String planId;
 	private boolean cyclic = false;
 	private ArrayList<Waypoint> waypoints = new ArrayList<>();
-	
+
 	/**
 	 * @return the planId
 	 */
@@ -57,10 +57,10 @@ public class Plan {
 
 		if (PlanUtilities.isCyclic(spec))
 			plan.cyclic = true;
-		
+
 		return plan;
 	}
-	
+
 	public static Plan parse(SoiPlan spec) {
 		Plan plan = new Plan("soi_"+spec.plan_id);
 		int id = 1;
@@ -73,22 +73,28 @@ public class Plan {
 		}
 		return plan;		
 	}
-	
+
 	public SoiPlan asImc() {
 		SoiPlan plan = new SoiPlan();
-		for (Waypoint wpt : waypoints) {
-			SoiWaypoint waypoint = new SoiWaypoint();
-			waypoint.eta = wpt.getArrivalTime().getTime() / 1000;
-			waypoint.lat = wpt.getLatitude();
-			waypoint.lon = wpt.getLongitude();
-			waypoint.duration = wpt.getDuration();
-			plan.waypoints.add(waypoint);
+		if (waypoints != null) {
+
+			for (Waypoint wpt : waypoints) {
+				SoiWaypoint waypoint = new SoiWaypoint();
+				if (wpt.getArrivalTime() != null)
+					waypoint.eta = wpt.getArrivalTime().getTime() / 1000;
+				else
+					waypoint.eta = 0;
+				waypoint.lat = wpt.getLatitude();
+				waypoint.lon = wpt.getLongitude();
+				waypoint.duration = wpt.getDuration();
+				plan.waypoints.add(waypoint);
+			}
 		}
 		byte[] data = plan.serializeFields();
 		plan.plan_id = SerializationUtils.crc16(data, 2, data.length-2);
 		return plan;
 	}
-	
+
 	public int checksum() {
 		byte[] data = asImc().serializeFields();
 		return SerializationUtils.crc16(data, 2, data.length-2);
@@ -99,7 +105,7 @@ public class Plan {
 			waypoints.add(waypoint);			
 		}
 	}
-	
+
 	public Waypoint waypoint(int index) {
 		if (index < 0 || index >= waypoints.size())
 			return null;
@@ -151,19 +157,22 @@ public class Plan {
 	public void remove(Waypoint waypoint) {
 		remove(waypoint.getId());
 	}
-	
+
 	public boolean scheduledInTheFuture() {
 		long present = System.currentTimeMillis();
+		if (waypoints == null)
+			return false;
+
 		synchronized (waypoints) {
 			for (Waypoint wpt : waypoints) {
-				if (wpt.getArrivalTime().getTime() < present)
+				if (wpt.getArrivalTime() == null || wpt.getArrivalTime().getTime() < present)
 					return false;
 			}
 		}
-		
+
 		return true;
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		Plan plan = new Plan("test");
 		ScheduledGoto goto1 = new ScheduledGoto();

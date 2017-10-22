@@ -151,6 +151,7 @@ public class SoiExecutive extends TimedFSM {
 				state = this::start_waiting;				
 			}
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
+			reply.plan = plan.asImc();
 			break;
 
 		case SOICMD_GET_PARAMS:
@@ -414,14 +415,19 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState communicate(FollowRefState ref) {
-
+		int seconds = wait_secs;
+		if (plan != null && plan.waypoint(wpt_index) != null)
+			seconds = Math.max(seconds, plan.waypoint(wpt_index).getDuration());
+		
 		// Send "DUNE" report
 		if (count_secs == 0) {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
-			sendViaSms(createSmsReport(), wait_secs - count_secs - 1);
-			ongoingIridium = sendViaIridium(createStateReport(), wait_secs - count_secs - 1);
+			sendViaSms(createSmsReport(), seconds - count_secs - 1);
+			ongoingIridium = sendViaIridium(createStateReport(), seconds - count_secs - 1);
+			
+			print("Will wait "+seconds+" seconds");
 		}
 
 		if (ongoingIridium != null && ongoingIridium.isDone()) {
@@ -435,10 +441,10 @@ public class SoiExecutive extends TimedFSM {
 			ongoingIridium = null;
 		}		
 
-		if (count_secs >= wait_secs / 2 && ongoingIridium == null) {
+		if (count_secs >= seconds / 2 && ongoingIridium == null) {
 			return this::exec;
 		}
-		else if (count_secs >= wait_secs) {
+		else if (count_secs >= seconds) {
 			return this::exec;
 		} else {
 			count_secs++;
