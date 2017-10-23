@@ -434,7 +434,6 @@ public class SoiExecutive extends TimedFSM {
 			try {
 				ongoingIridium.get();
 				print("Report was sent via iridium!");
-				return this::exec;
 			} catch (Exception e) {
 				print("Error transmitting over Iridium: " + e.getMessage());				
 			}
