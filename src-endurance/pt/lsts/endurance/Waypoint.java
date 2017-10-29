@@ -1,8 +1,6 @@
-package pt.lsts.autonomy.soi;
+package pt.lsts.endurance;
 
 import java.util.Date;
-
-import pt.lsts.imc4j.msg.Maneuver;
 
 public class Waypoint implements Comparable<Waypoint> {
 
@@ -10,19 +8,6 @@ public class Waypoint implements Comparable<Waypoint> {
 	private float latitude, longitude;
 	private Date arrivalTime = null;
 	
-	public Waypoint(int id, Maneuver man) throws Exception {
-		this.id = id;
-		this.latitude = (float) Math.toDegrees(man.getDouble("lat"));
-		this.longitude = (float )Math.toDegrees(man.getDouble("lon"));
-		
-		if (man.getInteger("duration") != null)
-			this.duration = man.getInteger("duration"); 
-		
-		if (man.getInteger("arrival_time") != null)
-			this.arrivalTime = new Date(man.getInteger("arrival_time") * 1000l); 
-		
-	}
-
 	public Waypoint(int id, float lat, float lon) {
 		this.latitude = lat;
 		this.longitude = lon;

@@ -11,6 +11,9 @@ import java.util.Properties;
 import java.util.concurrent.Future;
 
 import pt.lsts.backseat.TimedFSM;
+import pt.lsts.endurance.ImcTranslation;
+import pt.lsts.endurance.Plan;
+import pt.lsts.endurance.Waypoint;
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SpeedUnits;
@@ -98,7 +101,7 @@ public class SoiExecutive extends TimedFSM {
 		if (planDb.op == PlanDB.OP.DBOP_SET && planDb.type == TYPE.DBT_REQUEST) {
 			if (planDb.plan_id.equals(soi_plan_id)) {
 				spec = (PlanSpecification) planDb.arg;
-				plan = Plan.parse(spec);
+				plan = ImcTranslation.parse(spec);
 				EstimatedState s = get(EstimatedState.class);
 				if (s != null) {
 					double[] pos = WGS84Utilities.toLatLonDepth(s);
@@ -135,7 +138,7 @@ public class SoiExecutive extends TimedFSM {
 				state = this::idleAtSurface;
 			}
 			else {
-				plan = Plan.parse(cmd.plan);
+				plan = ImcTranslation.parse(cmd.plan);
 
 				if (!plan.scheduledInTheFuture()) {
 					EstimatedState s = get(EstimatedState.class);
@@ -151,7 +154,7 @@ public class SoiExecutive extends TimedFSM {
 				state = this::start_waiting;				
 			}
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
-			reply.plan = plan.asImc();
+			reply.plan = ImcTranslation.toImc(plan);
 			break;
 
 		case SOICMD_GET_PARAMS:
@@ -192,7 +195,7 @@ public class SoiExecutive extends TimedFSM {
 
 		case SOICMD_GET_PLAN:
 			print("CMD: Get plan!");
-			reply.plan = plan.asImc();
+			reply.plan = ImcTranslation.toImc(plan);
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
 
