@@ -28,6 +28,7 @@ import pt.lsts.imc4j.msg.PlanDB.TYPE;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.msg.SoiCommand;
+import pt.lsts.imc4j.msg.SoiCommand.COMMAND;
 import pt.lsts.imc4j.msg.StateReport;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
@@ -226,7 +227,7 @@ public class SoiExecutive extends TimedFSM {
 			for (EntityParameter param : params.params) {
 				try {
 					PojoConfig.setValue(this, param.name, param.value);
-					System.out.println("Set " + param.name + " := " + param.value);
+					print("Set " + param.name + " := " + param.value);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -234,6 +235,7 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private String createSmsReport() {
 		EstimatedState state = get(EstimatedState.class);
 		FuelLevel flevel = get(FuelLevel.class);
@@ -334,7 +336,22 @@ public class SoiExecutive extends TimedFSM {
 					plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
 				} else
 					plan.scheduleWaypoints(System.currentTimeMillis(), speed);
-				return this::exec;
+				print("Starting over...");
+				SoiCommand reply = new SoiCommand();
+				reply.command = COMMAND.SOICMD_GET_PLAN;
+				reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
+				reply.src = remoteSrc;
+				reply.dst = 0xFFFF;
+				reply.plan = plan.asImc();
+				sendViaIridium(reply, wait_secs);	
+				
+				try {
+					send(reply);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+				return this::start_waiting;
 			} else
 				return this::idleAtSurface;
 		}
@@ -378,6 +395,23 @@ public class SoiExecutive extends TimedFSM {
 			wpt_index++;
 			return this::start_waiting;
 		}
+		try {
+			double[] cur_pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+			double[] target_pos = new double[] { plan.waypoint(wpt_index).getLatitude(),
+					plan.waypoint(wpt_index).getLongitude() };
+			
+			double dist = WGS84Utilities.distance(cur_pos[0], cur_pos[1], target_pos[0], target_pos[1]);
+			double min_dist = 4 * cur_pos[2];
+			
+			if (dist < min_dist) {
+				print("Starting to ascend.");
+				return this::ascend;
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		if (arrivedZ()) {
 			setSpeed();
 			if (min_depth < max_depth)
@@ -427,9 +461,7 @@ public class SoiExecutive extends TimedFSM {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
-			//sendViaSms(createSmsReport(), seconds - count_secs - 1);
-			ongoingIridium = sendViaIridium(createStateReport(), seconds - count_secs - 1);
-			
+			ongoingIridium = sendViaIridium(createStateReport(), seconds - count_secs - 1);			
 			print("Will wait "+seconds+" seconds");
 		}
 
@@ -441,7 +473,7 @@ public class SoiExecutive extends TimedFSM {
 				print("Error transmitting over Iridium: " + e.getMessage());				
 			}
 			ongoingIridium = null;
-		}		
+		}
 
 		if (count_secs >= seconds / 2 && ongoingIridium == null) {
 			return this::exec;
@@ -460,6 +492,7 @@ public class SoiExecutive extends TimedFSM {
 		setDepth(0);
 		setSpeed(speed, SpeedUnits.METERS_PS);
 
+		print("Surfacing...");
 		return this::wait;
 	}
 
@@ -467,7 +500,7 @@ public class SoiExecutive extends TimedFSM {
 
 		// arrived at surface
 		if (get(VehicleMedium.class).medium == MEDIUM.VM_WATER) {
-			print("Now at surface, sending report.");
+			print("Now at surface, starting communications.");
 			double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 			setLocation(pos[0], pos[1]);
 			secs_underwater = 0;
