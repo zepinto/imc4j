@@ -260,6 +260,18 @@ public abstract class BackSeatDriver extends TcpClient {
 		}
 		startCommandTime = System.currentTimeMillis();
 	}
+	
+	@Periodic(5000)
+	public final void printState() {
+		EstimatedState state = get(EstimatedState.class);
+		VehicleMedium medium = get(VehicleMedium.class);
+		if (state == null || medium == null)
+			return;
+		
+		double[] pos = WGS84Utilities.toLatLonDepth(state);
+		
+		print("POS: "+pos[0]+" / "+pos[1]+", "+state.depth+" : "+state.alt+" : "+medium.medium);
+	}
 
 	@Periodic(1000)
 	public final void controlLoop() {
