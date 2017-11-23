@@ -8,7 +8,6 @@ import java.lang.reflect.Field;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Properties;
-import java.util.concurrent.Future;
 
 import pt.lsts.backseat.TimedFSM;
 import pt.lsts.imc4j.annotations.Consume;
@@ -77,8 +76,9 @@ public class SoiExecutive extends TimedFSM {
 	private PlanSpecification spec = null;
 	private int secs_underwater = 0, count_secs = 0;
 	private int wpt_index = 0;
-	private Future<Void> ongoingIridium = null;
-
+	//private Future<Void> ongoingIridium = null;
+	
+	
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
 		setDeadline(new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000));
@@ -215,7 +215,7 @@ public class SoiExecutive extends TimedFSM {
 			e.printStackTrace();
 		}
 		// FIXME make sure we wait for reply transmission...
-		ongoingIridium = sendViaIridium(reply, 60);
+		sendViaIridium(reply, 60);
 	}
 
 	@Consume
@@ -231,23 +231,7 @@ public class SoiExecutive extends TimedFSM {
 			}
 		}
 	}
-
-	@SuppressWarnings("unused")
-	private String createSmsReport() {
-		EstimatedState state = get(EstimatedState.class);
-		FuelLevel flevel = get(FuelLevel.class);
-		String plan_chk = "-";
-		if (plan != null)
-			plan_chk = "" + plan.checksum();
-
-		String pos = "?,?";
-		if (state != null) {
-			double[] loc = WGS84Utilities.toLatLonDepth(state);
-			pos = (float) loc[0] + "," + (float) loc[1];
-		}
-		String fuel = flevel == null ? "?" : "" + (int) flevel.value;
-		return remoteSrc + "," + pos + "," + plan_chk + "," + wpt_index + "," + fuel;
-	}
+	
 	
 	private StateReport createStateReport() {
 		EstimatedState estate = get(EstimatedState.class);
@@ -296,8 +280,7 @@ public class SoiExecutive extends TimedFSM {
 		report.stime = (int) (System.currentTimeMillis() / 1000);
 		return report;
 		
-	}
-	
+	}	
 
 	public FSMState init(FollowRefState state) {
 		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
@@ -317,7 +300,6 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState exec(FollowRefState state) {
-
 		if (plan == null)
 			return this::idleAtSurface;
 
@@ -458,27 +440,15 @@ public class SoiExecutive extends TimedFSM {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
-			ongoingIridium = sendViaIridium(createStateReport(), seconds - count_secs - 1);			
+			sendViaIridium(createStateReport(), seconds - count_secs - 1);			
 			print("Will wait "+seconds+" seconds");
 		}
 
-		if (ongoingIridium != null && ongoingIridium.isDone()) {
-			try {
-				ongoingIridium.get();
-				print("Report was sent via iridium!");
-			} catch (Exception e) {
-				print("Error transmitting over Iridium: " + e.getMessage());				
-			}
-			ongoingIridium = null;
-		}
-
-		if (count_secs >= seconds / 2 && ongoingIridium == null) {
+		if (count_secs >= seconds) {
 			return this::exec;
-		}
-		else if (count_secs >= seconds) {
-			return this::exec;
-		} else {
-			count_secs++;
+		} 
+		else {
+			count_secs++;			
 			return this::communicate;
 		}
 	}
@@ -490,6 +460,16 @@ public class SoiExecutive extends TimedFSM {
 		setSpeed(speed, SpeedUnits.METERS_PS);
 
 		print("Surfacing...");
+		return this::wait;
+	}
+	
+	public FSMState report_error(FollowRefState ref) {
+		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+		setLocation(pos[0], pos[1]);
+		setDepth(0);
+		setSpeed(0, SpeedUnits.METERS_PS);
+
+		print("Surfacing to report error...");
 		return this::wait;
 	}
 
