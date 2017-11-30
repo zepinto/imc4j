@@ -311,7 +311,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected <T extends Message> T get(Class<T> clazz) {
+	public <T extends Message> T get(Class<T> clazz) {
 		int id = MessageFactory.idOf(clazz.getSimpleName());
 		synchronized (state) {
 			return (T) state.get(id);
