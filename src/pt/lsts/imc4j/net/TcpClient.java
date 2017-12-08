@@ -144,7 +144,7 @@ public class TcpClient extends Thread {
 		}
 	}
 
-	protected void dispatch(Message m) {
+	public void dispatch(Message m) {
 		for (ImcConsumer consumer : consumers)
 			consumer.onMessage(m);		
 	}
