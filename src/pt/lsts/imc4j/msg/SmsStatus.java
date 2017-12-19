@@ -77,9 +77,7 @@ public class SmsStatus extends Message {
 
 		SMSSTAT_INPUT_FAILURE(101l),
 
-		SMSSTAT_TEMPORARY_FAILURE(102l),
-
-		SMSSTAT_PERMANENT_FAILURE(103l);
+		SMSSTAT_ERROR(102l);
 
 		protected long value;
 

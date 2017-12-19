@@ -76,7 +76,9 @@ public class IridiumTxStatus extends Message {
 
 		TXSTATUS_TRANSMIT(4l),
 
-		TXSTATUS_EXPIRED(5l);
+		TXSTATUS_EXPIRED(5l),
+
+		TXSTATUS_EMPTY(6l);
 
 		protected long value;
 
