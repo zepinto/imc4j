@@ -5,6 +5,10 @@ import java.util.Date;
 
 import javax.annotation.Generated;
 
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+
 public class AssetState {
 
 	private final Date timestamp;
@@ -56,6 +60,36 @@ public class AssetState {
 	@Generated("SparkTools")
 	public static Builder builder() {
 		return new Builder();
+	}
+	
+	@Override
+	public String toString() {
+		JsonObject state = new JsonObject();
+		state.add("time", getTimestamp().getTime()/1000.0);
+		state.add("latitude", getLatitude());
+		state.add("longitude", getLongitude());
+		state.add("heading", getHeading());
+		state.add("fuel", getFuel());
+		
+		if (getErrors() != null && !getErrors().isEmpty()) {
+			JsonArray array = new JsonArray();
+			for (String err : getErrors())
+				array.add(err);
+			state.add("errors", array);
+		}
+		
+		return super.toString();
+	}
+	
+	public static AssetState parse(String json) {
+		JsonObject obj = Json.parse(json).asObject();
+		return AssetState.builder()
+				.withLatitude(obj.getDouble("latitude", 0))
+				.withLongitude(obj.getDouble("longitude", 0))
+				.withHeading(obj.getDouble("heading", 0))
+				.withFuel(obj.getDouble("fuel", 0))
+				.withTimestamp(new Date((long)(obj.getDouble("time", 0) * 1000)))				
+				.build();
 	}
 
 	/**

@@ -134,7 +134,8 @@ public class Plan {
 	public ArrayList<Waypoint> waypoints() {
 		ArrayList<Waypoint> ret = new ArrayList<>();
 		synchronized (waypoints) {
-			waypoints.forEach(wpt -> ret.add(wpt.clone()));
+			for (Waypoint wpt : waypoints)
+				ret.add(wpt.clone());
 		}
 		return ret;
 	}

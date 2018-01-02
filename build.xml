@@ -14,7 +14,7 @@
 	   
 	  </target>
 	
-	<target name="jar">
+	<target name="jar" >
 		<mkdir dir="bin"/>
 			<delete dir="bin"/>
 		<mkdir dir="bin"/>
@@ -27,12 +27,25 @@
 		</jar>
 	</target>
 	
+	<target name="endurance" >
+		<mkdir dir="bin"/>
+			<delete dir="bin"/>
+		<mkdir dir="bin"/>
+		<javac encoding="${compile-encoding}" srcdir="src;src-endurance"  destdir="bin" includes="**/*.java" fork="false" target="1.7" source="1.7">
+			<classpath refid="classpath.dependencies"/>
+		</javac>
+		<jar destfile="${dir.jarfile}/endurance.jar">
+			<fileset dir="${dir.buildfile}/bin"/>
+		    <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+		</jar>
+	</target>
+	
     <target name="bserver">
     	 <mkdir dir="bin"/>
 		 <delete dir="bin"/>
     	 <mkdir dir="bin"/>
     	        
-    	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+    	 <javac encoding="${compile-encoding}" srcdir="src;src-endurance;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
     	  	<classpath refid="classpath.dependencies"/>
     	 </javac>
          <copy todir="bin" overwrite="true">
@@ -93,7 +106,7 @@
 			 <delete dir="bin"/>
 	    	 <mkdir dir="bin"/>
 	    	        
-	    	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+	    	 <javac encoding="${compile-encoding}" srcdir="src;src-endurance;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
 	    	  	<classpath refid="classpath.dependencies"/>
 	    	 </javac>
 	         <copy todir="bin" overwrite="true">
