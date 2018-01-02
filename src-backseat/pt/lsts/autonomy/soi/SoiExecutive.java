@@ -10,6 +10,8 @@ import java.util.EnumSet;
 import java.util.Properties;
 
 import pt.lsts.backseat.TimedFSM;
+import pt.lsts.endurance.Plan;
+import pt.lsts.endurance.Waypoint;
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SpeedUnits;

@@ -1,14 +1,16 @@
-package pt.lsts.autonomy.soi;
+package pt.lsts.endurance;
 
 import java.util.ArrayList;
 import java.util.Date;
 
 import pt.lsts.imc4j.msg.Goto;
 import pt.lsts.imc4j.msg.Maneuver;
+import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.ScheduledGoto;
 import pt.lsts.imc4j.msg.SoiPlan;
 import pt.lsts.imc4j.msg.SoiWaypoint;
+import pt.lsts.imc4j.util.FormatConversion;
 import pt.lsts.imc4j.util.PlanUtilities;
 import pt.lsts.imc4j.util.SerializationUtils;
 import pt.lsts.imc4j.util.WGS84Utilities;
@@ -43,6 +45,23 @@ public class Plan {
 	public Plan(String id) {
 		this.planId = id;
 	}
+
+	public static Plan parse(String spec) throws Exception {
+		Message msg = FormatConversion.fromJson(spec);
+		if (msg == null) {
+			throw new Exception("Could not parse JSON specification.");
+		}
+		if (msg instanceof SoiPlan) {
+			return parse((SoiPlan) msg);
+		}
+		else if (msg instanceof PlanSpecification) {
+			return parse((PlanSpecification) msg);
+		}
+		else {
+			throw new Exception("Message not recognized: "+msg.abbrev());
+		}		
+	}
+	
 
 	public static Plan parse(PlanSpecification spec) {
 		Plan plan = new Plan(spec.plan_id);
@@ -111,6 +130,14 @@ public class Plan {
 			return null;
 		return waypoints.get(index);
 	}
+	
+	public ArrayList<Waypoint> waypoints() {
+		ArrayList<Waypoint> ret = new ArrayList<>();
+		synchronized (waypoints) {
+			waypoints.forEach(wpt -> ret.add(wpt.clone()));
+		}
+		return ret;
+	}
 
 	public void remove(int index) {
 		synchronized (waypoints) {
@@ -141,17 +168,7 @@ public class Plan {
 	}
 
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Plan '"+planId+"'"+(cyclic? " (cyclic):\n": ":\n"));
-		synchronized (waypoints) {
-			for (Waypoint wpt : waypoints) {
-				sb.append("\t"+wpt.getId() + ", " + (float) wpt.getLatitude() + ", " + (float) wpt.getLongitude() + ", "
-						+ wpt.getArrivalTime() + ", "+wpt.getDuration()+"\n");
-			}
-		}
-
-		return sb.toString();
-
+		return asImc().toString();
 	}
 
 	public void remove(Waypoint waypoint) {
@@ -169,9 +186,9 @@ public class Plan {
 					return false;
 			}
 		}
-
 		return true;
 	}
+	
 
 	public static void main(String[] args) throws Exception {
 		Plan plan = new Plan("test");

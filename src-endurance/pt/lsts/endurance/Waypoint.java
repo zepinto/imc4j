@@ -1,4 +1,4 @@
-package pt.lsts.autonomy.soi;
+package pt.lsts.endurance;
 
 import java.util.Date;
 
@@ -19,8 +19,7 @@ public class Waypoint implements Comparable<Waypoint> {
 			this.duration = man.getInteger("duration"); 
 		
 		if (man.getInteger("arrival_time") != null)
-			this.arrivalTime = new Date(man.getInteger("arrival_time") * 1000l); 
-		
+			this.arrivalTime = new Date(man.getInteger("arrival_time") * 1000l); 	
 	}
 
 	public Waypoint(int id, float lat, float lon) {
@@ -28,7 +27,16 @@ public class Waypoint implements Comparable<Waypoint> {
 		this.longitude = lon;
 		this.id = id;
 	}
-
+	
+	public Waypoint clone() {
+		Waypoint wpt = new Waypoint(id, latitude, longitude);
+		wpt.setDuration(duration);
+		if (arrivalTime != null)
+			wpt.setArrivalTime(new Date(arrivalTime.getTime()));
+		
+		return wpt;
+	}
+	
 	public int getDuration() {
 		return duration;
 	}
