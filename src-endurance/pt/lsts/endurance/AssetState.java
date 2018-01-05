@@ -2,6 +2,7 @@ package pt.lsts.endurance;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.annotation.Generated;
 
@@ -86,6 +87,21 @@ public class AssetState {
 		}
 		
 		return state.toString();
+	}
+	
+	public static List<AssetState> parseStates(String json) {
+		JsonValue v = Json.parse(json);
+		ArrayList<AssetState> states = new ArrayList<>();
+		
+		if (v.isArray()) {
+			for (JsonValue obj : v.asArray().values())
+				states.add(AssetState.parse(obj.toString()));			
+		}
+		else {
+			states.add(AssetState.parse(v.toString()));
+		}
+		
+		return states;
 	}
 	
 	public static AssetState parse(String json) {
