@@ -200,7 +200,21 @@ public class Plan {
 	}
 
 	public String toString() {
-		return asImc().toString();
+		JsonObject pp = new JsonObject();
+		pp.add("id", getPlanId());
+		JsonArray waypoints = new JsonArray();
+		for (Waypoint wpt : waypoints()) {
+			JsonObject waypoint = new JsonObject();
+			waypoint.add("latitude", wpt.getLatitude());
+			waypoint.add("longitude", wpt.getLongitude());
+			if (wpt.getDuration() != 0)
+				waypoint.add("duration", wpt.getDuration());
+			if (wpt.getArrivalTime() != null)
+				waypoint.add("eta", wpt.getArrivalTime().getTime() / 1000);										
+			waypoints.add(waypoint);
+		}
+		pp.add("waypoints", waypoints);				
+		return pp.toString();		
 	}
 
 	public void remove(Waypoint waypoint) {
@@ -247,6 +261,9 @@ public class Plan {
 		plan.addWaypoint(new Waypoint(3, goto3));
 		plan.addWaypoint(new Waypoint(4, goto4));
 
-		System.out.println(plan);
+		System.out.println(plan.toString());
+		
+		Plan plan2 = Plan.parse(plan.toString());
+		System.out.println(plan2.toString());
 	}
 }

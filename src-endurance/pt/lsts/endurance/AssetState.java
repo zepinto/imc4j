@@ -70,7 +70,7 @@ public class AssetState {
 		state.add("longitude", getLongitude());
 		
 		if (getTimestamp() != null)
-			state.add("time", getTimestamp().getTime()/1000.0);
+			state.add("time", (int)(getTimestamp().getTime()/1000.0));
 		
 		if (getHeading() != 0)
 			state.add("heading", getHeading());
@@ -162,5 +162,4 @@ public class AssetState {
 		System.out.println(asset.toString());
 		System.out.println(AssetState.parse(asset.toString()));
 	}
-
 }
