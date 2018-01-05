@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -20,10 +21,10 @@ public class EnduranceWebApi {
 
 	private static final String SOI_URL = "http://ripples.lsts.pt/soi";
 
-	public static Future<List<AssetState>> getSoiState() {
-		return execute(new Callable<List<AssetState>>() {
+	public static Future<List<Asset>> getSoiState() {
+		return execute(new Callable<List<Asset>>() {
 			@Override
-			public List<AssetState> call() throws Exception {
+			public List<Asset> call() throws Exception {
 				URL url = new URL(SOI_URL);
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 				BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -34,6 +35,7 @@ public class EnduranceWebApi {
 				}
 				in.close();
 				conn.disconnect();
+				System.out.println(content);
 				return AssetState.parseStates(content.toString());
 			}
 		});
@@ -50,14 +52,14 @@ public class EnduranceWebApi {
 		JsonObject json = new JsonObject();
 		json.add("name", assetName);
 		json.add("received", Json.parse(state.toString()));
-		return postJson(SOI_URL+"/"+assetName, json.toString());
+		return postJson(SOI_URL, json.toString());
 	}	
 	
 	public static Future<Void> setAssetPlan(String assetName, Plan plan) {
 		JsonObject json = new JsonObject();
 		json.add("name", assetName);
 		json.add("plan", Json.parse(plan.toString()));
-		return postJson(SOI_URL+"/"+assetName, json.toString());
+		return postJson(SOI_URL, json.toString());
 	}
 
 	private static Future<Void> postJson(String url, String json) {
@@ -85,17 +87,24 @@ public class EnduranceWebApi {
 				}
 				in.close();
 				conn.disconnect();
+				System.out.println(conn.getResponseCode());
 				return null;
 			}
 		});
 	}
 
 	public static Future<Void> setAsset(Asset asset) {
-		return postJson(SOI_URL+"/"+asset.getAssetName(), asset.toString());
+		return postJson(SOI_URL, asset.toString());
 	}
 
 	public static void main(String[] args) throws Exception {
 		Asset asset = new Asset("lauv-xplore-1");
+		asset.setState(AssetState.builder()
+				.withLatitude(41)
+				.withLongitude(-8)
+				.withTimestamp(new Date())
+				.build());
+		
 		EnduranceWebApi.setAsset(asset).get(1000, TimeUnit.MILLISECONDS);
 		System.out.println(EnduranceWebApi.getSoiState().get(1000, TimeUnit.MILLISECONDS));
 	}

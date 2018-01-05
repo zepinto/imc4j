@@ -89,16 +89,18 @@ public class AssetState {
 		return state.toString();
 	}
 	
-	public static List<AssetState> parseStates(String json) {
+	public static List<Asset> parseStates(String json) throws Exception {
 		JsonValue v = Json.parse(json);
-		ArrayList<AssetState> states = new ArrayList<>();
+		ArrayList<Asset> states = new ArrayList<>();
 		
 		if (v.isArray()) {
-			for (JsonValue obj : v.asArray().values())
-				states.add(AssetState.parse(obj.toString()));			
+			for (JsonValue obj : v.asArray().values()) {
+				System.out.println(obj.toString());
+				states.add(Asset.parse(obj.toString()));
+			}
 		}
 		else {
-			states.add(AssetState.parse(v.toString()));
+			states.add(Asset.parse(v.toString()));
 		}
 		
 		return states;
