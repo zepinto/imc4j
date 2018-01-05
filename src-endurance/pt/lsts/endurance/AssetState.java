@@ -8,6 +8,7 @@ import javax.annotation.Generated;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 
 public class AssetState {
 
@@ -93,11 +94,20 @@ public class AssetState {
 		if (obj.get("time") != null)
 			d = new Date((long)(obj.getDouble("time", 0) * 1000));
 		
+		ArrayList<String> errors = new ArrayList<>();
+		
+		if (obj.get("errors") != null) {
+			for (JsonValue v : obj.get("errors").asArray().values()) {
+				errors.add(v.asString());
+			}			
+		}
+		
 		return AssetState.builder()
 				.withLatitude(obj.getDouble("latitude", 0))
 				.withLongitude(obj.getDouble("longitude", 0))
 				.withHeading(obj.getDouble("heading", 0))
 				.withFuel(obj.getDouble("fuel", 0))
+				.withErrors(errors)
 				.withTimestamp(d)				
 				.build();
 	}
