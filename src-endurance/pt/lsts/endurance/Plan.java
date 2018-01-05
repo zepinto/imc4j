@@ -3,6 +3,10 @@ package pt.lsts.endurance;
 import java.util.ArrayList;
 import java.util.Date;
 
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+
 import pt.lsts.imc4j.msg.Goto;
 import pt.lsts.imc4j.msg.Maneuver;
 import pt.lsts.imc4j.msg.Message;
@@ -47,9 +51,36 @@ public class Plan {
 	}
 
 	public static Plan parse(String spec) throws Exception {
-		Message msg = FormatConversion.fromJson(spec);
+		Message msg = null;
+		try {
+			msg = FormatConversion.fromJson(spec);
+		}
+		catch (Exception e) {
+		}
+		
 		if (msg == null) {
-			throw new Exception("Could not parse JSON specification.");
+			try {
+				JsonObject json = Json.parse(spec).asObject();
+				Plan p = new Plan(json.getString("id", ""));
+				JsonArray arr = json.get("waypoints").asArray();
+				
+				for (int i = 0; i < arr.size(); i++) {
+					JsonObject wpt = arr.get(i).asObject();
+					float lat = wpt.getFloat("latitude", 0);
+					float lon = wpt.getFloat("longitude", 0);
+					Waypoint waypoint = new Waypoint(i, lat, lon);
+					waypoint.setDuration(wpt.getInt("duration", 0));
+					double time = wpt.getDouble("eta", 0);
+					if (time != 0)
+						waypoint.setArrivalTime(new Date((long) (time * 1000)));
+					p.addWaypoint(waypoint);
+				}
+				return p;
+			}
+			catch (Exception e) {
+				throw new Exception("Unrecognized plan format.", e);
+			}
+			
 		}
 		if (msg instanceof SoiPlan) {
 			return parse((SoiPlan) msg);

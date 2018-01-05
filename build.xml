@@ -34,6 +34,12 @@
 		<javac encoding="${compile-encoding}" srcdir="src;src-endurance"  destdir="bin" includes="**/*.java" fork="false" target="1.7" source="1.7">
 			<classpath refid="classpath.dependencies"/>
 		</javac>
+	    <copy verbose="true" todir="bin">
+	      <fileset dir="src" includes="**/*.java"/>
+	    </copy>
+		<copy verbose="true" todir="bin">
+			<fileset dir="src-endurance" includes="**/*.java"/>
+	    </copy>
 		<jar destfile="${dir.jarfile}/endurance.jar">
 			<fileset dir="${dir.buildfile}/bin"/>
 		    <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>

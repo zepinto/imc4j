@@ -11,12 +11,12 @@ import com.eclipsesource.json.JsonObject;
 
 public class AssetState {
 
-	private final Date timestamp;
-	private final double latitude;
-	private final double longitude;
-	private final double heading;
-	private final double fuel;
-	private final ArrayList<String> errors;
+	private Date timestamp = null;
+	private double latitude = 0;
+	private double longitude = 0;
+	private double heading = 0;
+	private double fuel = 0;
+	private ArrayList<String> errors = new ArrayList<>();
 
 	@Generated("SparkTools")
 	private AssetState(Builder builder) {
@@ -65,11 +65,17 @@ public class AssetState {
 	@Override
 	public String toString() {
 		JsonObject state = new JsonObject();
-		state.add("time", getTimestamp().getTime()/1000.0);
+		
 		state.add("latitude", getLatitude());
 		state.add("longitude", getLongitude());
-		state.add("heading", getHeading());
-		state.add("fuel", getFuel());
+		
+		if (getTimestamp() != null)
+			state.add("time", getTimestamp().getTime()/1000.0);
+		
+		if (getHeading() != 0)
+			state.add("heading", getHeading());
+		if (getFuel() != 0)
+			state.add("fuel", getFuel());
 		
 		if (getErrors() != null && !getErrors().isEmpty()) {
 			JsonArray array = new JsonArray();
@@ -78,17 +84,21 @@ public class AssetState {
 			state.add("errors", array);
 		}
 		
-		return super.toString();
+		return state.toString();
 	}
 	
 	public static AssetState parse(String json) {
 		JsonObject obj = Json.parse(json).asObject();
+		Date d = null;
+		if (obj.get("time") != null)
+			d = new Date((long)(obj.getDouble("time", 0) * 1000));
+		
 		return AssetState.builder()
 				.withLatitude(obj.getDouble("latitude", 0))
 				.withLongitude(obj.getDouble("longitude", 0))
 				.withHeading(obj.getDouble("heading", 0))
 				.withFuel(obj.getDouble("fuel", 0))
-				.withTimestamp(new Date((long)(obj.getDouble("time", 0) * 1000)))				
+				.withTimestamp(d)				
 				.build();
 	}
 
@@ -140,6 +150,17 @@ public class AssetState {
 		public AssetState build() {
 			return new AssetState(this);
 		}
+	}
+	
+	public static void main(String[] args) {
+		AssetState asset = AssetState.builder()
+				.withFuel(30)
+				.withLatitude(41)
+				.withLongitude(-8)
+				.build();
+		
+		System.out.println(asset.toString());
+		System.out.println(AssetState.parse(asset.toString()));
 	}
 
 }
