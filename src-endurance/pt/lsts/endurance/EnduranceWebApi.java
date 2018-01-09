@@ -62,7 +62,7 @@ public class EnduranceWebApi {
 		return postJson(SOI_URL, json.toString());
 	}
 
-	private static Future<Void> postJson(String url, String json) {
+	private static Future<Void> postJson(final String url, final String json) {
 		return execute(new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
