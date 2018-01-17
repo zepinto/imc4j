@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Properties;
@@ -20,6 +21,8 @@ import pt.lsts.imc4j.msg.EntityParameters;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.FuelLevel;
+import pt.lsts.imc4j.msg.PlanControl;
+import pt.lsts.imc4j.msg.PlanControl.OP;
 import pt.lsts.imc4j.msg.PlanControlState;
 import pt.lsts.imc4j.msg.PlanDB;
 import pt.lsts.imc4j.msg.PlanDB.TYPE;
@@ -78,8 +81,7 @@ public class SoiExecutive extends TimedFSM {
 	private PlanSpecification spec = null;
 	private int secs_underwater = 0, count_secs = 0;
 	private int wpt_index = 0;
-	//private Future<Void> ongoingIridium = null;
-	
+	private ArrayList<PlanControl> planErrors = new ArrayList<>();
 	
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
@@ -113,6 +115,19 @@ public class SoiExecutive extends TimedFSM {
 				print("" + plan);
 				wpt_index = 0;
 				state = this::start_waiting;
+			}
+		}
+	}
+	
+	@Consume
+	public void on(PlanControl pControl) {
+		print("Received this plan control: "+pControl);
+		if (pControl.op == OP.PC_START && pControl.type == PlanControl.TYPE.PC_FAILURE) {
+			if (pControl.plan_id.equals(soi_plan_id)) {
+				// Error during execution!
+				print("Detected error during execution. Ascending for report");
+				planErrors.add(pControl);
+				state = this::report_error;
 			}
 		}
 	}
@@ -437,6 +452,16 @@ public class SoiExecutive extends TimedFSM {
 		if (plan != null && plan.waypoint(wpt_index) != null)
 			seconds = Math.max(seconds, plan.waypoint(wpt_index).getDuration());
 		
+		while (!planErrors.isEmpty()) {
+			PlanControl pc = planErrors.get(0);
+			String error = pc.info;
+			if (error.length() > 132)
+				error = error.substring(0, 132);
+			sendViaSms("ERROR: "+error, seconds - count_secs - 1);
+			sendViaIridium("ERROR: "+error, seconds - count_secs - 1);
+			planErrors.remove(0);
+		}
+		
 		// Send "DUNE" report
 		if (count_secs == 0) {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
@@ -446,6 +471,8 @@ public class SoiExecutive extends TimedFSM {
 			print("Will wait "+seconds+" seconds");
 		}
 
+		
+		
 		if (count_secs >= seconds) {
 			return this::exec;
 		} 
@@ -476,9 +503,10 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState wait(FollowRefState ref) {
-
+		
+		VehicleMedium medium = get(VehicleMedium.class); 
 		// arrived at surface
-		if (get(VehicleMedium.class).medium == MEDIUM.VM_WATER) {
+		if (medium != null && medium.medium == MEDIUM.VM_WATER) {
 			print("Now at surface, starting communications.");
 			double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 			setLocation(pos[0], pos[1]);
