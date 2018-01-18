@@ -81,12 +81,17 @@ public class SoiExecutive extends TimedFSM {
 	private PlanSpecification spec = null;
 	private int secs_underwater = 0, count_secs = 0;
 	private int wpt_index = 0;
-	private ArrayList<PlanControl> planErrors = new ArrayList<>();
+	private ArrayList<String> errors = new ArrayList<>();
 	
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
 		setDeadline(new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000));
 		state = this::init;
+	}
+	
+	public boolean underwaterForTooLong() {
+		int max_time = mins_under * 60 / 2;
+		return secs_underwater > max_time;
 	}
 
 	@Consume
@@ -120,14 +125,13 @@ public class SoiExecutive extends TimedFSM {
 	}
 	
 	@Consume
-	public void on(PlanControl pControl) {
-		print("Received this plan control: "+pControl);
+	public void on(PlanControl pControl) {		
 		if (pControl.op == OP.PC_START && pControl.type == PlanControl.TYPE.PC_FAILURE) {
 			if (pControl.plan_id.equals(soi_plan_id)) {
 				// Error during execution!
 				print("Detected error during execution. Ascending for report");
-				planErrors.add(pControl);
-				state = this::report_error;
+				errors.add(pControl.info);
+				state = this::surface_to_report_error;
 			}
 		}
 	}
@@ -386,6 +390,11 @@ public class SoiExecutive extends TimedFSM {
 		setDepth(max_depth);
 		secs_underwater++;
 
+		if (underwaterForTooLong()) {
+			errors.add("Underwater for too long ("+secs_underwater+")");
+			return this::surface_to_report_error;
+		}
+		
 		if (arrivedXY()) {
 			print("Arrived at waypoint " + wpt_index);
 			wpt_index++;
@@ -421,6 +430,11 @@ public class SoiExecutive extends TimedFSM {
 		setDepth(min_depth);
 		secs_underwater++;
 
+		if (underwaterForTooLong()) {
+			errors.add("Underwater for too long ("+secs_underwater+")");
+			return this::surface_to_report_error;
+		}
+		
 		if (secs_underwater / 60 >= mins_under) {
 			print("Periodic surface");
 			return this::start_waiting;
@@ -452,14 +466,13 @@ public class SoiExecutive extends TimedFSM {
 		if (plan != null && plan.waypoint(wpt_index) != null)
 			seconds = Math.max(seconds, plan.waypoint(wpt_index).getDuration());
 		
-		while (!planErrors.isEmpty()) {
-			PlanControl pc = planErrors.get(0);
-			String error = pc.info;
+		while (!errors.isEmpty()) {
+			String error = errors.get(0);
 			if (error.length() > 132)
 				error = error.substring(0, 132);
 			sendViaSms("ERROR: "+error, seconds - count_secs - 1);
 			sendViaIridium("ERROR: "+error, seconds - count_secs - 1);
-			planErrors.remove(0);
+			errors.remove(0);
 		}
 		
 		// Send "DUNE" report
@@ -492,17 +505,38 @@ public class SoiExecutive extends TimedFSM {
 		return this::wait;
 	}
 	
-	public FSMState report_error(FollowRefState ref) {
+	public FSMState surface_to_report_error(FollowRefState ref) {
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
 		setSpeed(0, SpeedUnits.METERS_PS);
 
 		print("Surfacing to report error...");
-		return this::wait;
+
+		return this::report_error;
+	}
+	
+	public FSMState report_error(FollowRefState ref) {
+				
+		VehicleMedium medium = get(VehicleMedium.class); 
+		
+		// arrived at surface
+		if (medium != null && medium.medium == MEDIUM.VM_WATER) {
+			print("Now at surface, starting communications.");
+			secs_underwater = 0;
+			count_secs = 0;
+			return this::communicate;
+		}
+		else
+			return this::report_error;
 	}
 
 	public FSMState wait(FollowRefState ref) {
+		
+		if (underwaterForTooLong()) {
+			errors.add("Underwater for too long ("+secs_underwater+")");
+			return this::surface_to_report_error;
+		}
 		
 		VehicleMedium medium = get(VehicleMedium.class); 
 		// arrived at surface
