@@ -90,7 +90,8 @@ public class SoiExecutive extends TimedFSM {
 	}
 	
 	public boolean underwaterForTooLong() {
-		int max_time = mins_under * 60 / 2;
+		 // Check if it has taken too long to go at the surface...
+		int max_time = mins_under * 60 * 3;
 		return secs_underwater > max_time;
 	}
 
