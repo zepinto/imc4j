@@ -468,7 +468,7 @@ public abstract class BackSeatDriver extends TcpClient {
 					
 					try {
 						send(req);
-						print("Sending "+req.req_id+" request using "+mean);
+						print("Sending "+req.req_id+" request using "+mean+": "+req.txt_data);
 						requests_sent.put(req.req_id, req);
 					}							
 					catch (Exception e) {
