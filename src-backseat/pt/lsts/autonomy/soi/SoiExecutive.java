@@ -76,7 +76,10 @@ public class SoiExecutive extends TimedFSM {
 
 	@Parameter(description = "Cyclic execution")
 	boolean cycle = false;
-
+	
+	@Parameter(description = "Speed up before descending")
+	int descendSpeedRpm = 1300;
+	
 	private Plan plan = new Plan("idle");
 	private PlanSpecification spec = null;
 	private int secs_underwater = 0, count_secs = 0;
@@ -364,6 +367,7 @@ public class SoiExecutive extends TimedFSM {
 		return this::descend;
 	}
 
+	
 	public void setSpeed() {
 		Waypoint wpt = plan.waypoint(wpt_index);
 		double speed = this.speed;
@@ -452,16 +456,42 @@ public class SoiExecutive extends TimedFSM {
 				print("Periodic surface");
 				return this::start_waiting;
 			} else {
-				setSpeed();
 				if (max_depth != min_depth)
 					print("Now descending (underwater for " + secs_underwater + " seconds).");
-				return this::descend;
+				
+				return this::start_descend;
 			}
 
 		} else
 			return this::ascend;
 	}
-
+	
+	public FSMState start_descend(FollowRefState ref) {
+		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+		
+		if (underwaterForTooLong()) {
+			errors.add("Underwater for too long ("+secs_underwater+")");
+			return this::surface_to_report_error;
+		}
+		
+		if (arrivedXY()) {
+			print("Arrived at waypoint " + wpt_index);
+			wpt_index++;
+			return this::start_waiting;
+		}
+		
+		setDepth(max_depth);
+		setSpeed(descendSpeedRpm, SpeedUnits.RPM);
+		secs_underwater++;
+		
+		if (pos[2] < 2 && pos[2] < max_depth)
+			return this::start_descend;
+		else {
+			setSpeed();
+			return this::descend;
+		}
+	}	
+	
 	public FSMState communicate(FollowRefState ref) {
 		int seconds = wait_secs;
 		if (plan != null && plan.waypoint(wpt_index) != null)
