@@ -94,7 +94,7 @@ public class SoiExecutive extends TimedFSM {
 	
 	public boolean underwaterForTooLong() {
 		 // Check if it has taken too long to go at the surface...
-		int max_time = mins_under * 60 * 3;
+		int max_time = mins_under * 60 * 2;
 		return secs_underwater > max_time;
 	}
 
@@ -393,8 +393,8 @@ public class SoiExecutive extends TimedFSM {
 
 	public FSMState descend(FollowRefState ref) {
 		setDepth(max_depth);
+		
 		secs_underwater++;
-
 		if (underwaterForTooLong()) {
 			errors.add("Underwater for too long ("+secs_underwater+")");
 			return this::surface_to_report_error;
@@ -433,8 +433,8 @@ public class SoiExecutive extends TimedFSM {
 
 	public FSMState ascend(FollowRefState ref) {
 		setDepth(min_depth);
+		
 		secs_underwater++;
-
 		if (underwaterForTooLong()) {
 			errors.add("Underwater for too long ("+secs_underwater+")");
 			return this::surface_to_report_error;
@@ -469,6 +469,7 @@ public class SoiExecutive extends TimedFSM {
 	public FSMState start_descend(FollowRefState ref) {
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		
+		secs_underwater++;
 		if (underwaterForTooLong()) {
 			errors.add("Underwater for too long ("+secs_underwater+")");
 			return this::surface_to_report_error;
@@ -482,11 +483,13 @@ public class SoiExecutive extends TimedFSM {
 		
 		setDepth(max_depth);
 		setSpeed(descendSpeedRpm, SpeedUnits.RPM);
-		secs_underwater++;
+
 		
-		if (pos[2] < 2 && pos[2] < max_depth)
+		if (pos[2] < 2 && pos[2] < max_depth) {
 			return this::start_descend;
+		}
 		else {
+			print("Vehicle now underwater. Setting speed according to ETA.");
 			setSpeed();
 			return this::descend;
 		}
@@ -514,8 +517,6 @@ public class SoiExecutive extends TimedFSM {
 			sendViaIridium(createStateReport(), seconds - count_secs - 1);			
 			print("Will wait "+seconds+" seconds");
 		}
-
-		
 		
 		if (count_secs >= seconds) {
 			return this::exec;
@@ -564,6 +565,7 @@ public class SoiExecutive extends TimedFSM {
 
 	public FSMState wait(FollowRefState ref) {
 		
+		secs_underwater++;
 		if (underwaterForTooLong()) {
 			errors.add("Underwater for too long ("+secs_underwater+")");
 			return this::surface_to_report_error;
@@ -578,8 +580,9 @@ public class SoiExecutive extends TimedFSM {
 			secs_underwater = 0;
 			count_secs = 0;
 			return this::communicate;
-		} else
+		} else {			
 			return this::wait;
+		}
 	}
 
 	public static void main(String[] args) throws Exception {
