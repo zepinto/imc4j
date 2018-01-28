@@ -364,7 +364,7 @@ public class SoiExecutive extends TimedFSM {
 		setLocation(wpt.getLatitude(), wpt.getLongitude());
 		setSpeed();
 
-		return this::descend;
+		return this::start_descend;
 	}
 
 	
