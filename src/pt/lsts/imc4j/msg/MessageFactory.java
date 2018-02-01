@@ -61,6 +61,10 @@ public class MessageFactory {
 
 	public static final int ID_HistoricEvent = 110;
 
+	public static final int ID_VerticalProfile = 111;
+
+	public static final int ID_ProfileSample = 112;
+
 	public static final int ID_Heartbeat = 150;
 
 	public static final int ID_Announce = 151;
@@ -689,6 +693,12 @@ public class MessageFactory {
 			}
 			case ID_HistoricEvent: {
 				return new HistoricEvent();
+			}
+			case ID_VerticalProfile: {
+				return new VerticalProfile();
+			}
+			case ID_ProfileSample: {
+				return new ProfileSample();
 			}
 			case ID_Heartbeat: {
 				return new Heartbeat();
@@ -1598,6 +1608,12 @@ public class MessageFactory {
 			}
 			case "HistoricEvent": {
 				return ID_HistoricEvent;
+			}
+			case "VerticalProfile": {
+				return ID_VerticalProfile;
+			}
+			case "ProfileSample": {
+				return ID_ProfileSample;
 			}
 			case "Heartbeat": {
 				return ID_Heartbeat;

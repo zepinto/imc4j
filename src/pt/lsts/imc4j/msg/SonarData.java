@@ -18,7 +18,6 @@ import pt.lsts.imc4j.util.SerializationUtils;
  * fill the data field used in this message. (Byte order is
  * little endian.)
  * **Sidescan:**
- *
  * +------+-------------------+-----------+
  * | Data | Name              | Type      |
  * +======+===================+===========+
@@ -28,7 +27,6 @@ import pt.lsts.imc4j.util.SerializationUtils;
  * * The type *uintX_t* will depend on the number of bits per unit, and it should be a multiple of 8.
  * * Furthermore, for now, 32 bits is the highest value of bits per unit supported.
  * **Multibeam:**
- *
  * +------+--------+-------------------------+---------+----------------------------------------------------------------------+
  * | Index| Section| Name                    | Type    | Comments                                                             |
  * +======+========+=========================+=========+======================================================================+
@@ -55,22 +53,18 @@ import pt.lsts.imc4j.util.SerializationUtils;
  * +--------+------------------+-----+
  * | H4.2   | Angle step flag  | 1   |
  * +--------+------------------+-----+
- *
  * .. figure:: ../images/imc_multibeam.png
  * *Notes:*
  * * Each angle at step *i* can be calculated is defined by:
  * .. code-block:: python
  * angle[i] = H2_start_angle + (32-bit sum of D1_angle_step[0] through D1_angle_step[i]) * H4_scaling_factor
- *
  * * If bit H4.1 is not set then sections H5 and D3 won't exist.
  * * If bit H4.2 is not set then sections H4 and D1 won't exist. In case this bit is set, then the angle steps is read from field "Beam Width" from "Beam Configuration".
  * * The type *uintX_t* will depend on the number of bits per unit, and it should be a multiple of 8.
  * * Furthermore, for now, 32 bits is the highest value of bits per unit supported.
- *
  * *How to write ranges and intensities data:*
  * .. code-block:: python
  * :linenos:
- *
  * data_unit = (Integer) (data_value / scale_factor);
  * bytes_per_unit = bits_per_unit / 8;
  * LOOP: i = 0, until i = bytes_per_unit
