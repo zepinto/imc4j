@@ -38,6 +38,7 @@ import pt.lsts.imc4j.msg.TransmissionRequest;
 import pt.lsts.imc4j.msg.TransmissionRequest.COMM_MEAN;
 import pt.lsts.imc4j.msg.TransmissionRequest.DATA_MODE;
 import pt.lsts.imc4j.msg.TransmissionStatus;
+import pt.lsts.imc4j.msg.TransmissionStatus.STATUS;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.net.TcpClient;
@@ -54,6 +55,8 @@ public abstract class BackSeatDriver extends TcpClient {
 	
 	private ConcurrentHashMap<COMM_MEAN, LinkedBlockingDeque<TransmissionRequest>> pendingRequests = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<COMM_MEAN, TransmissionRequest> ongoingRequests = new ConcurrentHashMap<>();
+	
+	private boolean simulateIridium = true;
 	
 	{
 		for (COMM_MEAN mean : COMM_MEAN.values()) {
@@ -453,6 +456,10 @@ public abstract class BackSeatDriver extends TcpClient {
 		throw new Exception("Transmission timed out.");
 	}
 	
+	protected boolean outQueueEmpty() {
+		return pendingRequests.isEmpty();
+	}
+	
 	void sendPending() {
 		for (TransmissionRequest.COMM_MEAN mean : pendingRequests.keySet()) {
 			// is there a transmission that can be sent now?
@@ -493,6 +500,16 @@ public abstract class BackSeatDriver extends TcpClient {
 
 			@Override
 			public Void call() throws Exception {
+				
+				if (simulateIridium) {
+					Thread.sleep((long)(Math.random() * 60000));
+					TransmissionStatus status = new TransmissionStatus();
+					status.req_id = request.req_id;
+					status.status = STATUS.TSTAT_SENT;
+					status.src = remoteSrc;
+					System.err.println("Simulated iridium transmission: "+request);
+					on(status);										
+				}
 				waitFor(request);
 				return null;
 			}

@@ -16,6 +16,7 @@ import pt.lsts.endurance.Waypoint;
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.Parameter;
 import pt.lsts.imc4j.def.SpeedUnits;
+import pt.lsts.imc4j.msg.Chlorophyll;
 import pt.lsts.imc4j.msg.EntityParameter;
 import pt.lsts.imc4j.msg.EntityParameters;
 import pt.lsts.imc4j.msg.EstimatedState;
@@ -28,11 +29,15 @@ import pt.lsts.imc4j.msg.PlanDB;
 import pt.lsts.imc4j.msg.PlanDB.TYPE;
 import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.ReportControl;
+import pt.lsts.imc4j.msg.Salinity;
 import pt.lsts.imc4j.msg.SoiCommand;
 import pt.lsts.imc4j.msg.SoiCommand.COMMAND;
 import pt.lsts.imc4j.msg.StateReport;
+import pt.lsts.imc4j.msg.Temperature;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
+import pt.lsts.imc4j.msg.VerticalProfile;
+import pt.lsts.imc4j.msg.VerticalProfile.PARAMETER;
 import pt.lsts.imc4j.util.PojoConfig;
 import pt.lsts.imc4j.util.WGS84Utilities;
 
@@ -80,11 +85,30 @@ public class SoiExecutive extends TimedFSM {
 	@Parameter(description = "Speed up before descending")
 	int descendSpeedRpm = 1300;
 	
+	@Parameter(description = "Send Salinity Data")
+	boolean sendSal = true;
+	
+	@Parameter(description = "Send Temperature Data")
+	boolean sendTemp = false;
+	
+	@Parameter(description = "Send Chlorophyll Data")
+	boolean sendChlr = false;
+	
+	@Parameter(description = "Number of profile depths")
+	int profDepths = 20;	
+	
 	private Plan plan = new Plan("idle");
 	private PlanSpecification spec = null;
 	private int secs_underwater = 0, count_secs = 0;
 	private int wpt_index = 0;
 	private ArrayList<String> errors = new ArrayList<>();
+	private int ctdEntity = -1;
+	
+	private VerticalProfiler<Salinity> salProfiler = new VerticalProfiler<>();
+	private VerticalProfiler<Temperature> tempProfiler = new VerticalProfiler<>();
+	private VerticalProfiler<Chlorophyll> chrlProfiler = new VerticalProfiler<>(); 
+	
+	private ArrayList<VerticalProfile> profilesToSend = new ArrayList<>();
 	
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
@@ -96,6 +120,32 @@ public class SoiExecutive extends TimedFSM {
 		 // Check if it has taken too long to go at the surface...
 		int max_time = mins_under * 60 * 2;
 		return secs_underwater > max_time;
+	}
+	
+	@Consume
+	public void on(Salinity sal) {
+		ctdEntity = sal.src_ent;
+		
+		if (sendSal)
+			salProfiler.setSample(get(EstimatedState.class), sal);
+	}
+	
+	@Consume
+	public void on(Temperature temp) {
+		if (temp.src_ent != ctdEntity)
+			return;
+		
+		if (sendTemp)
+			tempProfiler.setSample(get(EstimatedState.class), temp);
+	}
+	
+
+	@Consume
+	public void on(Chlorophyll chrl) {
+		ctdEntity = chrl.src_ent;
+		
+		if (sendChlr)
+			chrlProfiler.setSample(get(EstimatedState.class), chrl);
 	}
 
 	@Consume
@@ -257,7 +307,6 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 	
-	
 	private StateReport createStateReport() {
 		EstimatedState estate = get(EstimatedState.class);
 		FuelLevel flevel = get(FuelLevel.class);
@@ -320,7 +369,15 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState idle(FollowRefState state) {
+		
 		print("Waiting for plan...");
+		
+		if (outQueueEmpty() && !profilesToSend.isEmpty()) {
+			print("Sending environmental data profile");
+			VerticalProfile prof = profilesToSend.remove(0);
+			sendViaIridium(prof, wait_secs);			
+		}					
+		
 		return this::idle;
 	}
 
@@ -452,6 +509,23 @@ public class SoiExecutive extends TimedFSM {
 		}
 
 		if (min_depth > 0 && arrivedZ() || !isUnderwater()) {
+			
+			//arrived at surface
+			if (sendSal) {
+				VerticalProfile salProf = salProfiler.getProfile(PARAMETER.PROF_SALINITY, profDepths);
+				profilesToSend.add(0, salProf);
+			}
+			
+			if (sendTemp) {
+				VerticalProfile tempProf = tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, profDepths);
+				profilesToSend.add(0, tempProf);
+			}
+			
+			if (sendChlr) {
+				VerticalProfile chrlProf = tempProfiler.getProfile(PARAMETER.PROF_CHLOROPHYLL, profDepths);
+				profilesToSend.add(0, chrlProf);
+			}
+						
 			if (secs_underwater / 60 >= mins_under) {
 				print("Periodic surface");
 				return this::start_waiting;
@@ -514,7 +588,7 @@ public class SoiExecutive extends TimedFSM {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
-			sendViaIridium(createStateReport(), seconds - count_secs - 1);			
+			sendViaIridium(createStateReport(), seconds - count_secs - 1);	
 			print("Will wait "+seconds+" seconds");
 		}
 		
