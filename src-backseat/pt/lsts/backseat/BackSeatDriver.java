@@ -188,8 +188,8 @@ public abstract class BackSeatDriver extends TcpClient {
 	@Consume
 	protected void on(Abort msg) {
 		if (msg.src == remoteSrc || msg.dst == remoteSrc) {
-			System.err.println("ABORTED.");
-			finished = true;
+			print("ABORTED.");
+			paused = true;
 		}
 	}
 
