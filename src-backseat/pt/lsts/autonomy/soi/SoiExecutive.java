@@ -308,11 +308,13 @@ public class SoiExecutive extends TimedFSM {
 	}	
 
 	public FSMState init(FollowRefState state) {
+	    printFSMStateName("init");
 		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
 		return this::idleAtSurface;
 	}
 
 	public FSMState idleAtSurface(FollowRefState state) {
+		printFSMStateName("idleAtSurface");
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
@@ -320,11 +322,13 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState idle(FollowRefState state) {
+		printFSMStateName("idle");
 		print("Waiting for plan...");
 		return this::idle;
 	}
 
 	public FSMState exec(FollowRefState state) {
+		printFSMStateName("exec");
 		if (plan == null)
 			return this::idleAtSurface;
 
@@ -367,7 +371,6 @@ public class SoiExecutive extends TimedFSM {
 		return this::start_descend;
 	}
 
-	
 	public void setSpeed() {
 		Waypoint wpt = plan.waypoint(wpt_index);
 		double speed = this.speed;
@@ -392,6 +395,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState descend(FollowRefState ref) {
+		printFSMStateName("descend");
 		setDepth(max_depth);
 		
 		secs_underwater++;
@@ -427,16 +431,18 @@ public class SoiExecutive extends TimedFSM {
 			if (min_depth < max_depth)
 				print("Now ascending.");
 			return this::ascend;
-		} else
+		}
+		else
 			return this::descend;
 	}
 
 	public FSMState ascend(FollowRefState ref) {
+		printFSMStateName("ascend");
 		setDepth(min_depth);
 		
 		secs_underwater++;
 		if (underwaterForTooLong()) {
-			errors.add("Underwater for too long ("+secs_underwater+")");
+			errors.add("Underwater for too long ("+secs_underwater+"s)");
 			return this::surface_to_report_error;
 		}
 		
@@ -446,7 +452,7 @@ public class SoiExecutive extends TimedFSM {
 		}
 
 		if (arrivedXY()) {
-			print("Arrived at waypoint");
+            print("Arrived at waypoint " + wpt_index);
 			wpt_index++;
 			return this::start_waiting;
 		}
@@ -467,6 +473,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 	
 	public FSMState start_descend(FollowRefState ref) {
+		printFSMStateName("start_descend");
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		
 		secs_underwater++;
@@ -483,7 +490,6 @@ public class SoiExecutive extends TimedFSM {
 		
 		setDepth(max_depth);
 		setSpeed(descendSpeedRpm, SpeedUnits.RPM);
-
 		
 		if (pos[2] < 2 && pos[2] < max_depth) {
 			return this::start_descend;
@@ -496,6 +502,7 @@ public class SoiExecutive extends TimedFSM {
 	}	
 	
 	public FSMState communicate(FollowRefState ref) {
+		printFSMStateName("communicate");
 		int seconds = wait_secs;
 		if (plan != null && plan.waypoint(wpt_index) != null)
 			seconds = Math.max(seconds, plan.waypoint(wpt_index).getDuration());
@@ -528,6 +535,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState start_waiting(FollowRefState ref) {
+		printFSMStateName("start_waiting");
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
@@ -538,6 +546,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 	
 	public FSMState surface_to_report_error(FollowRefState ref) {
+		printFSMStateName("surface_to_report_error");
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
@@ -549,7 +558,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 	
 	public FSMState report_error(FollowRefState ref) {
-				
+		printFSMStateName("report_error");
 		VehicleMedium medium = get(VehicleMedium.class); 
 		
 		// arrived at surface
@@ -564,7 +573,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState wait(FollowRefState ref) {
-		
+		printFSMStateName("wait");
 		secs_underwater++;
 		if (underwaterForTooLong()) {
 			errors.add("Underwater for too long ("+secs_underwater+")");
@@ -580,13 +589,13 @@ public class SoiExecutive extends TimedFSM {
 			secs_underwater = 0;
 			count_secs = 0;
 			return this::communicate;
-		} else {			
+		}
+		else {			
 			return this::wait;
 		}
 	}
 
 	public static void main(String[] args) throws Exception {
-
 		if (args.length != 1) {
 			System.err.println("Usage: java -jar SoiExec.jar <FILE>");
 			System.exit(1);
@@ -612,8 +621,6 @@ public class SoiExecutive extends TimedFSM {
 		Properties props = new Properties();
 		props.load(new FileInputStream(file));
 
-
-
 		SoiExecutive tracker = PojoConfig.create(SoiExecutive.class, props);
 
 		System.out.println("Executive started with settings:");
@@ -628,5 +635,4 @@ public class SoiExecutive extends TimedFSM {
 		tracker.connect(tracker.host_addr, tracker.host_port);
 		tracker.join();
 	}
-
 }
