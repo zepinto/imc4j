@@ -85,6 +85,7 @@ public class SoiExecutive extends TimedFSM {
 	private int secs_underwater = 0, count_secs = 0;
 	private int wpt_index = 0;
 	private ArrayList<String> errors = new ArrayList<>();
+	private static final int DEFAULT_COMM_TIMEOUT = 60;
 	
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
@@ -240,7 +241,7 @@ public class SoiExecutive extends TimedFSM {
 			e.printStackTrace();
 		}
 		// FIXME make sure we wait for reply transmission...
-		sendViaIridium(reply, 60);
+		sendViaIridium(reply, DEFAULT_COMM_TIMEOUT);
 	}
 
 	@Consume
@@ -308,13 +309,16 @@ public class SoiExecutive extends TimedFSM {
 	}	
 
 	public FSMState init(FollowRefState state) {
-	    printFSMStateName("init");
+		printFSMState();
 		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
+		String txtDeadline = "INFO: Execution will end by "+deadline; 
+		sendViaSms(txtDeadline, SoiExecutive.DEFAULT_COMM_TIMEOUT);
+		sendViaIridium(txtDeadline, SoiExecutive.DEFAULT_COMM_TIMEOUT);
 		return this::idleAtSurface;
 	}
 
 	public FSMState idleAtSurface(FollowRefState state) {
-		printFSMStateName("idleAtSurface");
+		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
@@ -322,13 +326,13 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState idle(FollowRefState state) {
-		printFSMStateName("idle");
+		printFSMState();
 		print("Waiting for plan...");
 		return this::idle;
 	}
 
 	public FSMState exec(FollowRefState state) {
-		printFSMStateName("exec");
+		printFSMState();
 		if (plan == null)
 			return this::idleAtSurface;
 
@@ -395,7 +399,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState descend(FollowRefState ref) {
-		printFSMStateName("descend");
+		printFSMState();
 		setDepth(max_depth);
 		
 		secs_underwater++;
@@ -437,7 +441,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState ascend(FollowRefState ref) {
-		printFSMStateName("ascend");
+		printFSMState();
 		setDepth(min_depth);
 		
 		secs_underwater++;
@@ -473,7 +477,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 	
 	public FSMState start_descend(FollowRefState ref) {
-		printFSMStateName("start_descend");
+		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		
 		secs_underwater++;
@@ -502,7 +506,7 @@ public class SoiExecutive extends TimedFSM {
 	}	
 	
 	public FSMState communicate(FollowRefState ref) {
-		printFSMStateName("communicate");
+		printFSMState();
 		int seconds = wait_secs;
 		if (plan != null && plan.waypoint(wpt_index) != null)
 			seconds = Math.max(seconds, plan.waypoint(wpt_index).getDuration());
@@ -535,7 +539,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState start_waiting(FollowRefState ref) {
-		printFSMStateName("start_waiting");
+		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
@@ -546,7 +550,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 	
 	public FSMState surface_to_report_error(FollowRefState ref) {
-		printFSMStateName("surface_to_report_error");
+		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		setLocation(pos[0], pos[1]);
 		setDepth(0);
@@ -558,7 +562,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 	
 	public FSMState report_error(FollowRefState ref) {
-		printFSMStateName("report_error");
+		printFSMState();
 		VehicleMedium medium = get(VehicleMedium.class); 
 		
 		// arrived at surface
@@ -573,7 +577,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	public FSMState wait(FollowRefState ref) {
-		printFSMStateName("wait");
+		printFSMState();
 		secs_underwater++;
 		if (underwaterForTooLong()) {
 			errors.add("Underwater for too long ("+secs_underwater+")");
@@ -594,7 +598,7 @@ public class SoiExecutive extends TimedFSM {
 			return this::wait;
 		}
 	}
-
+	
 	public static void main(String[] args) throws Exception {
 		if (args.length != 1) {
 			System.err.println("Usage: java -jar SoiExec.jar <FILE>");

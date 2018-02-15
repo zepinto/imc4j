@@ -13,7 +13,7 @@ public class FSMController extends BackSeatDriver {
 		}
 		else {
 			try {
-                state = state.step(fref);
+				state = state.step(fref);
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -22,8 +22,9 @@ public class FSMController extends BackSeatDriver {
 		}
 	}
 	
-    protected void printFSMStateName(String name) {
-        print("FSM> Steping into state " + name);
+    protected void printFSMState() {
+    	String method = currentThread().getStackTrace()[2].getMethodName();
+        print("FSM State: " + method);
     }
 
 	@FunctionalInterface

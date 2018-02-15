@@ -609,7 +609,7 @@ public class DistressSurvey extends TimedFSM {
     }
 
     public FSMState loiterUnderwaterState(FollowRefState ref) {
-        printFSMStateName("loiterUnderwaterState");
+        printFSMState();
         markState(this::loiterUnderwaterState);
         
         double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
@@ -635,7 +635,7 @@ public class DistressSurvey extends TimedFSM {
     }
 
     public FSMState loiterUnderwaterStayState(FollowRefState ref) {
-        printFSMStateName("loiterUnderwaterStayState");
+    	printFSMState();
         markState(this::loiterUnderwaterState);
 
         if (!isUnderwater()) {
@@ -682,7 +682,7 @@ public class DistressSurvey extends TimedFSM {
     }
 
     public FSMState goSurfaceState(FollowRefState ref) {
-        printFSMStateName("goSurfaceState");
+    	printFSMState();
         // markState(this::goSurfaceState);
         
         double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
@@ -706,7 +706,7 @@ public class DistressSurvey extends TimedFSM {
     }
 
     public FSMState goSurfaceStayState(FollowRefState ref) {
-        printFSMStateName("goSurfaceStayState");
+    	printFSMState();
         // markState(this::goSurfaceState);
 
         if (isUnderwater()) {
@@ -765,7 +765,7 @@ public class DistressSurvey extends TimedFSM {
     }
 
     public FSMState approachSurveyPointState(FollowRefState ref) {
-        printFSMStateName("approachSurveyPointState");
+    	printFSMState();
         markState(this::approachSurveyPointState);
         
         surveyStage = SurveyStageEnum.ON_GOING;
@@ -787,7 +787,7 @@ public class DistressSurvey extends TimedFSM {
     }
 
     public FSMState approachSurveyPointStayState(FollowRefState ref) {
-        printFSMStateName("approachSurveyPointStayState");
+    	printFSMState();
         markState(this::approachSurveyPointState);
 
         if (isGoSurfaceTime()) {
@@ -816,7 +816,7 @@ public class DistressSurvey extends TimedFSM {
     }
 
     public FSMState firstSurveyPointState(FollowRefState ref) {
-        printFSMStateName("firstSurveyPointState");
+    	printFSMState();
         markState(this::firstSurveyPointState);
 
         if (surfaceOnCorners && (SurveyPathEnum.FIRST.compareTo(surfacePointIdx) == 0
@@ -855,7 +855,7 @@ public class DistressSurvey extends TimedFSM {
     }
 
     public FSMState firstSurveyPointStayState(FollowRefState ref) {
-        printFSMStateName("firstSurveyPointStayState");
+    	printFSMState();
         markState(this::firstSurveyPointState);
 
         DistressPosition dp = AisCsvParser.distressPosition;
