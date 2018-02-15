@@ -238,6 +238,19 @@ public class Plan {
 		return true;
 	}
 	
+	public Date getETA() {
+		if (!scheduledInTheFuture())
+			return null;
+		
+		synchronized (waypoints) {
+			Waypoint wpt = 	waypoints.get(waypoints.size()-1);
+			if (wpt != null)
+				return wpt.getArrivalTime();
+		}
+	
+		return null;
+	}
+	
 
 	public static void main(String[] args) throws Exception {
 		Plan plan = new Plan("test");

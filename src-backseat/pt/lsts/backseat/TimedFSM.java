@@ -12,9 +12,9 @@ public class TimedFSM extends FSMController {
 	public void update(FollowRefState fref) {
 		if (deadline != null && deadline.getTime() < System.currentTimeMillis()) {
 			print("Deadline reached, terminating.");
-			sendViaIridium("ERROR: \"Deadline reached, terminating.\"", 60);
-			sendViaSms("ERROR: \"Deadline reached, terminating.\"", 60);
-			end();
+			sendViaIridium("ERROR: \"Deadline reached, stopped.\"", 60);
+			sendViaSms("ERROR: \"Deadline reached, stopped.\"", 60);
+			setPaused(true);
 		}
 		else
 			super.update(fref);

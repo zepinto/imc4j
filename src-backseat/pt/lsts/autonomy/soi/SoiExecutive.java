@@ -171,8 +171,21 @@ public class SoiExecutive extends TimedFSM {
 						plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, pos[0], pos[1], speed);
 					} else
 						plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, speed);
-				}					
+				}
+				
+				if (plan.getETA().after(deadline)) {
+					int timeDiff = (int) ((plan.getETA().getTime() - deadline.getTime()) / 1000.0);
+					String err = "Deadline would be reached " + timeDiff + " seconds before the end of the plan";
+					System.out.println(err);
+					plan = null;
+					errors.add(err);
+					state = this::surface_to_report_error;
+					reply.type = SoiCommand.TYPE.SOITYPE_ERROR;
+					reply.plan = null;
+					break;				
+				}
 				wpt_index = 0;
+				
 				print("Start executing this plan:");
 				print("" + plan);
 				state = this::start_waiting;				
