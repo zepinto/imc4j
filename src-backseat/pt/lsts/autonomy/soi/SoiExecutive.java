@@ -116,9 +116,9 @@ public class SoiExecutive extends TimedFSM {
 				EstimatedState s = get(EstimatedState.class);
 				if (s != null) {
 					double[] pos = WGS84Utilities.toLatLonDepth(s);
-					plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
+					plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, pos[0], pos[1], speed);
 				} else
-					plan.scheduleWaypoints(System.currentTimeMillis(), speed);
+					plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, speed);
 
 				print("Received soi plan:");
 				print("" + plan);
@@ -167,9 +167,9 @@ public class SoiExecutive extends TimedFSM {
 					EstimatedState s = get(EstimatedState.class);
 					if (s != null) {
 						double[] pos = WGS84Utilities.toLatLonDepth(s);
-						plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
+						plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, pos[0], pos[1], speed);
 					} else
-						plan.scheduleWaypoints(System.currentTimeMillis(), speed);
+						plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, speed);
 				}					
 				wpt_index = 0;
 				print("Start executing this plan:");
@@ -341,9 +341,9 @@ public class SoiExecutive extends TimedFSM {
 				EstimatedState s = get(EstimatedState.class);
 				if (s != null) {
 					double[] pos = WGS84Utilities.toLatLonDepth(s);
-					plan.scheduleWaypoints(System.currentTimeMillis(), pos[0], pos[1], speed);
+					plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, pos[0], pos[1], speed);
 				} else
-					plan.scheduleWaypoints(System.currentTimeMillis(), speed);
+					plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, speed);
 				print("Starting over...");
 				SoiCommand reply = new SoiCommand();
 				reply.command = COMMAND.SOICMD_GET_PLAN;

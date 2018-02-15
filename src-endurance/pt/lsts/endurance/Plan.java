@@ -177,26 +177,29 @@ public class Plan {
 		}
 	}
 
-	public void scheduleWaypoints(long startTime, double lat, double lon, double speed) {
-		long curTime = startTime;
+	public void scheduleWaypoints(long startTime, double minDuration, double lat, double lon, double speed) {
+		long curTime = startTime + (long)(minDuration * 1000);
 		synchronized (waypoints) {
 			for (Waypoint waypoint : waypoints) {
 				double distance = WGS84Utilities.distance(lat, lon, waypoint.getLatitude(), waypoint.getLongitude());
 				double timeToReach = distance / speed;
-				curTime += (long) (1000.0 * (timeToReach + waypoint.getDuration()));
+				waypoint.setDuration(Math.max(waypoint.getDuration(), (int)minDuration));
+				curTime += (long) (1000.0 * timeToReach);
 				waypoint.setArrivalTime(new Date(curTime));
+				
+				curTime += (long) (1000.0 * waypoint.getDuration());
 				lat = waypoint.getLatitude();
 				lon = waypoint.getLongitude();
 			}
 		}
 	}
 
-	public void scheduleWaypoints(long startTime, double speed) {
+	public void scheduleWaypoints(long startTime, double minDuration, double speed) {
 		if (waypoints.isEmpty())
 			return;
 
 		Waypoint start = waypoints.get(0);
-		scheduleWaypoints(startTime, start.getLatitude(), start.getLongitude(), speed);
+		scheduleWaypoints(startTime, minDuration, start.getLatitude(), start.getLongitude(), speed);
 	}
 
 	public String toString() {
