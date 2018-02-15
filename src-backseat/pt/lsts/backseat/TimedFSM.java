@@ -23,7 +23,7 @@ public class TimedFSM extends FSMController {
 	@Override
 	protected void printFSMState() {
     	String method = currentThread().getStackTrace()[2].getMethodName();
-        print("FSM State: " + method+" ("+((deadline.getTime() - System.currentTimeMillis()) / 1000)+" seconds left)");
+        print("FSM State: " + method+" ("+((deadline.getTime() - System.currentTimeMillis()) / 1000)+" left)");
     }
 	
 	public void setDeadline(Date date) {

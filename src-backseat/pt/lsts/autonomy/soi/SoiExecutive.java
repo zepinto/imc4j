@@ -225,6 +225,7 @@ public class SoiExecutive extends TimedFSM {
 
 		case SOICMD_RESUME:
 			print("CMD: Resume execution!");
+			resetDeadline();
 			if (paused) {
 				setPaused(false);
 				state = this::start_waiting;
@@ -242,6 +243,15 @@ public class SoiExecutive extends TimedFSM {
 		}
 		// FIXME make sure we wait for reply transmission...
 		sendViaIridium(reply, DEFAULT_COMM_TIMEOUT);
+	}
+	
+	private void resetDeadline() {
+		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
+		String txtDeadline = "INFO: Execution will end by "+deadline; 
+		sendViaSms(txtDeadline, SoiExecutive.DEFAULT_COMM_TIMEOUT);
+		sendViaIridium(txtDeadline, SoiExecutive.DEFAULT_COMM_TIMEOUT);
+		setDeadline(deadline);
+		print(txtDeadline);		
 	}
 
 	@Consume
@@ -311,9 +321,6 @@ public class SoiExecutive extends TimedFSM {
 	public FSMState init(FollowRefState state) {
 		printFSMState();
 		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
-		String txtDeadline = "INFO: Execution will end by "+deadline; 
-		sendViaSms(txtDeadline, SoiExecutive.DEFAULT_COMM_TIMEOUT);
-		sendViaIridium(txtDeadline, SoiExecutive.DEFAULT_COMM_TIMEOUT);
 		return this::idleAtSurface;
 	}
 
