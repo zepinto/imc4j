@@ -51,6 +51,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	protected String endPlan = null, plan_name = "back_seat";
 	private Reference reference = new Reference();
 	private ExecutorService executor = Executors.newCachedThreadPool();
+	private final double MAX_NEAR_DIST = 50;
 	
 	private ConcurrentHashMap<COMM_MEAN, LinkedBlockingDeque<TransmissionRequest>> pendingRequests = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<COMM_MEAN, TransmissionRequest> ongoingRequests = new ConcurrentHashMap<>();
@@ -123,9 +124,17 @@ public abstract class BackSeatDriver extends TcpClient {
 
 	public boolean arrivedXY() {
 		FollowRefState refState = get(FollowRefState.class);
-		if (refState == null || refState.reference == null)
+		EstimatedState state = get(EstimatedState.class);
+		
+		if (refState == null || refState.reference == null || state == null)
 			return false;
 
+		// check if vehicle is actually near the destination
+		double lld[] = WGS84Utilities.toLatLonDepth(state);
+		double dist = WGS84Utilities.distance(lld[0], lld[1], Math.toDegrees(reference.lat), Math.toDegrees(reference.lon));
+		if (dist > MAX_NEAR_DIST)
+			return false;
+		
 		if (refState.reference.lat != reference.lat || refState.reference.lon != reference.lon)
 			return false;
 
