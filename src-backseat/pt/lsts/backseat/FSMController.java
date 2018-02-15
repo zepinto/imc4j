@@ -24,7 +24,7 @@ public class FSMController extends BackSeatDriver {
 	
     protected void printFSMState() {
     	String method = currentThread().getStackTrace()[2].getMethodName();
-        print("FSM State: " + method);
+        print("FSM State: " + method);        
     }
 
 	@FunctionalInterface

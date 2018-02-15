@@ -512,9 +512,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	protected Future<Void> sendVia(String text, TransmissionRequest.COMM_MEAN mean, int ttl) {
 		final TransmissionRequest request = createRequest(text, mean, ttl);
 		pendingRequests.get(mean).add(request);
-
 		sendPending();
-				
 		return executor.submit(new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
