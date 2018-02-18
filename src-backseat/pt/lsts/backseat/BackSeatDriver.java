@@ -2,6 +2,7 @@ package pt.lsts.backseat;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -22,6 +23,7 @@ import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.FollowReference;
 import pt.lsts.imc4j.msg.GpsFix;
+import pt.lsts.imc4j.msg.IridiumTxStatus;
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.msg.MessageFactory;
 import pt.lsts.imc4j.msg.PlanControl;
@@ -38,6 +40,7 @@ import pt.lsts.imc4j.msg.TransmissionRequest;
 import pt.lsts.imc4j.msg.TransmissionRequest.COMM_MEAN;
 import pt.lsts.imc4j.msg.TransmissionRequest.DATA_MODE;
 import pt.lsts.imc4j.msg.TransmissionStatus;
+import pt.lsts.imc4j.msg.TransmissionStatus.STATUS;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.net.TcpClient;
@@ -52,6 +55,8 @@ public abstract class BackSeatDriver extends TcpClient {
 	private Reference reference = new Reference();
 	private ExecutorService executor = Executors.newCachedThreadPool();
 	private final double MAX_NEAR_DIST = 50;
+	
+	private static boolean IRIDIUM_SIMULATION = false;
 	
 	private ConcurrentHashMap<COMM_MEAN, LinkedBlockingDeque<TransmissionRequest>> pendingRequests = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<COMM_MEAN, TransmissionRequest> ongoingRequests = new ConcurrentHashMap<>();
@@ -270,6 +275,33 @@ public abstract class BackSeatDriver extends TcpClient {
 		startCommandTime = System.currentTimeMillis();
 	}
 	
+	@Periodic(80_000)
+	public void iridiumSimulation() {
+		if (!IRIDIUM_SIMULATION)
+			return;
+
+		VehicleMedium medium = get(VehicleMedium.class);
+		if (medium == null || medium.medium == MEDIUM.VM_UNDERWATER)
+			return;
+		
+		synchronized (requests_sent) {
+			for (Entry<Integer, Message> entry : requests_sent.entrySet()) {
+				TransmissionStatus status = new TransmissionStatus();
+				status.req_id = entry.getKey();
+				status.status = STATUS.TSTAT_DELIVERED;
+				requests_sent.put(entry.getKey(), status);
+				ongoingRequests.clear();
+				System.out.println("Simulated delivery of "+entry.getKey());
+			}			
+		}		
+		
+		IridiumTxStatus status = new IridiumTxStatus();
+		status.src = remoteSrc;		
+		status.status = IridiumTxStatus.STATUS.TXSTATUS_EMPTY;
+		dispatch(status);
+		
+	}
+	
 	@Periodic(5000)
 	public final void printState() {
 		EstimatedState state = get(EstimatedState.class);
@@ -332,6 +364,10 @@ public abstract class BackSeatDriver extends TcpClient {
 	public BackSeatDriver() {
 		super();
 		register(this);
+		
+		if (IRIDIUM_SIMULATION) {
+			System.err.println("Simulated delivery of messages!");
+		}
 	}
 
 	protected void setParam(String entity, String param, String value) {

@@ -127,13 +127,13 @@ public class SoiExecutive extends TimedFSM {
 
 		case SOICMD_EXEC:
 			print("CMD: Exec plan!");
-			if (cmd.plan == null) {
+			if (cmd.plan == null || cmd.plan.waypoints.isEmpty()) {
 				plan = null;
 				state = this::idleAtSurface;
 			}
 			else {
 				plan = Plan.parse(cmd.plan);
-
+				
 				if (!plan.scheduledInTheFuture()) {
 					EstimatedState s = get(EstimatedState.class);
 					if (s != null) {
@@ -155,13 +155,15 @@ public class SoiExecutive extends TimedFSM {
 					break;				
 				}
 				wpt_index = 0;
+				reply.plan = plan.asImc();
 				
 				print("Start executing this plan:");
 				print("" + plan);
-				state = this::start_waiting;				
+				state = this::start_waiting;		
+				
 			}
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
-			reply.plan = plan.asImc();
+			
 			break;
 
 		case SOICMD_GET_PARAMS:
@@ -532,7 +534,9 @@ public class SoiExecutive extends TimedFSM {
 		}
 		else if (count_secs > min_wait) {
 			IridiumTxStatus iridiumStatus = get(IridiumTxStatus.class);
-			 if (iridiumStatus != null && iridiumStatus.status == STATUS.TXSTATUS_EMPTY) {
+			
+			if (iridiumStatus != null && iridiumStatus.timestamp > (System.currentTimeMillis() / 1000.0) - 3
+					&& iridiumStatus.status == STATUS.TXSTATUS_EMPTY) {
 				 print("Synchronized with server in "+count_secs+" seconds. Advancing to next waypoint.");
 				 return this::exec;
 			 }
