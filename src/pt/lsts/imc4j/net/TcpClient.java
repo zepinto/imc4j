@@ -169,13 +169,23 @@ public class TcpClient extends Thread {
 	}
 	
 	SimpleDateFormat sdf = new SimpleDateFormat("[YYYY-MM-dd HH:mm:ss.SS] ");
+	public void printError(String text) {
+		print(text, true);
+	}
 	public void print(String text) {
+		print(text, false);		
+	}
+	
+	public void print(String text, boolean error) {
 		
 		LogBookEntry lbe = new LogBookEntry();
 		lbe.text = text;
 		lbe.htime = System.currentTimeMillis() / 1000.0;
 		lbe.src = remoteSrc;
-		lbe.type = LogBookEntry.TYPE.LBET_INFO;
+		if (error)
+			lbe.type = LogBookEntry.TYPE.LBET_ERROR;
+		else
+			lbe.type = LogBookEntry.TYPE.LBET_INFO;
 		lbe.context = "Back Seat Driver";
 		try {
 			send(lbe);
@@ -184,7 +194,10 @@ public class TcpClient extends Thread {
 		}
 		
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		System.out.println(sdf.format(new Date()) + text);
+		if (error)
+			System.err.println(sdf.format(new Date()) + text);
+		else
+			System.out.println(sdf.format(new Date()) + text);
 	}
 	
 	public void sendReport(EnumSet<ReportControl.COMM_INTERFACE> interfaces) {

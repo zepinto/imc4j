@@ -21,17 +21,16 @@ import pt.lsts.imc4j.msg.EntityParameters;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.FuelLevel;
+import pt.lsts.imc4j.msg.IridiumTxStatus;
 import pt.lsts.imc4j.msg.PlanControl;
 import pt.lsts.imc4j.msg.PlanControl.OP;
 import pt.lsts.imc4j.msg.PlanControlState;
-import pt.lsts.imc4j.msg.PlanDB;
-import pt.lsts.imc4j.msg.PlanDB.TYPE;
-import pt.lsts.imc4j.msg.PlanSpecification;
 import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.msg.SoiCommand;
 import pt.lsts.imc4j.msg.SoiCommand.COMMAND;
 import pt.lsts.imc4j.msg.StateReport;
 import pt.lsts.imc4j.msg.VehicleMedium;
+import pt.lsts.imc4j.msg.IridiumTxStatus.STATUS;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.util.PojoConfig;
 import pt.lsts.imc4j.util.WGS84Utilities;
@@ -81,7 +80,6 @@ public class SoiExecutive extends TimedFSM {
 	int descendSpeedRpm = 1300;
 	
 	private Plan plan = new Plan("idle");
-	private PlanSpecification spec = null;
 	private int secs_underwater = 0, count_secs = 0;
 	private int wpt_index = 0;
 	private ArrayList<String> errors = new ArrayList<>();
@@ -100,42 +98,14 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	@Consume
-	public void on(PlanDB planDb) {
-		if (planDb.op == PlanDB.OP.DBOP_DEL && planDb.type == TYPE.DBT_REQUEST) {
-			if (planDb.plan_id.equals(soi_plan_id)) {
-				print("Stop execution (SOI plan removed)");
-				spec = null;
-				plan = null;
-				wpt_index = 0;
-				state = this::idleAtSurface;
-			}
-		}
-		if (planDb.op == PlanDB.OP.DBOP_SET && planDb.type == TYPE.DBT_REQUEST) {
-			if (planDb.plan_id.equals(soi_plan_id)) {
-				spec = (PlanSpecification) planDb.arg;
-				plan = Plan.parse(spec);
-				EstimatedState s = get(EstimatedState.class);
-				if (s != null) {
-					double[] pos = WGS84Utilities.toLatLonDepth(s);
-					plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, pos[0], pos[1], speed);
-				} else
-					plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, speed);
-
-				print("Received soi plan:");
-				print("" + plan);
-				wpt_index = 0;
-				state = this::start_waiting;
-			}
-		}
-	}
-	
-	@Consume
 	public void on(PlanControl pControl) {		
 		if (pControl.op == OP.PC_START && pControl.type == PlanControl.TYPE.PC_FAILURE) {
 			if (pControl.plan_id.equals(soi_plan_id)) {
 				// Error during execution!
-				print("Detected error during execution. Ascending for report");
+				String err = "Detected error during execution: "+pControl.info;
+				printError(err);
 				errors.add(pControl.info);
+				print("Ascending for report");
 				state = this::surface_to_report_error;
 			}
 		}
@@ -176,7 +146,7 @@ public class SoiExecutive extends TimedFSM {
 				if (plan.getETA().after(deadline)) {
 					int timeDiff = (int) ((plan.getETA().getTime() - deadline.getTime()) / 1000.0);
 					String err = "Deadline would be reached " + timeDiff + " seconds before the end of the plan";
-					System.out.println(err);
+					printError(err);
 					plan = null;
 					errors.add(err);
 					state = this::surface_to_report_error;
@@ -424,7 +394,9 @@ public class SoiExecutive extends TimedFSM {
 		
 		secs_underwater++;
 		if (underwaterForTooLong()) {
-			errors.add("Underwater for too long ("+secs_underwater+")");
+			String err = "Underwater for too long ("+secs_underwater+")";
+			printError(err);
+			errors.add(err);
 			return this::surface_to_report_error;
 		}
 		
@@ -466,7 +438,9 @@ public class SoiExecutive extends TimedFSM {
 		
 		secs_underwater++;
 		if (underwaterForTooLong()) {
-			errors.add("Underwater for too long ("+secs_underwater+"s)");
+			String err = "Underwater for too long ("+secs_underwater+")";
+			printError(err);
+			errors.add(err);
 			return this::surface_to_report_error;
 		}
 		
@@ -502,7 +476,9 @@ public class SoiExecutive extends TimedFSM {
 		
 		secs_underwater++;
 		if (underwaterForTooLong()) {
-			errors.add("Underwater for too long ("+secs_underwater+")");
+			String err = "Underwater for too long ("+secs_underwater+")";
+			printError(err);
+			errors.add(err);
 			return this::surface_to_report_error;
 		}
 		
@@ -523,20 +499,21 @@ public class SoiExecutive extends TimedFSM {
 			setSpeed();
 			return this::descend;
 		}
-	}	
+	}
 	
 	public FSMState communicate(FollowRefState ref) {
 		printFSMState();
-		int seconds = wait_secs;
+		int max_wait = wait_secs * 3;
+		int min_wait = wait_secs;
 		if (plan != null && plan.waypoint(wpt_index) != null)
-			seconds = Math.max(seconds, plan.waypoint(wpt_index).getDuration());
+			min_wait = Math.max(min_wait, plan.waypoint(wpt_index).getDuration());
 		
 		while (!errors.isEmpty()) {
 			String error = errors.get(0);
 			if (error.length() > 132)
 				error = error.substring(0, 132);
-			sendViaSms("ERROR: "+error, seconds - count_secs - 1);
-			sendViaIridium("ERROR: "+error, seconds - count_secs - 1);
+			sendViaSms("ERROR: "+error, max_wait - count_secs - 1);
+			sendViaIridium("ERROR: "+error, max_wait - count_secs - 1);
 			errors.remove(0);
 		}
 		
@@ -545,17 +522,24 @@ public class SoiExecutive extends TimedFSM {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
-			sendViaIridium(createStateReport(), seconds - count_secs - 1);			
-			print("Will wait "+seconds+" seconds");
+			sendViaIridium(createStateReport(), max_wait - count_secs - 1);			
+			print("Will wait from "+min_wait+" to "+max_wait+" seconds");
 		}
 		
-		if (count_secs >= seconds) {
+		if (count_secs >= max_wait) {
+			print("Advancing to next waypoint as maximum time was reached.");
 			return this::exec;
-		} 
-		else {
-			count_secs++;			
-			return this::communicate;
 		}
+		else if (count_secs > min_wait) {
+			IridiumTxStatus iridiumStatus = get(IridiumTxStatus.class);
+			 if (iridiumStatus != null && iridiumStatus.status == STATUS.TXSTATUS_EMPTY) {
+				 print("Synchronized with server in "+count_secs+" seconds. Advancing to next waypoint.");
+				 return this::exec;
+			 }
+		}				
+		count_secs++;			
+		return this::communicate;
+		
 	}
 
 	public FSMState start_waiting(FollowRefState ref) {
@@ -600,7 +584,9 @@ public class SoiExecutive extends TimedFSM {
 		printFSMState();
 		secs_underwater++;
 		if (underwaterForTooLong()) {
-			errors.add("Underwater for too long ("+secs_underwater+")");
+			String err = "Underwater for too long ("+secs_underwater+")";
+			printError(err);
+			errors.add(err);
 			return this::surface_to_report_error;
 		}
 		
