@@ -133,9 +133,10 @@ public abstract class BackSeatDriver extends TcpClient {
 		
 		if (refState == null || refState.reference == null || state == null)
 			return false;
-
+		
 		// check if vehicle is actually near the destination
 		double lld[] = WGS84Utilities.toLatLonDepth(state);
+		
 		double dist = WGS84Utilities.distance(lld[0], lld[1], Math.toDegrees(reference.lat), Math.toDegrees(reference.lon));
 		if (dist > MAX_NEAR_DIST)
 			return false;
@@ -275,7 +276,7 @@ public abstract class BackSeatDriver extends TcpClient {
 		startCommandTime = System.currentTimeMillis();
 	}
 	
-	@Periodic(80_000)
+	@Periodic(45_000)
 	public void iridiumSimulation() {
 		if (!IRIDIUM_SIMULATION)
 			return;
@@ -513,7 +514,12 @@ public abstract class BackSeatDriver extends TcpClient {
 					
 					try {
 						send(req);
-						print("Sending "+req.req_id+" request using "+mean+": "+req.txt_data);
+						if (req.data_mode == DATA_MODE.DMODE_TEXT)
+							print("Sending "+req.req_id+" request using "+mean+": "+req.txt_data);
+						else if (req.data_mode == DATA_MODE.DMODE_INLINEMSG)
+							print("Sending "+req.req_id+" request using "+mean+": "+req.msg_data);
+						else
+							print("Sending "+req.req_id+" request using "+mean+": "+req.raw_data);
 						requests_sent.put(req.req_id, req);
 					}							
 					catch (Exception e) {
