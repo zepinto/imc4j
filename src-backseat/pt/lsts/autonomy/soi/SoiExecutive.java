@@ -29,9 +29,12 @@ import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.msg.SoiCommand;
 import pt.lsts.imc4j.msg.SoiCommand.COMMAND;
 import pt.lsts.imc4j.msg.StateReport;
+import pt.lsts.imc4j.msg.Temperature;
 import pt.lsts.imc4j.msg.VehicleMedium;
 import pt.lsts.imc4j.msg.IridiumTxStatus.STATUS;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
+import pt.lsts.imc4j.msg.VerticalProfile;
+import pt.lsts.imc4j.msg.VerticalProfile.PARAMETER;
 import pt.lsts.imc4j.util.PojoConfig;
 import pt.lsts.imc4j.util.WGS84Utilities;
 
@@ -79,11 +82,17 @@ public class SoiExecutive extends TimedFSM {
 	@Parameter(description = "Speed up before descending")
 	int descendSpeedRpm = 1300;
 	
+	@Parameter(description = "Upload temperature profiles when idle")
+	boolean uploadTemp = true;
+	
+	
 	private Plan plan = new Plan("idle");
 	private int secs_underwater = 0, count_secs = 0;
 	private int wpt_index = 0;
 	private ArrayList<String> txtMessages = new ArrayList<>();
 	private ArrayList<SoiCommand> replies = new ArrayList<>();
+	private ArrayList<VerticalProfile> profiles = new ArrayList<>();
+	private VerticalProfiler<Temperature> tempProfiler = new VerticalProfiler<>();
 	
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
@@ -250,6 +259,11 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 	
+	@Consume
+	public void on(Temperature temp) {
+		tempProfiler.setSample(get(EstimatedState.class), temp);
+	}
+	
 	
 	private StateReport createStateReport() {
 		EstimatedState estate = get(EstimatedState.class);
@@ -310,7 +324,17 @@ public class SoiExecutive extends TimedFSM {
 
 	public FSMState idle(FollowRefState state) {
 		printFSMState();
-		print("Waiting for plan...");
+		
+		if (!profiles.isEmpty() && uploadTemp) {
+			print("Sending vertical profile ("+(profiles.size()-1)+" left)...");
+			sendViaIridium(profiles.get(profiles.size()-1), wait_secs * 3);
+			profiles.remove(profiles.size()-1);
+			return this::communicate;					
+		}
+		else {
+			profiles.clear();
+			print("Waiting for plan...");
+		}
 		return this::idle;
 	}
 
@@ -371,6 +395,7 @@ public class SoiExecutive extends TimedFSM {
 			}
 		}
 
+		print("Vehicle now underwater. Setting speed according to ETA: "+speed+" m/s.");
 		setSpeed(speed, SpeedUnits.METERS_PS);
 	}
 
@@ -446,8 +471,11 @@ public class SoiExecutive extends TimedFSM {
 				print("Periodic surface");
 				return this::start_waiting;
 			} else {
-				if (max_depth != min_depth)
+				
+				if (max_depth != min_depth) {
 					print("Now descending (underwater for " + secs_underwater + " seconds).");
+					profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)max_depth, 20)));				
+				}
 				
 				return this::start_descend;
 			}
@@ -481,7 +509,6 @@ public class SoiExecutive extends TimedFSM {
 			return this::start_descend;
 		}
 		else {
-			print("Vehicle now underwater. Setting speed according to ETA.");
 			setSpeed();
 			return this::descend;
 		}
@@ -527,7 +554,8 @@ public class SoiExecutive extends TimedFSM {
 			
 			if (iridiumStatus != null && iridiumStatus.timestamp > (System.currentTimeMillis() / 1000.0) - 3
 					&& iridiumStatus.status == STATUS.TXSTATUS_EMPTY) {
-				 print("Synchronized with server in "+count_secs+" seconds. Advancing to next waypoint.");
+				
+				print("Synchronized with server in "+count_secs+" seconds. Advancing to next waypoint.");
 				 return this::exec;
 			 }
 		}				

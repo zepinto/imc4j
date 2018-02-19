@@ -8,22 +8,34 @@ import pt.lsts.imc4j.msg.ProfileSample;
 import pt.lsts.imc4j.msg.Salinity;
 import pt.lsts.imc4j.msg.VerticalProfile;
 import pt.lsts.imc4j.msg.VerticalProfile.PARAMETER;
+import pt.lsts.imc4j.util.WGS84Utilities;
 
 public class VerticalProfiler<T extends Message> {
 
 	ArrayList<ProfileSample> samples = new ArrayList<>();
 
 	double maxDepth = 0;
-
+	EstimatedState lastState = null;
+	
 	public void setSample(EstimatedState state, T value) {
+		if (state == null)
+			return;
+		
 		ProfileSample newSample = new ProfileSample();
 		maxDepth = Math.max(maxDepth, state.depth);
 		newSample.depth = (int) Math.round(state.depth * 10);
 		newSample.avg = value.getFloat("value");
 		samples.add(newSample);
+		lastState = state;
 	}
 
 	public VerticalProfile getProfile(VerticalProfile.PARAMETER param, int numDepths) {
+		
+		if (samples.isEmpty())
+			return null;
+		
+		double[] lld = WGS84Utilities.toLatLonDepth(lastState);
+		
 		VerticalProfile vp = new VerticalProfile();
 		vp.parameter = param;
 		double[] sums = new double[numDepths];
@@ -51,6 +63,8 @@ public class VerticalProfiler<T extends Message> {
 		samples.clear();
 		maxDepth = 0;
 		vp.numSamples = depthCount;
+		vp.lat = lld[0];
+		vp.lon = lld[1];
 		return vp;
 	}
 
