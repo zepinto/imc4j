@@ -82,13 +82,13 @@ public class SoiExecutive extends TimedFSM {
 	private Plan plan = new Plan("idle");
 	private int secs_underwater = 0, count_secs = 0;
 	private int wpt_index = 0;
-	private ArrayList<String> errors = new ArrayList<>();
-	private static final int DEFAULT_COMM_TIMEOUT = 60;
+	private ArrayList<String> txtMessages = new ArrayList<>();
+	private ArrayList<SoiCommand> replies = new ArrayList<>();
 	
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
 		setDeadline(new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000));
-		state = this::init;
+		state = this::idleAtSurface;
 	}
 	
 	public boolean underwaterForTooLong() {
@@ -104,10 +104,14 @@ public class SoiExecutive extends TimedFSM {
 				// Error during execution!
 				String err = "Detected error during execution: "+pControl.info;
 				printError(err);
-				errors.add(pControl.info);
+				txtMessages.add("ERROR: "+pControl.info);
 				print("Ascending for report");
 				state = this::surface_to_report_error;
 			}
+		}
+		
+		if (pControl.op == OP.PC_STOP && pControl.type == PlanControl.TYPE.PC_SUCCESS) {
+			state = this::start_waiting;
 		}
 	}
 
@@ -128,8 +132,7 @@ public class SoiExecutive extends TimedFSM {
 		case SOICMD_EXEC:
 			print("CMD: Exec plan!");
 			if (cmd.plan == null || cmd.plan.waypoints.isEmpty()) {
-				plan = null;
-				state = this::idleAtSurface;
+				plan = null;				
 			}
 			else {
 				plan = Plan.parse(cmd.plan);
@@ -148,8 +151,7 @@ public class SoiExecutive extends TimedFSM {
 					String err = "Deadline would be reached " + timeDiff + " seconds before the end of the plan";
 					printError(err);
 					plan = null;
-					errors.add(err);
-					state = this::surface_to_report_error;
+					txtMessages.add(err);
 					reply.type = SoiCommand.TYPE.SOITYPE_ERROR;
 					reply.plan = null;
 					break;				
@@ -158,12 +160,10 @@ public class SoiExecutive extends TimedFSM {
 				reply.plan = plan.asImc();
 				
 				print("Start executing this plan:");
-				print("" + plan);
-				state = this::start_waiting;		
+				print("" + plan);					
 				
 			}
-			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
-			
+			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;			
 			break;
 
 		case SOICMD_GET_PARAMS:
@@ -198,7 +198,6 @@ public class SoiExecutive extends TimedFSM {
 		case SOICMD_STOP:
 			print("CMD: Stop execution!");
 			setPaused(true);
-			state = this::start_waiting;
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
 
@@ -213,7 +212,6 @@ public class SoiExecutive extends TimedFSM {
 			resetDeadline();
 			if (paused) {
 				setPaused(false);
-				state = this::start_waiting;
 				return;
 			}
 			break;
@@ -226,15 +224,14 @@ public class SoiExecutive extends TimedFSM {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		// FIXME make sure we wait for reply transmission...
-		sendViaIridium(reply, DEFAULT_COMM_TIMEOUT);
+		replies.add(reply);		
+		state = this::start_waiting;
 	}
 	
 	private void resetDeadline() {
 		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
 		String txtDeadline = "INFO: Execution will end by "+deadline; 
-		sendViaSms(txtDeadline, SoiExecutive.DEFAULT_COMM_TIMEOUT);
-		sendViaIridium(txtDeadline, SoiExecutive.DEFAULT_COMM_TIMEOUT);
+		txtMessages.add(txtDeadline);
 		setDeadline(deadline);
 		print(txtDeadline);		
 	}
@@ -303,12 +300,6 @@ public class SoiExecutive extends TimedFSM {
 		
 	}	
 
-	public FSMState init(FollowRefState state) {
-		printFSMState();
-		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
-		return this::idleAtSurface;
-	}
-
 	public FSMState idleAtSurface(FollowRefState state) {
 		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
@@ -347,14 +338,7 @@ public class SoiExecutive extends TimedFSM {
 				reply.src = remoteSrc;
 				reply.dst = 0xFFFF;
 				reply.plan = plan.asImc();
-				sendViaIridium(reply, wait_secs);	
-				
-				try {
-					send(reply);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-
+				replies.add(reply);
 				return this::start_waiting;
 			} else
 				return this::idleAtSurface;
@@ -398,7 +382,7 @@ public class SoiExecutive extends TimedFSM {
 		if (underwaterForTooLong()) {
 			String err = "Underwater for too long ("+secs_underwater+")";
 			printError(err);
-			errors.add(err);
+			txtMessages.add("ERROR: "+err);
 			return this::surface_to_report_error;
 		}
 		
@@ -442,7 +426,7 @@ public class SoiExecutive extends TimedFSM {
 		if (underwaterForTooLong()) {
 			String err = "Underwater for too long ("+secs_underwater+")";
 			printError(err);
-			errors.add(err);
+			txtMessages.add("ERROR: "+err);
 			return this::surface_to_report_error;
 		}
 		
@@ -480,7 +464,7 @@ public class SoiExecutive extends TimedFSM {
 		if (underwaterForTooLong()) {
 			String err = "Underwater for too long ("+secs_underwater+")";
 			printError(err);
-			errors.add(err);
+			txtMessages.add("ERROR: "+err);
 			return this::surface_to_report_error;
 		}
 		
@@ -510,13 +494,19 @@ public class SoiExecutive extends TimedFSM {
 		if (plan != null && plan.waypoint(wpt_index) != null)
 			min_wait = Math.max(min_wait, plan.waypoint(wpt_index).getDuration());
 		
-		while (!errors.isEmpty()) {
-			String error = errors.get(0);
-			if (error.length() > 132)
-				error = error.substring(0, 132);
-			sendViaSms("ERROR: "+error, max_wait - count_secs - 1);
-			sendViaIridium("ERROR: "+error, max_wait - count_secs - 1);
-			errors.remove(0);
+		while (!txtMessages.isEmpty()) {
+			String txt = txtMessages.get(0);
+			if (txt.length() > 132)
+				txt = txt.substring(0, 132);
+			sendViaSms(txt, max_wait - count_secs - 1);
+			sendViaIridium(txt, max_wait - count_secs - 1);
+			txtMessages.remove(0);
+		}
+		
+		while (!replies.isEmpty()) {
+			SoiCommand cmd = replies.get(0);
+			sendViaIridium(cmd, max_wait - count_secs -1);
+			replies.remove(0);
 		}
 		
 		// Send "DUNE" report
@@ -590,7 +580,7 @@ public class SoiExecutive extends TimedFSM {
 		if (underwaterForTooLong()) {
 			String err = "Underwater for too long ("+secs_underwater+")";
 			printError(err);
-			errors.add(err);
+			txtMessages.add("ERROR: "+err);
 			return this::surface_to_report_error;
 		}
 		
