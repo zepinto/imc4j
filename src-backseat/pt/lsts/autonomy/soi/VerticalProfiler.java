@@ -25,14 +25,17 @@ public class VerticalProfiler<T extends Message> {
 		maxDepth = Math.max(maxDepth, state.depth);
 		newSample.depth = (int) Math.round(state.depth * 10);
 		newSample.avg = value.getFloat("value");
-		samples.add(newSample);
+		synchronized (samples) {
+			samples.add(newSample);	
+		}		
 		lastState = state;
 	}
 
 	public VerticalProfile getProfile(VerticalProfile.PARAMETER param, int numDepths) {
-		
-		if (samples.isEmpty())
-			return null;
+		synchronized (samples) {
+			if (samples.isEmpty())
+				return null;				
+		}
 		
 		double[] lld = WGS84Utilities.toLatLonDepth(lastState);
 		
@@ -41,13 +44,15 @@ public class VerticalProfiler<T extends Message> {
 		double[] sums = new double[numDepths];
 		int[] counts = new int[numDepths];
 
-		for (ProfileSample s : samples) {
-			double depth = (s.depth / 10);
-			int pos = (int) ((depth / maxDepth) * numDepths);
-			counts[pos]++;
-			sums[pos] += s.avg;
+		synchronized (samples) {
+			for (ProfileSample s : samples) {
+				double depth = (s.depth / 10);
+				int pos = (int) ((depth / maxDepth) * numDepths);
+				counts[pos]++;
+				sums[pos] += s.avg;
+			}	
 		}
-
+		
 		int depthCount = 0;
 
 		for (int pos = 0; pos < numDepths; pos++) {
@@ -60,7 +65,9 @@ public class VerticalProfiler<T extends Message> {
 			depthCount++;
 		}
 
-		samples.clear();
+		synchronized (samples) {
+			samples.clear();	
+		}		
 		maxDepth = 0;
 		vp.numSamples = depthCount;
 		vp.lat = lld[0];
