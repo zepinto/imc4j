@@ -65,7 +65,10 @@ public class SoiExecutive extends TimedFSM {
 	int mins_timeout = 600;
 
 	@Parameter(description = "Maximum time underwater")
-	int mins_under = 10;
+	int mins_offline = 10;
+	
+	@Parameter(description = "Maximum time without GPS")
+	int mins_under = 3;	
 
 	@Parameter(description = "Number where to send reports")
 	String sms_number = "+351914785889";
@@ -87,12 +90,12 @@ public class SoiExecutive extends TimedFSM {
 	
 	
 	private Plan plan = new Plan("idle");
-	private int secs_underwater = 0, count_secs = 0;
+	private int secs_no_comms = 0, count_secs = 0, secs_underwater = 0;
 	private int wpt_index = 0;
 	private ArrayList<String> txtMessages = new ArrayList<>();
 	private ArrayList<SoiCommand> replies = new ArrayList<>();
 	private ArrayList<VerticalProfile> profiles = new ArrayList<>();
-	private VerticalProfiler<Temperature> tempProfiler = new VerticalProfiler<>();
+	private VerticalProfiler<Temperature> tempProfiler = new VerticalProfiler<>();	
 	
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
@@ -100,10 +103,10 @@ public class SoiExecutive extends TimedFSM {
 		state = this::idleAtSurface;
 	}
 	
-	public boolean underwaterForTooLong() {
+	public boolean offlineForTooLong() {
 		 // Check if it has taken too long to go at the surface...
-		int max_time = mins_under * 60 * 2;
-		return secs_underwater > max_time;
+		int max_time = mins_offline * 60 * 2;
+		return secs_no_comms > max_time;
 	}
 
 	@Consume
@@ -264,6 +267,14 @@ public class SoiExecutive extends TimedFSM {
 		tempProfiler.setSample(get(EstimatedState.class), temp);
 	}
 	
+	@Consume
+	public void on(VehicleMedium medium) {
+		if (medium.medium == MEDIUM.VM_UNDERWATER)
+			secs_underwater++;
+		else
+			secs_underwater = 0;				
+	}
+	
 	
 	private StateReport createStateReport() {
 		EstimatedState estate = get(EstimatedState.class);
@@ -372,7 +383,7 @@ public class SoiExecutive extends TimedFSM {
 		setLocation(wpt.getLatitude(), wpt.getLongitude());
 		setSpeed();
 
-		return this::start_descend;
+		return this::align;
 	}
 
 	public void setSpeed() {
@@ -403,9 +414,9 @@ public class SoiExecutive extends TimedFSM {
 		printFSMState();
 		setDepth(max_depth);
 		
-		secs_underwater++;
-		if (underwaterForTooLong()) {
-			String err = "Underwater for too long ("+secs_underwater+")";
+		secs_no_comms++;
+		if (offlineForTooLong()) {
+			String err = "Offline for too long ("+secs_no_comms+")";
 			printError(err);
 			txtMessages.add("ERROR: "+err);
 			return this::surface_to_report_error;
@@ -445,20 +456,25 @@ public class SoiExecutive extends TimedFSM {
 
 	public FSMState ascend(FollowRefState ref) {
 		printFSMState();
-		setDepth(min_depth);
 		
-		secs_underwater++;
-		if (underwaterForTooLong()) {
-			String err = "Underwater for too long ("+secs_underwater+")";
+		double target_depth = min_depth;
+		if (mins_under > 0 && (secs_underwater / 60) >= mins_under)
+			target_depth = 0;						
+		
+		setDepth(target_depth);
+
+		secs_no_comms++;
+		if (offlineForTooLong()) {
+			String err = "Offline for too long ("+secs_no_comms+")";
 			printError(err);
 			txtMessages.add("ERROR: "+err);
 			return this::surface_to_report_error;
 		}
 		
-		if (secs_underwater / 60 >= mins_under) {
+		if (secs_no_comms / 60 >= mins_offline) {
 			print("Periodic surface");
 			return this::start_waiting;
-		}
+		}			
 
 		if (arrivedXY()) {
             print("Arrived at waypoint " + wpt_index);
@@ -466,31 +482,70 @@ public class SoiExecutive extends TimedFSM {
 			return this::start_waiting;
 		}
 
-		if (min_depth > 0 && arrivedZ() || !isUnderwater()) {
-			if (secs_underwater / 60 >= mins_under) {
+		if (target_depth > 0 && arrivedZ() || !isUnderwater()) {
+			if (secs_no_comms / 60 >= mins_offline) {
 				print("Periodic surface");
 				return this::start_waiting;
 			} else {
 				
-				if (max_depth != min_depth) {
-					print("Now descending (underwater for " + secs_underwater + " seconds).");
+				if (max_depth != target_depth) {
+					print("Now descending (disconnected for " + secs_no_comms + " seconds).");
 					profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)max_depth, 20)));				
 				}
 				
-				return this::start_descend;
+				return this::align;
 			}
 
 		} else
 			return this::ascend;
 	}
 	
-	public FSMState start_descend(FollowRefState ref) {
+	public FSMState align(FollowRefState ref) {
+		printFSMState();
+		EstimatedState state = get(EstimatedState.class);
+		double[] pos = WGS84Utilities.toLatLonDepth(state);
+		
+		secs_no_comms++;
+		if (offlineForTooLong()) {
+			String err = "Offline for too long ("+secs_no_comms+")";
+			printError(err);
+			txtMessages.add("ERROR: "+err);
+			return this::surface_to_report_error;
+		}
+		
+		if (arrivedXY()) {
+			print("Arrived at waypoint " + wpt_index);
+			wpt_index++;
+			return this::start_waiting;
+		}
+		double[] dest = getDestinationDegs();
+		// Difference between current and destination location
+		double[] diff = WGS84Utilities.WGS84displacement(pos[0], pos[1], 0, dest[0], dest[1], 0);
+		double des_ang = Math.toDegrees(Math.atan2(diff[1], diff[0]));
+		double cur_ang = Math.toDegrees(state.psi);
+		// Angle difference to destination (degrees)
+		double ang_diff = Math.abs(des_ang - cur_ang);
+		
+		setSpeed(descendSpeedRpm, SpeedUnits.RPM);
+		
+		// go underwater only if aligned with destination
+		if (ang_diff < 1) {
+			setDepth(max_depth);
+			return this::dive;
+		}
+		else {
+			setDepth(0);
+			return this::align;
+		}
+	}
+	
+	public FSMState dive(FollowRefState ref) {
 		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 		
-		secs_underwater++;
-		if (underwaterForTooLong()) {
-			String err = "Underwater for too long ("+secs_underwater+")";
+		secs_no_comms++;
+		if (offlineForTooLong()) {
+			String err = "Offline for too long ("+secs_no_comms+")";
 			printError(err);
 			txtMessages.add("ERROR: "+err);
 			return this::surface_to_report_error;
@@ -506,7 +561,7 @@ public class SoiExecutive extends TimedFSM {
 		setSpeed(descendSpeedRpm, SpeedUnits.RPM);
 		
 		if (pos[2] < 2 && pos[2] < max_depth) {
-			return this::start_descend;
+			return this::dive;
 		}
 		else {
 			setSpeed();
@@ -594,7 +649,7 @@ public class SoiExecutive extends TimedFSM {
 		// arrived at surface
 		if (medium != null && medium.medium == MEDIUM.VM_WATER) {
 			print("Now at surface, starting communications.");
-			secs_underwater = 0;
+			secs_no_comms = 0;
 			count_secs = 0;
 			return this::communicate;
 		}
@@ -604,9 +659,9 @@ public class SoiExecutive extends TimedFSM {
 
 	public FSMState wait(FollowRefState ref) {
 		printFSMState();
-		secs_underwater++;
-		if (underwaterForTooLong()) {
-			String err = "Underwater for too long ("+secs_underwater+")";
+		secs_no_comms++;
+		if (offlineForTooLong()) {
+			String err = "Offline for too long ("+secs_no_comms+")";
 			printError(err);
 			txtMessages.add("ERROR: "+err);
 			return this::surface_to_report_error;
@@ -618,7 +673,7 @@ public class SoiExecutive extends TimedFSM {
 			print("Now at surface, starting communications.");
 			double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 			setLocation(pos[0], pos[1]);
-			secs_underwater = 0;
+			secs_no_comms = 0;
 			count_secs = 0;
 			return this::communicate;
 		}

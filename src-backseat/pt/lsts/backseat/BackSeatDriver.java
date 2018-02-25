@@ -56,7 +56,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	private ExecutorService executor = Executors.newCachedThreadPool();
 	private final double MAX_NEAR_DIST = 50;
 	
-	private static boolean IRIDIUM_SIMULATION = false;
+	private static boolean IRIDIUM_SIMULATION = true;
 	
 	private ConcurrentHashMap<COMM_MEAN, LinkedBlockingDeque<TransmissionRequest>> pendingRequests = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<COMM_MEAN, TransmissionRequest> ongoingRequests = new ConcurrentHashMap<>();
@@ -72,6 +72,10 @@ public abstract class BackSeatDriver extends TcpClient {
 		reference.lat = Math.toRadians(latDegs);
 		reference.lon = Math.toRadians(lonDegs);
 		reference.flags.add(FLAGS.FLAG_LOCATION);
+	}
+	
+	public double[] getDestinationDegs() {
+		return new double[] {Math.toDegrees(reference.lat), Math.toDegrees(reference.lon)};
 	}
 
 	public void setDepth(double depth) {
