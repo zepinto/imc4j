@@ -62,10 +62,10 @@ public class SoiExecutive extends TimedFSM {
 	int host_port = 6006;
 
 	@Parameter(description = "Minutes before termination")
-	int mins_timeout = 600;
+	int mins_timeout = 2400;
 
 	@Parameter(description = "Maximum time underwater")
-	int mins_offline = 10;
+	int mins_offline = 15;
 	
 	@Parameter(description = "Maximum time without GPS")
 	int mins_under = 3;	
@@ -86,7 +86,7 @@ public class SoiExecutive extends TimedFSM {
 	int descendSpeedRpm = 1300;
 	
 	@Parameter(description = "Upload temperature profiles when idle")
-	boolean uploadTemp = true;
+	boolean uploadTemp = false;
 	
 	
 	private Plan plan = new Plan("idle");
@@ -231,11 +231,13 @@ public class SoiExecutive extends TimedFSM {
 			break;
 		}
 
+		print("Replying with "+reply);
+		
 		try {
 			send(reply);
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
+		}		
 		replies.add(reply);		
 		state = this::start_waiting;
 	}
@@ -340,7 +342,7 @@ public class SoiExecutive extends TimedFSM {
 			print("Sending vertical profile ("+(profiles.size()-1)+" left)...");
 			sendViaIridium(profiles.get(profiles.size()-1), wait_secs * 3);
 			profiles.remove(profiles.size()-1);
-			return this::communicate;					
+			return this::wait;					
 		}
 		else {
 			profiles.clear();
@@ -576,32 +578,34 @@ public class SoiExecutive extends TimedFSM {
 		if (plan != null && plan.waypoint(wpt_index) != null)
 			min_wait = Math.max(min_wait, plan.waypoint(wpt_index).getDuration());
 		
-		while (!txtMessages.isEmpty()) {
-			String txt = txtMessages.get(0);
-			if (txt.length() > 132)
-				txt = txt.substring(0, 132);
-			sendViaSms(txt, max_wait - count_secs - 1);
-			sendViaIridium(txt, max_wait - count_secs - 1);
-			txtMessages.remove(0);
-		}
-		
-		while (!replies.isEmpty()) {
-			SoiCommand cmd = replies.get(0);
-			sendViaIridium(cmd, max_wait - count_secs -1);
-			replies.remove(0);
-		}
-		
 		// Send "DUNE" report
 		if (count_secs == 0) {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
 			sendViaIridium(createStateReport(), max_wait - count_secs - 1);			
-			print("Will wait from "+min_wait+" to "+max_wait+" seconds");
+			print("Will wait from " + min_wait + " to " + max_wait + " seconds to send " + txtMessages.size()
+					+ " texts and " + replies.size() + " command replies.");			
+		}
+		else {
+			while (!replies.isEmpty()) {
+				SoiCommand cmd = replies.get(0);
+				sendViaIridium(cmd, max_wait - count_secs -1);
+				replies.remove(0);
+			}
+			
+			while (!txtMessages.isEmpty()) {
+				String txt = txtMessages.get(0);
+				if (txt.length() > 132)
+					txt = txt.substring(0, 132);
+				sendViaSms(txt, max_wait - count_secs - 1);
+				sendViaIridium(txt, max_wait - count_secs - 1);
+				txtMessages.remove(0);
+			}
 		}
 		
 		if (count_secs >= max_wait) {
-			print("Advancing to next waypoint as maximum time was reached.");
+			print("Advancing to next waypoint as maximum time was reached.");			
 			return this::exec;
 		}
 		else if (count_secs > min_wait) {

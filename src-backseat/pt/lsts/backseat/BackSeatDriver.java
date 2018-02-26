@@ -56,7 +56,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	private ExecutorService executor = Executors.newCachedThreadPool();
 	private final double MAX_NEAR_DIST = 50;
 	
-	private static boolean IRIDIUM_SIMULATION = true;
+	private static boolean IRIDIUM_SIMULATION = false;
 	
 	private ConcurrentHashMap<COMM_MEAN, LinkedBlockingDeque<TransmissionRequest>> pendingRequests = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<COMM_MEAN, TransmissionRequest> ongoingRequests = new ConcurrentHashMap<>();
@@ -541,7 +541,7 @@ public abstract class BackSeatDriver extends TcpClient {
 	protected Future<Void> sendVia(Message msg, TransmissionRequest.COMM_MEAN mean, int ttl) {
 		final TransmissionRequest request = createRequest(msg, mean, ttl);
 		pendingRequests.get(mean).add(request);
-		
+		print("Request to send "+msg.abbrev()+" using "+mean+" within "+ttl+" seconds");
 		sendPending();
 		
 		return executor.submit(new Callable<Void>() {
