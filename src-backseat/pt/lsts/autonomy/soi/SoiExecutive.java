@@ -88,6 +88,9 @@ public class SoiExecutive extends TimedFSM {
 	@Parameter(description = "Upload temperature profiles when idle")
 	boolean uploadTemp = false;
 	
+	@Parameter(description = "Align with destination waypoint before going underwater")
+	boolean alignBeforeDive = true;
+	
 	
 	private Plan plan = new Plan("idle");
 	private int secs_no_comms = 0, count_secs = 0, secs_underwater = 0;
@@ -495,7 +498,10 @@ public class SoiExecutive extends TimedFSM {
 					profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)max_depth, 20)));				
 				}
 				
-				return this::align;
+				if (alignBeforeDive)
+					return this::align;
+				else
+					return this::dive;
 			}
 
 		} else
