@@ -89,8 +89,7 @@ public class SoiExecutive extends TimedFSM {
 	boolean uploadTemp = false;
 	
 	@Parameter(description = "Align with destination waypoint before going underwater")
-	boolean alignBeforeDive = true;
-	
+	boolean alignBeforeDive = true;	
 	
 	private Plan plan = new Plan("idle");
 	private int secs_no_comms = 0, count_secs = 0, secs_underwater = 0;
@@ -100,18 +99,19 @@ public class SoiExecutive extends TimedFSM {
 	private ArrayList<VerticalProfile> profiles = new ArrayList<>();
 	private VerticalProfiler<Temperature> tempProfiler = new VerticalProfiler<>();	
 	
+	/**
+	 * Class constructor
+	 */
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
 		setDeadline(new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000));
 		state = this::idleAtSurface;
 	}
-	
-	public boolean offlineForTooLong() {
-		 // Check if it has taken too long to go at the surface...
-		int max_time = mins_offline * 60 * 2;
-		return secs_no_comms > max_time;
-	}
 
+	/**
+	 * In case the last plan failed, report the resulting error
+	 * @param pControl A {@link PlanControl} message
+ 	 */
 	@Consume
 	public void on(PlanControl pControl) {		
 		if (pControl.op == OP.PC_START && pControl.type == PlanControl.TYPE.PC_FAILURE) {
@@ -130,11 +130,14 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 
+	/**
+	 * React to incoming commands
+	 * @param cmd The received command
+	 */
 	@Consume
 	public void on(SoiCommand cmd) {
 		if (cmd.type != SoiCommand.TYPE.SOITYPE_REQUEST)
 			return;
-		System.out.println("SoiCommand!\n" + cmd);
 		SoiCommand reply = new SoiCommand();
 		reply.command = cmd.command;
 		reply.type = SoiCommand.TYPE.SOITYPE_ERROR;
@@ -241,16 +244,8 @@ public class SoiExecutive extends TimedFSM {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}		
-		replies.add(reply);		
+		replies.add(reply);
 		state = this::start_waiting;
-	}
-	
-	private void resetDeadline() {
-		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
-		String txtDeadline = "INFO: Execution will end by "+deadline; 
-		txtMessages.add(txtDeadline);
-		setDeadline(deadline);
-		print(txtDeadline);		
 	}
 
 	@Consume
@@ -280,56 +275,9 @@ public class SoiExecutive extends TimedFSM {
 			secs_underwater = 0;				
 	}
 	
-	
-	private StateReport createStateReport() {
-		EstimatedState estate = get(EstimatedState.class);
-		FuelLevel flevel = get(FuelLevel.class);
-		PlanControlState pcs = get(PlanControlState.class);
-		
-		StateReport report = new StateReport();
-		report.depth = estate == null || estate.depth == -1 ? 0xFFFF : (int) (estate.depth * 10);
-		report.altitude = estate == null || estate.alt == -1 ? 0xFFFF : (int) (estate.alt * 10);
-		report.speed = estate == null ? 0xFFFF : (int) (estate.u * 100);
-		report.fuel = flevel == null ? 255 : (int)flevel.value;
-		
-		if (estate != null) {
-			double[] loc = WGS84Utilities.toLatLonDepth(estate);
-			report.latitude = (float) loc[0];
-			report.longitude = (float) loc[1];
-			double rads = estate.psi;
-			while (rads < 0)
-				rads += (Math.PI * 2);
-			report.heading = (int) ((rads / (Math.PI * 2)) * 65535);
-		}				
-		
-		report.exec_state = -2;
-		if (pcs != null) {
-			switch (pcs.state) {
-			case PCS_EXECUTING:
-				report.exec_state = (int) pcs.plan_progress;
-				break;
-			case PCS_READY:
-				report.exec_state = -1;
-				break;
-			case PCS_INITIALIZING:
-				report.exec_state = -3;
-				break;				
-			case PCS_BLOCKED:
-				report.exec_state = -4;
-				break;
-			default:
-				break;
-			}
-		}
-		
-		if (plan != null)
-			report.plan_checksum = plan.checksum();
-		
-		report.stime = (int) (System.currentTimeMillis() / 1000);
-		return report;
-		
-	}	
-
+	/**
+	 * Actively go to the surface to wait for a plan
+	 */
 	public FSMState idleAtSurface(FollowRefState state) {
 		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
@@ -338,6 +286,9 @@ public class SoiExecutive extends TimedFSM {
 		return this::idle;
 	}
 
+	/**
+	 * Wait for a plan to arrive
+	 */
 	public FSMState idle(FollowRefState state) {
 		printFSMState();
 		
@@ -354,6 +305,9 @@ public class SoiExecutive extends TimedFSM {
 		return this::idle;
 	}
 
+	/**
+	 * Execute the next waypoint
+	 */
 	public FSMState exec(FollowRefState state) {
 		printFSMState();
 		if (plan == null)
@@ -391,30 +345,9 @@ public class SoiExecutive extends TimedFSM {
 		return this::align;
 	}
 
-	public void setSpeed() {
-		Waypoint wpt = plan.waypoint(wpt_index);
-		double speed = this.speed;
-
-		if (wpt == null)
-			speed = 0;
-
-		if (wpt.getArrivalTime() != null) {
-			double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
-			double dist = WGS84Utilities.distance(wpt.getLatitude(), wpt.getLongitude(), pos[0], pos[1]);
-			double secs = (wpt.getArrivalTime().getTime() - System.currentTimeMillis()) / 1000.0;
-
-			if (secs < 0) {
-				speed = max_speed;
-			} else {
-				speed = Math.min(max_speed, dist / secs);
-				speed = Math.max(min_speed, speed);
-			}
-		}
-
-		print("Setting speed according to ETA: "+speed+" m/s.");
-		setSpeed(speed, SpeedUnits.METERS_PS);
-	}
-
+	/**
+	 * Go to maximum depth
+	 */
 	public FSMState descend(FollowRefState ref) {
 		printFSMState();
 		setDepth(max_depth);
@@ -459,6 +392,9 @@ public class SoiExecutive extends TimedFSM {
 			return this::descend;
 	}
 
+	/**
+	 * Go to minimum depth
+	 */
 	public FSMState ascend(FollowRefState ref) {
 		printFSMState();
 		
@@ -511,6 +447,9 @@ public class SoiExecutive extends TimedFSM {
 			return this::ascend;
 	}
 	
+	/**
+	 * Right before diving, align yaw with target waypoint
+	 */
 	public FSMState align(FollowRefState ref) {
 		printFSMState();
 		EstimatedState state = get(EstimatedState.class);
@@ -550,6 +489,9 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 	
+	/**
+	 * Go underwater at fixed RPM speed
+	 */
 	public FSMState dive(FollowRefState ref) {
 		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
@@ -580,6 +522,9 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 	
+	/**
+	 * Send a position report and any pending replies / errors
+	 */
 	public FSMState communicate(FollowRefState ref) {
 		printFSMState();
 		int max_wait = wait_secs * 3;
@@ -632,6 +577,9 @@ public class SoiExecutive extends TimedFSM {
 		
 	}
 
+	/**
+	 * Request the vehicle to (actively) go at the surface
+	 */
 	public FSMState start_waiting(FollowRefState ref) {
 		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
@@ -643,6 +591,9 @@ public class SoiExecutive extends TimedFSM {
 		return this::wait;
 	}
 	
+	/**
+	 * Stop the motor and start waiting to float to the surface
+	 */
 	public FSMState surface_to_report_error(FollowRefState ref) {
 		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
@@ -655,6 +606,9 @@ public class SoiExecutive extends TimedFSM {
 		return this::report_error;
 	}
 	
+	/**
+	 * Wait to arrive at the surface before communications
+	 */
 	public FSMState report_error(FollowRefState ref) {
 		printFSMState();
 		VehicleMedium medium = get(VehicleMedium.class); 
@@ -670,6 +624,9 @@ public class SoiExecutive extends TimedFSM {
 			return this::report_error;
 	}
 
+	/**
+	 * Actively go at the surface before communications
+	 */
 	public FSMState wait(FollowRefState ref) {
 		printFSMState();
 		secs_no_comms++;
@@ -695,6 +652,108 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 	
+	/**
+	 * Set the desired speed based on current ETA and distance
+	 */
+	public void setSpeed() {
+		Waypoint wpt = plan.waypoint(wpt_index);
+		double speed = this.speed;
+
+		if (wpt == null)
+			speed = 0;
+
+		if (wpt.getArrivalTime() != null) {
+			double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+			double dist = WGS84Utilities.distance(wpt.getLatitude(), wpt.getLongitude(), pos[0], pos[1]);
+			double secs = (wpt.getArrivalTime().getTime() - System.currentTimeMillis()) / 1000.0;
+
+			if (secs < 0) {
+				speed = max_speed;
+			} else {
+				speed = Math.min(max_speed, dist / secs);
+				speed = Math.max(min_speed, speed);
+			}
+		}
+
+		print("Setting speed according to ETA: "+speed+" m/s.");
+		setSpeed(speed, SpeedUnits.METERS_PS);
+	}
+	
+	/**
+	 * Check if the vehicle has been disconnected for too long
+	 * @return <code>true</code> if the vehicle has been more than <code>mins_offline</code> minutes disconnected. 
+	 */
+	public boolean offlineForTooLong() {
+		 // Check if it has taken too long to go at the surface...
+		int max_time = mins_offline * 60 * 2;
+		return secs_no_comms > max_time;
+	}
+	
+	/**
+	 * Reset watchdog based on timeout parameter
+	 */
+	private void resetDeadline() {
+		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
+		String txtDeadline = "INFO: Execution will end by "+deadline; 
+		txtMessages.add(txtDeadline);
+		setDeadline(deadline);
+		print(txtDeadline);		
+	}
+	
+
+	/**
+	 * Generate state report to be sent over Iridium
+	 * @return A {@link StateReport} to be sent over Iridium
+	 */
+	private StateReport createStateReport() {
+		EstimatedState estate = get(EstimatedState.class);
+		FuelLevel flevel = get(FuelLevel.class);
+		PlanControlState pcs = get(PlanControlState.class);
+		
+		StateReport report = new StateReport();
+		report.depth = estate == null || estate.depth == -1 ? 0xFFFF : (int) (estate.depth * 10);
+		report.altitude = estate == null || estate.alt == -1 ? 0xFFFF : (int) (estate.alt * 10);
+		report.speed = estate == null ? 0xFFFF : (int) (estate.u * 100);
+		report.fuel = flevel == null ? 255 : (int)flevel.value;
+		
+		if (estate != null) {
+			double[] loc = WGS84Utilities.toLatLonDepth(estate);
+			report.latitude = (float) loc[0];
+			report.longitude = (float) loc[1];
+			double rads = estate.psi;
+			while (rads < 0)
+				rads += (Math.PI * 2);
+			report.heading = (int) ((rads / (Math.PI * 2)) * 65535);
+		}				
+		
+		report.exec_state = -2;
+		if (pcs != null) {
+			switch (pcs.state) {
+			case PCS_EXECUTING:
+				report.exec_state = (int) pcs.plan_progress;
+				break;
+			case PCS_READY:
+				report.exec_state = -1;
+				break;
+			case PCS_INITIALIZING:
+				report.exec_state = -3;
+				break;				
+			case PCS_BLOCKED:
+				report.exec_state = -4;
+				break;
+			default:
+				break;
+			}
+		}
+		
+		if (plan != null)
+			report.plan_checksum = plan.checksum();
+		
+		report.stime = (int) (System.currentTimeMillis() / 1000);
+		return report;
+		
+	}
+
 	public static void main(String[] args) throws Exception {
 		if (args.length != 1) {
 			System.err.println("Usage: java -jar SoiExec.jar <FILE>");
