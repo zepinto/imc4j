@@ -62,9 +62,9 @@ public class SoiExecutive extends TimedFSM {
 	int host_port = 6006;
 
 	@Parameter(description = "Minutes before termination")
-	int mins_timeout = 2400;
+	int mins_timeout = 600;
 
-	@Parameter(description = "Maximum time underwater")
+	@Parameter(description = "Maximum time without reporting position")
 	int mins_offline = 15;
 	
 	@Parameter(description = "Maximum time without GPS")
@@ -411,7 +411,7 @@ public class SoiExecutive extends TimedFSM {
 			}
 		}
 
-		print("Vehicle now underwater. Setting speed according to ETA: "+speed+" m/s.");
+		print("Setting speed according to ETA: "+speed+" m/s.");
 		setSpeed(speed, SpeedUnits.METERS_PS);
 	}
 
@@ -498,8 +498,11 @@ public class SoiExecutive extends TimedFSM {
 					profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)max_depth, 20)));				
 				}
 				
-				if (alignBeforeDive)
-					return this::align;
+				if (isUnderwater())
+					return this::descend;
+				else 
+					if (alignBeforeDive)
+						return this::align;
 				else
 					return this::dive;
 			}
