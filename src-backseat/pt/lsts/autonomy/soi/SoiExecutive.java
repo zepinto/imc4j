@@ -44,52 +44,46 @@ public class SoiExecutive extends TimedFSM {
 	double speed = 1;
 
 	@Parameter(description = "Maximum Depth")
-	double max_depth = 10;
+	double maxDepth = 10;
 
 	@Parameter(description = "Minimum Depth")
-	double min_depth = 0.0;
+	double minDepth = 0.0;
 
 	@Parameter(description = "Maximum Speed")
-	double max_speed = 1.5;
+	double maxSpeed = 1.5;
 
 	@Parameter(description = "Minimum Speed")
-	double min_speed = 0.7;
+	double minSpeed = 0.7;
 
 	@Parameter(description = "DUNE Host Address")
-	String host_addr = "127.0.0.1";
+	String hAddr = "127.0.0.1";
 
 	@Parameter(description = "DUNE Host Port (TCP)")
-	int host_port = 6006;
+	int hPort = 6006;
 
 	@Parameter(description = "Minutes before termination")
-	int mins_timeout = 600;
+	int timeout = 600;
 
 	@Parameter(description = "Maximum time without reporting position")
-	int mins_offline = 15;
+	int minsOff = 15;
 	
 	@Parameter(description = "Maximum time without GPS")
-	int mins_under = 3;	
-
-	@Parameter(description = "Number where to send reports")
-	String sms_number = "+351914785889";
+	int minsUnder = 3;	
 
 	@Parameter(description = "Seconds to idle at each vertex")
-	int wait_secs = 60;
-
-	@Parameter(description = "SOI plan identifier")
-	String soi_plan_id = "soi_plan";
+	int wptSecs = 60;
 
 	@Parameter(description = "Cyclic execution")
 	boolean cycle = false;
 	
 	@Parameter(description = "Speed up before descending")
-	int descendSpeedRpm = 1300;
+	int descRpm = 1300;
 	
 	@Parameter(description = "Upload temperature profiles when idle")
-	boolean uploadTemp = false;
+	boolean upTemp = false;
 	
 	@Parameter(description = "Align with destination waypoint before going underwater")
-	boolean alignBeforeDive = true;	
+	boolean align = true;
 	
 	private Plan plan = new Plan("idle");
 	private int secs_no_comms = 0, count_secs = 0, secs_underwater = 0;
@@ -98,13 +92,14 @@ public class SoiExecutive extends TimedFSM {
 	private ArrayList<SoiCommand> replies = new ArrayList<>();
 	private ArrayList<VerticalProfile> profiles = new ArrayList<>();
 	private VerticalProfiler<Temperature> tempProfiler = new VerticalProfiler<>();	
+	private String soi_plan_id = "soi_plan";
 	
 	/**
 	 * Class constructor
 	 */
 	public SoiExecutive() {
 		setPlanName(soi_plan_id);
-		setDeadline(new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000));
+		setDeadline(new Date(System.currentTimeMillis() + timeout * 60 * 1000));
 		state = this::idleAtSurface;
 	}
 
@@ -159,9 +154,9 @@ public class SoiExecutive extends TimedFSM {
 					EstimatedState s = get(EstimatedState.class);
 					if (s != null) {
 						double[] pos = WGS84Utilities.toLatLonDepth(s);
-						plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, pos[0], pos[1], speed);
+						plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, pos[0], pos[1], speed);
 					} else
-						plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, speed);
+						plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, speed);
 				}
 				
 				if (plan.getETA().after(deadline)) {
@@ -292,9 +287,9 @@ public class SoiExecutive extends TimedFSM {
 	public FSMState idle(FollowRefState state) {
 		printFSMState();
 		
-		if (!profiles.isEmpty() && uploadTemp) {
+		if (!profiles.isEmpty() && upTemp) {
 			print("Sending vertical profile ("+(profiles.size()-1)+" left)...");
-			sendViaIridium(profiles.get(profiles.size()-1), wait_secs * 3);
+			sendViaIridium(profiles.get(profiles.size()-1), wptSecs * 3);
 			profiles.remove(profiles.size()-1);
 			return this::wait;					
 		}
@@ -318,14 +313,16 @@ public class SoiExecutive extends TimedFSM {
 		if (wpt == null) {
 			print("Finished executing plan.");
 			if (cycle) {
+				print("Starting over (cyclic)...");
 				wpt_index = 0;
 				EstimatedState s = get(EstimatedState.class);
 				if (s != null) {
 					double[] pos = WGS84Utilities.toLatLonDepth(s);
-					plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, pos[0], pos[1], speed);
-				} else
-					plan.scheduleWaypoints(System.currentTimeMillis(), wait_secs, speed);
-				print("Starting over...");
+					plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, pos[0], pos[1], speed);
+				} 
+				else
+					plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, speed);
+				
 				SoiCommand reply = new SoiCommand();
 				reply.command = COMMAND.SOICMD_GET_PLAN;
 				reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
@@ -333,6 +330,7 @@ public class SoiExecutive extends TimedFSM {
 				reply.dst = 0xFFFF;
 				reply.plan = plan.asImc();
 				replies.add(reply);
+				
 				return this::start_waiting;
 			} else
 				return this::idleAtSurface;
@@ -350,7 +348,7 @@ public class SoiExecutive extends TimedFSM {
 	 */
 	public FSMState descend(FollowRefState ref) {
 		printFSMState();
-		setDepth(max_depth);
+		setDepth(maxDepth);
 		
 		secs_no_comms++;
 		if (offlineForTooLong()) {
@@ -384,7 +382,7 @@ public class SoiExecutive extends TimedFSM {
 		
 		if (arrivedZ()) {
 			setSpeed();
-			if (min_depth < max_depth)
+			if (minDepth < maxDepth)
 				print("Now ascending.");
 			return this::ascend;
 		}
@@ -398,8 +396,8 @@ public class SoiExecutive extends TimedFSM {
 	public FSMState ascend(FollowRefState ref) {
 		printFSMState();
 		
-		double target_depth = min_depth;
-		if (mins_under > 0 && (secs_underwater / 60) >= mins_under)
+		double target_depth = minDepth;
+		if (minsUnder > 0 && (secs_underwater / 60) >= minsUnder)
 			target_depth = 0;						
 		
 		setDepth(target_depth);
@@ -412,7 +410,7 @@ public class SoiExecutive extends TimedFSM {
 			return this::surface_to_report_error;
 		}
 		
-		if (secs_no_comms / 60 >= mins_offline) {
+		if (secs_no_comms / 60 >= minsOff) {
 			print("Periodic surface");
 			return this::start_waiting;
 		}			
@@ -424,20 +422,20 @@ public class SoiExecutive extends TimedFSM {
 		}
 
 		if (target_depth > 0 && arrivedZ() || !isUnderwater()) {
-			if (secs_no_comms / 60 >= mins_offline) {
+			if (secs_no_comms / 60 >= minsOff) {
 				print("Periodic surface");
 				return this::start_waiting;
 			} else {
 				
-				if (max_depth != target_depth) {
+				if (maxDepth != target_depth) {
 					print("Now descending (disconnected for " + secs_no_comms + " seconds).");
-					profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)max_depth, 20)));				
+					profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)maxDepth, 20)));				
 				}
 				
 				if (isUnderwater())
 					return this::descend;
 				else 
-					if (alignBeforeDive)
+					if (align)
 						return this::align;
 				else
 					return this::dive;
@@ -476,11 +474,11 @@ public class SoiExecutive extends TimedFSM {
 		// Angle difference to destination (degrees)
 		double ang_diff = Math.abs(des_ang - cur_ang);
 		
-		setSpeed(descendSpeedRpm, SpeedUnits.RPM);
+		setSpeed(descRpm, SpeedUnits.RPM);
 		
 		// go underwater only if aligned with destination
 		if (ang_diff < 1) {
-			setDepth(max_depth);
+			setDepth(maxDepth);
 			return this::dive;
 		}
 		else {
@@ -510,10 +508,10 @@ public class SoiExecutive extends TimedFSM {
 			return this::start_waiting;
 		}
 		
-		setDepth(max_depth);
-		setSpeed(descendSpeedRpm, SpeedUnits.RPM);
+		setDepth(maxDepth);
+		setSpeed(descRpm, SpeedUnits.RPM);
 		
-		if (pos[2] < 2 && pos[2] < max_depth) {
+		if (pos[2] < 2 && pos[2] < maxDepth) {
 			return this::dive;
 		}
 		else {
@@ -527,8 +525,8 @@ public class SoiExecutive extends TimedFSM {
 	 */
 	public FSMState communicate(FollowRefState ref) {
 		printFSMState();
-		int max_wait = wait_secs * 3;
-		int min_wait = wait_secs;
+		int max_wait = wptSecs * 3;
+		int min_wait = wptSecs;
 		if (plan != null && plan.waypoint(wpt_index) != null)
 			min_wait = Math.max(min_wait, plan.waypoint(wpt_index).getDuration());
 		
@@ -668,10 +666,10 @@ public class SoiExecutive extends TimedFSM {
 			double secs = (wpt.getArrivalTime().getTime() - System.currentTimeMillis()) / 1000.0;
 
 			if (secs < 0) {
-				speed = max_speed;
+				speed = maxSpeed;
 			} else {
-				speed = Math.min(max_speed, dist / secs);
-				speed = Math.max(min_speed, speed);
+				speed = Math.min(maxSpeed, dist / secs);
+				speed = Math.max(minSpeed, speed);
 			}
 		}
 
@@ -685,7 +683,7 @@ public class SoiExecutive extends TimedFSM {
 	 */
 	public boolean offlineForTooLong() {
 		 // Check if it has taken too long to go at the surface...
-		int max_time = mins_offline * 60 * 2;
+		int max_time = minsOff * 60 * 2;
 		return secs_no_comms > max_time;
 	}
 	
@@ -693,7 +691,7 @@ public class SoiExecutive extends TimedFSM {
 	 * Reset watchdog based on timeout parameter
 	 */
 	private void resetDeadline() {
-		deadline = new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000);
+		deadline = new Date(System.currentTimeMillis() + timeout * 60 * 1000);
 		String txtDeadline = "INFO: Execution will end by "+deadline; 
 		txtMessages.add(txtDeadline);
 		setDeadline(deadline);
@@ -753,6 +751,26 @@ public class SoiExecutive extends TimedFSM {
 		return report;
 		
 	}
+	
+	public void x() {
+		SoiCommand reply = new SoiCommand();
+		reply.type = SoiCommand.TYPE.SOITYPE_ERROR;
+		for (Field f : getClass().getDeclaredFields()) {
+			f.setAccessible(true);
+			Parameter p = f.getAnnotation(Parameter.class);
+			if (p == null)
+				continue;
+			String name = f.getName();
+			try {
+				reply.settings.set(name, f.get(this));
+			} catch (Exception e) {
+
+			}
+		}
+		
+		System.out.println(reply.serialize().length);
+		
+	}
 
 	public static void main(String[] args) throws Exception {
 		if (args.length != 1) {
@@ -791,7 +809,8 @@ public class SoiExecutive extends TimedFSM {
 		}
 		System.out.println();
 
-		tracker.connect(tracker.host_addr, tracker.host_port);
+		tracker.x();
+		tracker.connect(tracker.hAddr, tracker.hPort);
 		tracker.join();
 	}
 }

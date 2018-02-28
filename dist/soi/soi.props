@@ -4,38 +4,44 @@
 speed=1.0
 
 #Maximum Depth
-max_depth=10.0
+maxDepth=10.0
 
 #Minimum Depth
-min_depth=0.0
+minDepth=0.0
 
 #Maximum Speed
-max_speed=1.5
+maxSpeed=1.5
 
 #Minimum Speed
-min_speed=0.7
+minSpeed=0.7
 
 #DUNE Host Address
-host_addr=10.0.10.120
+hAddr=10.0.10.120
 
 #DUNE Host Port (TCP)
-host_port=6006
+hPort=6006
 
 #Minutes before termination
-mins_timeout=750
+timeout=600
 
-#Maximum time underwater
-mins_under=15
+#Maximum time without reporting position
+minsOff=15
 
-#Number where to send reports
-sms_number=+351914785889
+#Maximum time without GPS
+minsUnder=3
 
 #Seconds to idle at each vertex
-wait_secs=60
-
-#SOI plan identifier
-soi_plan_id=soi_plan
+wptSecs=60
 
 #Cyclic execution
 cycle=false
+
+#Speed up before descending
+descRpm=1300
+
+#Upload temperature profiles when idle
+upTemp=false
+
+#Align with destination waypoint before going underwater
+align=true
 
