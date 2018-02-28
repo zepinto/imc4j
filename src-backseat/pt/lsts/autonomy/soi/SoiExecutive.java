@@ -92,13 +92,15 @@ public class SoiExecutive extends TimedFSM {
 	private ArrayList<SoiCommand> replies = new ArrayList<>();
 	private ArrayList<VerticalProfile> profiles = new ArrayList<>();
 	private VerticalProfiler<Temperature> tempProfiler = new VerticalProfiler<>();	
-	private String soi_plan_id = "soi_plan";
+	
+	private final String SOI_PLAN_ID = "soi_plan";
+	private final int ANGLE_DIFF_DEGS = 5;
 	
 	/**
 	 * Class constructor
 	 */
 	public SoiExecutive() {
-		setPlanName(soi_plan_id);
+		setPlanName(SOI_PLAN_ID);
 		setDeadline(new Date(System.currentTimeMillis() + timeout * 60 * 1000));
 		state = this::idleAtSurface;
 	}
@@ -110,7 +112,7 @@ public class SoiExecutive extends TimedFSM {
 	@Consume
 	public void on(PlanControl pControl) {		
 		if (pControl.op == OP.PC_START && pControl.type == PlanControl.TYPE.PC_FAILURE) {
-			if (pControl.plan_id.equals(soi_plan_id)) {
+			if (pControl.plan_id.equals(SOI_PLAN_ID)) {
 				// Error during execution!
 				String err = "Detected error during execution: "+pControl.info;
 				printError(err);
@@ -477,7 +479,7 @@ public class SoiExecutive extends TimedFSM {
 		setSpeed(descRpm, SpeedUnits.RPM);
 		
 		// go underwater only if aligned with destination
-		if (ang_diff < 1) {
+		if (ang_diff < ANGLE_DIFF_DEGS) {
 			setDepth(maxDepth);
 			return this::dive;
 		}
