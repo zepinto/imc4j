@@ -752,26 +752,6 @@ public class SoiExecutive extends TimedFSM {
 		
 	}
 	
-	public void x() {
-		SoiCommand reply = new SoiCommand();
-		reply.type = SoiCommand.TYPE.SOITYPE_ERROR;
-		for (Field f : getClass().getDeclaredFields()) {
-			f.setAccessible(true);
-			Parameter p = f.getAnnotation(Parameter.class);
-			if (p == null)
-				continue;
-			String name = f.getName();
-			try {
-				reply.settings.set(name, f.get(this));
-			} catch (Exception e) {
-
-			}
-		}
-		
-		System.out.println(reply.serialize().length);
-		
-	}
-
 	public static void main(String[] args) throws Exception {
 		if (args.length != 1) {
 			System.err.println("Usage: java -jar SoiExec.jar <FILE>");
@@ -809,7 +789,6 @@ public class SoiExecutive extends TimedFSM {
 		}
 		System.out.println();
 
-		tracker.x();
 		tracker.connect(tracker.hAddr, tracker.hPort);
 		tracker.join();
 	}
