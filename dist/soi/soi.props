@@ -4,7 +4,7 @@
 speed=1.0
 
 #Maximum Depth
-maxDepth=10.0
+maxDepth=4.0
 
 #Minimum Depth
 minDepth=0.0
