@@ -4,7 +4,7 @@
 speed=1.0
 
 #Maximum Depth
-max_depth=10.0
+max_depth=4.0
 
 #Minimum Depth
 min_depth=0.0
@@ -22,10 +22,13 @@ host_addr=10.0.10.120
 host_port=6006
 
 #Minutes before termination
-mins_timeout=750
+mins_timeout=600
 
-#Maximum time underwater
-mins_under=15
+#Maximum time without reporting position
+mins_offline=15
+
+#Maximum time without GPS
+mins_under=3
 
 #Number where to send reports
 sms_number=+351914785889
@@ -38,4 +41,13 @@ soi_plan_id=soi_plan
 
 #Cyclic execution
 cycle=false
+
+#Speed up before descending
+descendSpeedRpm=1300
+
+#Upload temperature profiles when idle
+uploadTemp=false
+
+#Align with destination waypoint before going underwater
+alignBeforeDive=true
 
