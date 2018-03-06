@@ -325,6 +325,15 @@ public class SoiExecutive extends TimedFSM {
 				else
 					plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, speed);
 				
+				if (plan.getETA().after(deadline)) {
+					int timeDiff = (int) ((plan.getETA().getTime() - deadline.getTime()) / 1000.0);
+					String err = "Deadline would be reached " + timeDiff + " seconds before the end of the plan";
+					printError(err);
+					plan = null;
+					txtMessages.add(err);					
+					return this::idleAtSurface;
+				}
+				
 				SoiCommand reply = new SoiCommand();
 				reply.command = COMMAND.SOICMD_GET_PLAN;
 				reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
