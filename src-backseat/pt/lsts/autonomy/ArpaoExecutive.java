@@ -423,7 +423,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		PopUp popup = new PopUp();
 		popup.lat = Math.toRadians(pos[0]);
 		popup.lon = Math.toRadians(pos[1]);
-		popup.speed = (float) Math.min(MIN_SPEED, speed_for_generated_maneuvers);
+		popup.speed = (float) Math.max(MIN_SPEED, speed_for_generated_maneuvers);
 		popup.speed_units = SpeedUnits.METERS_PS;
 		popup.flags.add(FLAGS.FLG_CURR_POS);
 		popup.duration = 30;
@@ -456,7 +456,7 @@ public class ArpaoExecutive extends MissionExecutive {
 		PopUp popup = new PopUp();
 		popup.lat = Math.toRadians(pos[0]);
 		popup.lon = Math.toRadians(pos[1]);
-		popup.speed = (float) Math.min(MIN_SPEED, speed_for_generated_maneuvers);
+		popup.speed = (float) Math.max(MIN_SPEED, speed_for_generated_maneuvers);
 		popup.speed_units = SpeedUnits.METERS_PS;
 		popup.flags.add(FLAGS.FLG_CURR_POS);
 		popup.duration = 30;
@@ -499,7 +499,7 @@ public class ArpaoExecutive extends MissionExecutive {
 	        Goto man1 = new Goto();
 	        man1.lat = Math.toRadians(loc1[0]);
 	        man1.lon = Math.toRadians(loc1[1]);
-	        man1.speed = (float) Math.min(MIN_SPEED, speed_for_generated_maneuvers);
+	        man1.speed = (float) Math.max(MIN_SPEED, speed_for_generated_maneuvers);
 	        man1.speed_units = SpeedUnits.METERS_PS;
 	        man1.z = 0;
 	        man1.z_units = ZUnits.DEPTH;
