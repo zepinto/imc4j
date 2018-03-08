@@ -8,7 +8,11 @@
 	<path id="classpath.dependencies">
 	    <pathelement location="lib/minimal-json-0.9.4.jar" />
 	    <pathelement location="lib/nanohttpd-2.3.1.jar" />
-	  </path>
+		<pathelement location="lib/otto-1.3.8.jar" />
+		<pathelement location="lib/grizzly-core-2.3.28.jar" />
+	</path>
+	
+	
 	
 	<target name="compile-backseat">
 	   
@@ -137,6 +141,26 @@
 	         </jar>
 	    </target>
 
+	<target name="feathers">
+		    	 <mkdir dir="bin"/>
+				 <delete dir="bin"/>
+		    	 <mkdir dir="bin"/>
+		    	        
+		    	 <javac encoding="${compile-encoding}" srcdir="src;src-actors;src-test"  destdir="bin" includes="**/*.java" fork="false">
+		    	  	<classpath refid="classpath.dependencies"/>
+		    	 </javac>
+		         <jar destfile="${dir.jarfile}/feathers.jar" filesetmanifest="mergewithoutmain">
+		            <manifest>
+		                <attribute name="Main-Class" value="pt.lsts.imc4j.test.FeathersPublisher"/>
+		                <attribute name="Class-Path" value="."/>
+		            </manifest>
+		            <fileset dir="${dir.buildfile}/bin"/>
+		            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+					<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
+					<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/otto-1.3.8.jar"/>
+					<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/grizzly-core-2.3.28.jar"/>
+		         </jar>
+		    </target>
 
     <target name="arpao">
     	 <mkdir dir="bin"/>
