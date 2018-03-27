@@ -48,6 +48,8 @@ public class VerticalProfiler<T extends Message> {
 			for (ProfileSample s : samples) {
 				double depth = (s.depth / 10);
 				int pos = (int) ((depth / maxDepth) * numDepths);
+				if (pos >= numDepths)
+					continue;
 				counts[pos]++;
 				sums[pos] += s.avg;
 			}	

@@ -486,7 +486,8 @@ public class SoiExecutive extends TimedFSM {
 		// Angle difference to destination (degrees)
 		double ang_diff = Math.abs(des_ang - cur_ang);
 		
-		setSpeed(descRpm, SpeedUnits.RPM);
+		if (descRpm > 0)
+			setSpeed(descRpm, SpeedUnits.RPM);
 		
 		// go underwater only if aligned with destination
 		if (ang_diff < ANGLE_DIFF_DEGS) {
@@ -521,7 +522,8 @@ public class SoiExecutive extends TimedFSM {
 		}
 		
 		setDepth(maxDepth);
-		setSpeed(descRpm, SpeedUnits.RPM);
+		if (descRpm > 0)
+			setSpeed(descRpm, SpeedUnits.RPM);
 		
 		if (pos[2] < 2 && pos[2] < maxDepth) {
 			return this::dive;
