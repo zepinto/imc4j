@@ -440,7 +440,8 @@ public class SoiExecutive extends TimedFSM {
 				
 				if (maxDepth != target_depth) {
 					print("Now descending (disconnected for " + secs_no_comms + " seconds).");
-					profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)maxDepth, 20)));				
+					if (upTemp)
+						profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)maxDepth, 20)));				
 				}
 				
 				if (isUnderwater())
