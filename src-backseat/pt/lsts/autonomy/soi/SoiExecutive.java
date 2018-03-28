@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Properties;
+import java.util.concurrent.Future;
 
 import pt.lsts.backseat.TimedFSM;
 import pt.lsts.endurance.Plan;
@@ -290,24 +291,39 @@ public class SoiExecutive extends TimedFSM {
 		setDepth(0);
 		return this::idle;
 	}
-
+	
+	
 	/**
 	 * Wait for a plan to arrive
 	 */
 	public FSMState idle(FollowRefState state) {
 		printFSMState();
-		
-		if (!profiles.isEmpty() && upTemp) {
-			print("Sending vertical profile ("+(profiles.size()-1)+" left)...");
-			sendViaIridium(profiles.get(profiles.size()-1), wptSecs * 3);
-			profiles.remove(profiles.size()-1);
-			return this::wait;					
+		if (upTemp && !profiles.isEmpty()) {
+			return this::sendProfiles;
 		}
 		else {
 			profiles.clear();
 			print("Waiting for plan...");
 		}
 		return this::idle;
+	}
+	
+	private Future<Void> ongoingProfile = null;
+	public FSMState sendProfiles(FollowRefState state) {
+		printFSMState();
+		
+		boolean canSend = ongoingProfile == null || ongoingProfile.isDone();
+		
+		if (profiles.isEmpty())
+			return this::idle;
+		
+		if (canSend) {
+			print("Sending vertical profile ("+(profiles.size()-1)+" left)...");
+			ongoingProfile = sendViaIridium(profiles.get(profiles.size()-1), wptSecs);
+			profiles.remove(profiles.get(profiles.size()-1));			
+		}
+		
+		return this::sendProfiles;
 	}
 
 	/**
@@ -448,8 +464,15 @@ public class SoiExecutive extends TimedFSM {
 				
 				if (maxDepth != target_depth) {
 					print("Now descending (disconnected for " + secs_no_comms + " seconds).");
-					if (upTemp)
-						profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)maxDepth, 20)));				
+					if (upTemp) {
+						try {
+							profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)maxDepth, 20)));
+						}
+						catch (Exception e) {
+							print(e.getClass().getSimpleName()+" while calculating profile: "+e.getMessage());
+							e.printStackTrace();
+						}
+					}
 				}
 				
 				if (isUnderwater())
@@ -644,6 +667,7 @@ public class SoiExecutive extends TimedFSM {
 			return this::report_error;
 	}
 
+	
 	/**
 	 * Actively go at the surface before communications
 	 */
