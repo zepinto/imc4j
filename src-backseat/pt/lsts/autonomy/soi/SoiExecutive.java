@@ -36,6 +36,7 @@ import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.msg.VerticalProfile;
 import pt.lsts.imc4j.msg.VerticalProfile.PARAMETER;
 import pt.lsts.imc4j.util.PojoConfig;
+import pt.lsts.imc4j.util.TupleList;
 import pt.lsts.imc4j.util.WGS84Utilities;
 
 public class SoiExecutive extends TimedFSM {
@@ -183,18 +184,7 @@ public class SoiExecutive extends TimedFSM {
 
 		case SOICMD_GET_PARAMS:
 			print("CMD: Get Params!");
-			for (Field f : getClass().getDeclaredFields()) {
-				f.setAccessible(true);
-				Parameter p = f.getAnnotation(Parameter.class);
-				if (p == null)
-					continue;
-				String name = f.getName();
-				try {
-					reply.settings.set(name, f.get(this));
-				} catch (Exception e) {
-
-				}
-			}
+			reply.settings = params();
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
 
@@ -204,6 +194,7 @@ public class SoiExecutive extends TimedFSM {
 				for (String key : cmd.settings.keys())
 					PojoConfig.setProperty(this, key, cmd.settings.get(key));
 				reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
+				reply.settings = params();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -243,6 +234,23 @@ public class SoiExecutive extends TimedFSM {
 		}		
 		replies.add(reply);
 		state = this::start_waiting;
+	}
+	
+	private TupleList params() {
+		TupleList settings = new TupleList();
+		for (Field f : getClass().getDeclaredFields()) {
+			f.setAccessible(true);
+			Parameter p = f.getAnnotation(Parameter.class);
+			if (p == null)
+				continue;
+			String name = f.getName();
+			try {
+				settings.set(name, f.get(this));
+			} catch (Exception e) {
+
+			}
+		}
+		return settings;
 	}
 
 	@Consume
