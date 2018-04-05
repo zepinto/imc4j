@@ -367,8 +367,12 @@ public class SoiExecutive extends TimedFSM {
 				replies.add(reply);
 				
 				return this::start_waiting;
-			} else
+			}
+			else {
+				String txtDeadline = "INFO: Finished plan execution."; 
+				txtMessages.add(txtDeadline);
 				return this::idleAtSurface;
+			}
 		}
 
 		print("Executing wpt " + wpt_index);
