@@ -1,0 +1,47 @@
+#SOI Executive settings
+
+#Nominal Speed
+speed=1.0
+
+#Maximum Depth
+maxDepth=4.0
+
+#Minimum Depth
+minDepth=0.0
+
+#Maximum Speed
+maxSpeed=1.5
+
+#Minimum Speed
+minSpeed=0.7
+
+#DUNE Host Address
+hAddr=10.0.10.120
+
+#DUNE Host Port (TCP)
+hPort=6006
+
+#Minutes before termination
+timeout=600
+
+#Maximum time without reporting position
+minsOff=15
+
+#Maximum time without GPS
+minsUnder=3
+
+#Seconds to idle at each vertex
+wptSecs=60
+
+#Cyclic execution
+cycle=false
+
+#Speed up before descending
+descRpm=1300
+
+#Upload temperature profiles when idle
+upTemp=false
+
+#Align with destination waypoint before going underwater
+align=true
+

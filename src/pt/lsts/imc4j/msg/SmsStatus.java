@@ -11,12 +11,12 @@ import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.util.SerializationUtils;
 
-public class IridiumTxStatus extends Message {
-	public static final int ID_STATIC = 172;
+/**
+ * Reply sent in response to a SMS sending request.
+ */
+public class SmsStatus extends Message {
+	public static final int ID_STATIC = 518;
 
-	/**
-	 * The request identifier used to receive transmission updates
-	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT16
 	)
@@ -28,17 +28,20 @@ public class IridiumTxStatus extends Message {
 	)
 	public STATUS status = STATUS.values()[0];
 
+	/**
+	 * Error description.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT
 	)
-	public String text = "";
+	public String info = "";
 
 	public String abbrev() {
-		return "IridiumTxStatus";
+		return "SmsStatus";
 	}
 
 	public int mgid() {
-		return 172;
+		return 518;
 	}
 
 	public byte[] serializeFields() {
@@ -47,7 +50,7 @@ public class IridiumTxStatus extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeShort(req_id);
 			_out.writeByte((int)(status != null? status.value() : 0));
-			SerializationUtils.serializePlaintext(_out, text);
+			SerializationUtils.serializePlaintext(_out, info);
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -60,7 +63,7 @@ public class IridiumTxStatus extends Message {
 		try {
 			req_id = buf.getShort() & 0xFFFF;
 			status = STATUS.valueOf(buf.get() & 0xFF);
-			text = SerializationUtils.deserializePlaintext(buf);
+			info = SerializationUtils.deserializePlaintext(buf);
 		}
 		catch (Exception e) {
 			throw new IOException(e);
@@ -68,17 +71,13 @@ public class IridiumTxStatus extends Message {
 	}
 
 	public enum STATUS {
-		TXSTATUS_OK(1l),
+		SMSSTAT_QUEUED(0l),
 
-		TXSTATUS_ERROR(2l),
+		SMSSTAT_SENT(1l),
 
-		TXSTATUS_QUEUED(3l),
+		SMSSTAT_INPUT_FAILURE(101l),
 
-		TXSTATUS_TRANSMIT(4l),
-
-		TXSTATUS_EXPIRED(5l),
-
-		TXSTATUS_EMPTY(6l);
+		SMSSTAT_ERROR(102l);
 
 		protected long value;
 

@@ -3,6 +3,7 @@ package pt.lsts.imc4j.util;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class TupleList {
 
@@ -24,6 +25,10 @@ public class TupleList {
 			String[] parts = s.split("=");
 			list.put(parts[0].trim(), parts[1].trim());
 		}
+	}
+	
+	public Set<String> keys() {
+		return list.keySet();
 	}
 	
 	@Override

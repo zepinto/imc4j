@@ -10,11 +10,23 @@ public class TimedFSM extends FSMController {
 	
 	@Override
 	public void update(FollowRefState fref) {
-		if (deadline.getTime() < System.currentTimeMillis()) {
+		if (deadline != null && deadline.getTime() < System.currentTimeMillis()) {
 			print("Deadline reached, terminating.");
-			end();
+			sendViaIridium("ERROR: \"Deadline reached, stopped.\"", 60);
+			sendViaSms("ERROR: \"Deadline reached, stopped.\"", 60);
+			setPaused(true);
 		}
 		else
 			super.update(fref);
+	}
+	
+	@Override
+	protected void printFSMState() {
+    	String method = currentThread().getStackTrace()[2].getMethodName();
+        print("FSM State: " + method+" ("+((deadline.getTime() - System.currentTimeMillis()) / 1000)+" left)");
+    }
+	
+	public void setDeadline(Date date) {
+		this.deadline = date;
 	}
 }

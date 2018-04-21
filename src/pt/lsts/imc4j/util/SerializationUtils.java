@@ -203,7 +203,7 @@ public class SerializationUtils {
 		int numMsgs = buf.getShort() & 0xFFFF;
 
 		for (int i = 0; i < numMsgs; i++) {
-			msgs.add(deserializeInlineMsg(buf));
+			msgs.add((T)deserializeInlineMsg(buf));
 		}
 		
 		return msgs;		

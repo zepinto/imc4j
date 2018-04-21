@@ -82,6 +82,12 @@ public class PojoConfig {
 		}		
 	}
 	
+	public static void setProperty(Object pojo, String field, String value) throws Exception {
+		Field f = pojo.getClass().getDeclaredField(field);
+		f.setAccessible(true);
+		setValue(pojo, value, f);		
+	}
+	
 	public static Properties getProperties(Object pojo) throws Exception {
 		validate(pojo);
 		ArrayList<Field> fields = loadFields(pojo);
@@ -114,6 +120,14 @@ public class PojoConfig {
 				throw new Exception(
 						"Type of parameter '" + f.getName() + "' (" + f.getType().getSimpleName() + ") is not valid.");
 		}
+	}
+	
+	public static void setValue(Object pojo, String field, String value) throws Exception {
+		Field f = pojo.getClass().getDeclaredField(field);
+		if (f.getAnnotation(Parameter.class) == null)
+			throw new NoSuchFieldException(field+" is not annotated with @Parameter");
+		f.setAccessible(true);
+		setValue(pojo, value, f);
 	}
 	
 	private static void setValue(Object pojo, String value, Field f) throws Exception {

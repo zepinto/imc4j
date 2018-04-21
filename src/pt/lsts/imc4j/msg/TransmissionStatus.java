@@ -11,12 +11,12 @@ import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.util.SerializationUtils;
 
-public class IridiumTxStatus extends Message {
-	public static final int ID_STATIC = 172;
+/**
+ * Reply sent in response to a communications request.
+ */
+public class TransmissionStatus extends Message {
+	public static final int ID_STATIC = 516;
 
-	/**
-	 * The request identifier used to receive transmission updates
-	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT16
 	)
@@ -31,14 +31,14 @@ public class IridiumTxStatus extends Message {
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT
 	)
-	public String text = "";
+	public String info = "";
 
 	public String abbrev() {
-		return "IridiumTxStatus";
+		return "TransmissionStatus";
 	}
 
 	public int mgid() {
-		return 172;
+		return 516;
 	}
 
 	public byte[] serializeFields() {
@@ -47,7 +47,7 @@ public class IridiumTxStatus extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeShort(req_id);
 			_out.writeByte((int)(status != null? status.value() : 0));
-			SerializationUtils.serializePlaintext(_out, text);
+			SerializationUtils.serializePlaintext(_out, info);
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -60,7 +60,7 @@ public class IridiumTxStatus extends Message {
 		try {
 			req_id = buf.getShort() & 0xFFFF;
 			status = STATUS.valueOf(buf.get() & 0xFF);
-			text = SerializationUtils.deserializePlaintext(buf);
+			info = SerializationUtils.deserializePlaintext(buf);
 		}
 		catch (Exception e) {
 			throw new IOException(e);
@@ -68,17 +68,19 @@ public class IridiumTxStatus extends Message {
 	}
 
 	public enum STATUS {
-		TXSTATUS_OK(1l),
+		TSTAT_IN_PROGRESS(0l),
 
-		TXSTATUS_ERROR(2l),
+		TSTAT_SENT(1l),
 
-		TXSTATUS_QUEUED(3l),
+		TSTAT_DELIVERED(51l),
 
-		TXSTATUS_TRANSMIT(4l),
+		TSTAT_MAYBE_DELIVERED(52l),
 
-		TXSTATUS_EXPIRED(5l),
+		TSTAT_INPUT_FAILURE(101l),
 
-		TXSTATUS_EMPTY(6l);
+		TSTAT_TEMPORARY_FAILURE(102l),
+
+		TSTAT_PERMANENT_FAILURE(103l);
 
 		protected long value;
 
