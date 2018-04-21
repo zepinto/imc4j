@@ -9,20 +9,28 @@ import java.nio.ByteBuffer;
 import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.def.SpeedUnits;
-import pt.lsts.imc4j.def.ZUnits;
 import pt.lsts.imc4j.util.SerializationUtils;
 import pt.lsts.imc4j.util.TupleList;
 
 /**
- * The Station Keeping maneuver makes the vehicle come to the surface
- * and then enter a given circular perimeter around a waypoint coordinate
- * for a certain amount of time.
+ * An "Alignment" is a maneuver specifying a movement of the vehicle to a
+ * target waypoint intended to control activation of an IMU/INS in order
+ * to start aligning navigation for more precise dead reckoning operation.
  */
-public class StationKeeping extends Maneuver {
-	public static final int ID_STATIC = 461;
+public class Alignment extends Maneuver {
+	public static final int ID_STATIC = 495;
 
 	/**
-	 * WGS-84 Latitude.
+	 * The amount of time the maneuver is allowed to run.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_UINT16,
+			units = "s"
+	)
+	public int timeout = 0;
+
+	/**
+	 * WGS-84 Latitude of target waypoint.
 	 */
 	@FieldType(
 			type = IMCField.TYPE_FP64,
@@ -33,7 +41,7 @@ public class StationKeeping extends Maneuver {
 	public double lat = 0;
 
 	/**
-	 * WGS-84 Longitude.
+	 * WGS-84 Longitude of target waypoint.
 	 */
 	@FieldType(
 			type = IMCField.TYPE_FP64,
@@ -44,45 +52,7 @@ public class StationKeeping extends Maneuver {
 	public double lon = 0;
 
 	/**
-	 * Maneuver reference in the z axis. Use z_units to specify
-	 * whether z represents depth, altitude or other.
-	 */
-	@FieldType(
-			type = IMCField.TYPE_FP32,
-			units = "m"
-	)
-	public float z = 0f;
-
-	/**
-	 * Units of the z reference.
-	 */
-	@FieldType(
-			type = IMCField.TYPE_UINT8,
-			units = "Enumerated"
-	)
-	public ZUnits z_units = ZUnits.values()[0];
-
-	/**
-	 * Radius.
-	 */
-	@FieldType(
-			type = IMCField.TYPE_FP32,
-			units = "m"
-	)
-	public float radius = 0f;
-
-	/**
-	 * Duration (0 for unlimited).
-	 */
-	@FieldType(
-			type = IMCField.TYPE_UINT16,
-			units = "s"
-	)
-	public int duration = 0;
-
-	/**
-	 * The value of the desired speed, in the scale specified
-	 * by the "Speed Units" field.
+	 * Maneuver speed reference.
 	 */
 	@FieldType(
 			type = IMCField.TYPE_FP32
@@ -90,7 +60,7 @@ public class StationKeeping extends Maneuver {
 	public float speed = 0f;
 
 	/**
-	 * Indicates the units used for the speed value.
+	 * Speed units.
 	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT8,
@@ -108,23 +78,20 @@ public class StationKeeping extends Maneuver {
 	public TupleList custom = new TupleList("");
 
 	public String abbrev() {
-		return "StationKeeping";
+		return "Alignment";
 	}
 
 	public int mgid() {
-		return 461;
+		return 495;
 	}
 
 	public byte[] serializeFields() {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
+			_out.writeShort(timeout);
 			_out.writeDouble(lat);
 			_out.writeDouble(lon);
-			_out.writeFloat(z);
-			_out.writeByte((int)(z_units != null? z_units.value() : 0));
-			_out.writeFloat(radius);
-			_out.writeShort(duration);
 			_out.writeFloat(speed);
 			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
 			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
@@ -138,12 +105,9 @@ public class StationKeeping extends Maneuver {
 
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
+			timeout = buf.getShort() & 0xFFFF;
 			lat = buf.getDouble();
 			lon = buf.getDouble();
-			z = buf.getFloat();
-			z_units = ZUnits.valueOf(buf.get() & 0xFF);
-			radius = buf.getFloat();
-			duration = buf.getShort() & 0xFFFF;
 			speed = buf.getFloat();
 			speed_units = SpeedUnits.valueOf(buf.get() & 0xFF);
 			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));

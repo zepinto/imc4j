@@ -75,7 +75,11 @@ public class UamTxStatus extends Message {
 
 		UTS_INV_ADDR(4l),
 
-		UTS_IP(5l);
+		UTS_IP(5l),
+
+		UTS_UNSUPPORTED(6l),
+
+		UTS_INV_SIZE(7l);
 
 		protected long value;
 

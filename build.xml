@@ -82,7 +82,7 @@
 		 <delete dir="bin"/>
     	 <mkdir dir="bin"/>
     	        
-    	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+    	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat;src-endurance"  destdir="bin" includes="**/*.java" fork="false">
     	  	<classpath refid="classpath.dependencies"/>
     	 </javac>
          <copy todir="bin" overwrite="true">

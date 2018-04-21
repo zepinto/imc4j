@@ -60,7 +60,11 @@ public class AlignmentState extends Message {
 
 		AS_ALIGNED(1l),
 
-		AS_NOT_SUPPORTED(2l);
+		AS_NOT_SUPPORTED(2l),
+
+		AS_ALIGNING(3l),
+
+		AS_WRONG_MEDIUM(4l);
 
 		protected long value;
 

@@ -141,7 +141,11 @@ public class FollowRefState extends Message {
 
 		PROX_XY_NEAR(0x02l),
 
-		PROX_Z_NEAR(0x04l);
+		PROX_Z_NEAR(0x04l),
+
+		PROX_XY_UNREACHABLE(0x08l),
+
+		PROX_Z_UNREACHABLE(0x10l);
 
 		protected long value;
 

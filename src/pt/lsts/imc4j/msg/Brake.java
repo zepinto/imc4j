@@ -58,7 +58,9 @@ public class Brake extends Message {
 	public enum OP {
 		OP_STOP(0l),
 
-		OP_START(1l);
+		OP_START(1l),
+
+		OP_REVERT(2l);
 
 		protected long value;
 

@@ -4,8 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
+import java.lang.IllegalArgumentException;
 import java.lang.String;
 import java.nio.ByteBuffer;
+import java.util.EnumSet;
 import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.def.SpeedUnits;
@@ -14,12 +16,14 @@ import pt.lsts.imc4j.util.SerializationUtils;
 import pt.lsts.imc4j.util.TupleList;
 
 /**
- * The Station Keeping maneuver makes the vehicle come to the surface
+ * The Station Keeping Extended maneuver makes the vehicle come to the surface
  * and then enter a given circular perimeter around a waypoint coordinate
- * for a certain amount of time.
+ * for a certain amount of time. It extends the Station Keeping maneuver with the feature
+ * 'Keep Safe', which allows for the vehicle to hold position underwater and popup periodically
+ * to communicate.
  */
-public class StationKeeping extends Maneuver {
-	public static final int ID_STATIC = 461;
+public class StationKeepingExtended extends Maneuver {
+	public static final int ID_STATIC = 496;
 
 	/**
 	 * WGS-84 Latitude.
@@ -99,6 +103,35 @@ public class StationKeeping extends Maneuver {
 	public SpeedUnits speed_units = SpeedUnits.values()[0];
 
 	/**
+	 * The period at which the vehicle will popup to report its position.
+	 * Only used if flag KEEP_SAFE is on.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_UINT16,
+			units = "s"
+	)
+	public int popup_period = 0;
+
+	/**
+	 * The duration of the station keeping at surface level when it pops up.
+	 * Only used if flag KEEP_SAFE is on.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_UINT16,
+			units = "s"
+	)
+	public int popup_duration = 0;
+
+	/**
+	 * Flags of the maneuver.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_UINT8,
+			units = "Bitfield"
+	)
+	public EnumSet<FLAGS> flags = EnumSet.noneOf(FLAGS.class);
+
+	/**
 	 * Custom settings for maneuver.
 	 */
 	@FieldType(
@@ -108,11 +141,11 @@ public class StationKeeping extends Maneuver {
 	public TupleList custom = new TupleList("");
 
 	public String abbrev() {
-		return "StationKeeping";
+		return "StationKeepingExtended";
 	}
 
 	public int mgid() {
-		return 461;
+		return 496;
 	}
 
 	public byte[] serializeFields() {
@@ -127,6 +160,15 @@ public class StationKeeping extends Maneuver {
 			_out.writeShort(duration);
 			_out.writeFloat(speed);
 			_out.writeByte((int)(speed_units != null? speed_units.value() : 0));
+			_out.writeShort(popup_period);
+			_out.writeShort(popup_duration);
+			long _flags = 0;
+			if (flags != null) {
+				for (FLAGS __flags : flags.toArray(new FLAGS[0])) {
+					_flags += __flags.value();
+				}
+			}
+			_out.writeByte((int)_flags);
 			SerializationUtils.serializePlaintext(_out, custom == null? null : custom.toString());
 			return _data.toByteArray();
 		}
@@ -146,10 +188,42 @@ public class StationKeeping extends Maneuver {
 			duration = buf.getShort() & 0xFFFF;
 			speed = buf.getFloat();
 			speed_units = SpeedUnits.valueOf(buf.get() & 0xFF);
+			popup_period = buf.getShort() & 0xFFFF;
+			popup_duration = buf.getShort() & 0xFFFF;
+			long flags_val = buf.get() & 0xFF;
+			flags.clear();
+			for (FLAGS FLAGS_op : FLAGS.values()) {
+				if ((flags_val & FLAGS_op.value()) == FLAGS_op.value()) {
+					flags.add(FLAGS_op);
+				}
+			}
 			custom = new TupleList(SerializationUtils.deserializePlaintext(buf));
 		}
 		catch (Exception e) {
 			throw new IOException(e);
+		}
+	}
+
+	public enum FLAGS {
+		FLG_KEEP_SAFE(0x01l);
+
+		protected long value;
+
+		FLAGS(long value) {
+			this.value = value;
+		}
+
+		long value() {
+			return value;
+		}
+
+		public static FLAGS valueOf(long value) throws IllegalArgumentException {
+			for (FLAGS v : FLAGS.values()) {
+				if (v.value == value) {
+					return v;
+				}
+			}
+			throw new IllegalArgumentException("Invalid value for FLAGS: "+value);
 		}
 	}
 }

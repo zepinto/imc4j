@@ -20,7 +20,7 @@ public class RemoteActions extends Message {
 	public static final int ID_STATIC = 305;
 
 	/**
-	 * List of values for each remote action (e.g: "Propeler=0.6,PanTilt=0.75,Lights=1").
+	 * List of values for each remote action (e.g: "Propeller=0.6,PanTilt=0.75,Lights=1").
 	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT,
