@@ -609,6 +609,8 @@ public class MessageFactory {
 
 	public static final int ID_SadcReadings = 907;
 
+	public static final int ID_DmsDetection = 908;
+
 	public static Message create(int mgid) {
 		switch(mgid) {
 			case ID_EntityState: {
@@ -1519,6 +1521,9 @@ public class MessageFactory {
 			}
 			case ID_SadcReadings: {
 				return new SadcReadings();
+			}
+			case ID_DmsDetection: {
+				return new DmsDetection();
 			}
 			default: {
 				return null;
@@ -2440,6 +2445,9 @@ public class MessageFactory {
 			}
 			case "SadcReadings": {
 				return ID_SadcReadings;
+			}
+			case "DmsDetection": {
+				return ID_DmsDetection;
 			}
 			default: {
 				return -1;

@@ -91,7 +91,9 @@ public class PowerChannelControl extends Message {
 
 		PCC_OP_SCHED_RESET(5l),
 
-		PCC_OP_SAVE(6l);
+		PCC_OP_SAVE(6l),
+
+		PCC_OP_RESTART(7l);
 
 		protected long value;
 

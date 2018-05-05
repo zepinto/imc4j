@@ -16,7 +16,7 @@ maxSpeed=1.5
 minSpeed=0.7
 
 #DUNE Host Address
-hAddr=10.0.10.120
+hAddr=127.0.0.1
 
 #DUNE Host Port (TCP)
 hPort=6006
