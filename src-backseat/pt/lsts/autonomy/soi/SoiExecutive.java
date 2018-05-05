@@ -331,14 +331,14 @@ public class SoiExecutive extends TimedFSM {
 	 */
 	public FSMState exec(FollowRefState state) {
 		printFSMState();
-		if (plan == null)
+		if (plan == null || plan.waypoints().isEmpty())
 			return this::idleAtSurface;
 
 		Waypoint wpt = plan.waypoint(wpt_index);
 
 		if (wpt == null) {
 			print("Finished executing plan.");
-			if (cycle) {
+			if (cycle && plan != null) {
 				print("Starting over (cyclic)...");
 				wpt_index = 0;
 				EstimatedState s = get(EstimatedState.class);
@@ -582,7 +582,6 @@ public class SoiExecutive extends TimedFSM {
 		// Send "DUNE" report
 		if (count_secs == 0) {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
-			itfs.add(ReportControl.COMM_INTERFACE.CI_SATELLITE);
 			sendReport(itfs);
 			sendViaIridium(createStateReport(), max_wait - count_secs - 1);			
 			print("Will wait from " + min_wait + " to " + max_wait + " seconds to send " + txtMessages.size()
