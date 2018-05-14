@@ -68,36 +68,36 @@ public class SoiExecutive extends TimedFSM {
 
 	@Parameter(description = "Maximum time without reporting position")
 	int minsOff = 15;
-	
+
 	@Parameter(description = "Maximum time without GPS")
-	int minsUnder = 3;	
+	int minsUnder = 3;
 
 	@Parameter(description = "Seconds to idle at each vertex")
 	int wptSecs = 60;
 
 	@Parameter(description = "Cyclic execution")
 	boolean cycle = false;
-	
+
 	@Parameter(description = "Speed up before descending")
 	int descRpm = 1300;
-	
+
 	@Parameter(description = "Upload temperature profiles when idle")
 	boolean upTemp = false;
-	
+
 	@Parameter(description = "Align with destination waypoint before going underwater")
 	boolean align = true;
-	
+
 	private Plan plan = new Plan("idle");
 	private int secs_no_comms = 0, count_secs = 0, secs_underwater = 0;
 	private int wpt_index = 0;
 	private ArrayList<String> txtMessages = new ArrayList<>();
 	private ArrayList<SoiCommand> replies = new ArrayList<>();
 	private ArrayList<VerticalProfile> profiles = new ArrayList<>();
-	private VerticalProfiler<Temperature> tempProfiler = new VerticalProfiler<>();	
-	
+	private VerticalProfiler<Temperature> tempProfiler = new VerticalProfiler<>();
+
 	private final String SOI_PLAN_ID = "soi_plan";
 	private final int ANGLE_DIFF_DEGS = 5;
-	
+
 	/**
 	 * Class constructor
 	 */
@@ -109,21 +109,23 @@ public class SoiExecutive extends TimedFSM {
 
 	/**
 	 * In case the last plan failed, report the resulting error
-	 * @param pControl A {@link PlanControl} message
- 	 */
+	 * 
+	 * @param pControl
+	 *            A {@link PlanControl} message
+	 */
 	@Consume
-	public void on(PlanControl pControl) {		
+	public void on(PlanControl pControl) {
 		if (pControl.op == OP.PC_START && pControl.type == PlanControl.TYPE.PC_FAILURE) {
 			if (pControl.plan_id.equals(SOI_PLAN_ID)) {
 				// Error during execution!
-				String err = "Detected error during execution: "+pControl.info;
+				String err = "Detected error during execution: " + pControl.info;
 				printError(err);
-				txtMessages.add("ERROR: "+pControl.info);
+				txtMessages.add("ERROR: " + pControl.info);
 				print("Ascending for report");
 				state = this::surface_to_report_error;
 			}
 		}
-		
+
 		if (pControl.op == OP.PC_STOP && pControl.type == PlanControl.TYPE.PC_SUCCESS) {
 			state = this::start_waiting;
 		}
@@ -131,7 +133,9 @@ public class SoiExecutive extends TimedFSM {
 
 	/**
 	 * React to incoming commands
-	 * @param cmd The received command
+	 * 
+	 * @param cmd
+	 *            The received command
 	 */
 	@Consume
 	public void on(SoiCommand cmd) {
@@ -149,11 +153,10 @@ public class SoiExecutive extends TimedFSM {
 		case SOICMD_EXEC:
 			print("CMD: Exec plan!");
 			if (cmd.plan == null || cmd.plan.waypoints.isEmpty()) {
-				plan = null;				
-			}
-			else {
+				plan = null;
+			} else {
 				plan = Plan.parse(cmd.plan);
-				
+
 				if (!plan.scheduledInTheFuture()) {
 					EstimatedState s = get(EstimatedState.class);
 					if (s != null) {
@@ -162,7 +165,7 @@ public class SoiExecutive extends TimedFSM {
 					} else
 						plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, speed);
 				}
-				
+
 				if (plan.getETA().after(deadline)) {
 					int timeDiff = (int) ((plan.getETA().getTime() - deadline.getTime()) / 1000.0);
 					String err = "Deadline would be reached " + timeDiff + " seconds before the end of the plan";
@@ -171,16 +174,16 @@ public class SoiExecutive extends TimedFSM {
 					txtMessages.add(err);
 					reply.type = SoiCommand.TYPE.SOITYPE_ERROR;
 					reply.plan = null;
-					break;				
+					break;
 				}
 				wpt_index = 0;
 				reply.plan = plan.asImc();
-				
+
 				print("Start executing this plan:");
-				print("" + plan);					
-				
+				print("" + plan);
+
 			}
-			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;			
+			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
 
 		case SOICMD_GET_PARAMS:
@@ -196,6 +199,10 @@ public class SoiExecutive extends TimedFSM {
 					PojoConfig.setProperty(this, key, cmd.settings.get(key));
 				reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 				reply.settings = params();
+
+				saveConfig(CONFIG_FILE);
+				print("Config saved to " + CONFIG_FILE.getAbsolutePath());
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -226,17 +233,17 @@ public class SoiExecutive extends TimedFSM {
 			break;
 		}
 
-		print("Replying with "+reply);
-		
+		print("Replying with " + reply);
+
 		try {
 			send(reply);
 		} catch (Exception e) {
 			e.printStackTrace();
-		}		
+		}
 		replies.add(reply);
 		state = this::start_waiting;
 	}
-	
+
 	private TupleList params() {
 		TupleList settings = new TupleList();
 		for (Field f : getClass().getDeclaredFields()) {
@@ -261,26 +268,30 @@ public class SoiExecutive extends TimedFSM {
 				try {
 					PojoConfig.setValue(this, param.name, param.value);
 					print("Set " + param.name + " := " + param.value);
+
+					saveConfig(CONFIG_FILE);
+					print("Config saved to " + CONFIG_FILE.getAbsolutePath());
+
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 		}
 	}
-	
+
 	@Consume
 	public void on(Temperature temp) {
 		tempProfiler.setSample(get(EstimatedState.class), temp);
 	}
-	
+
 	@Consume
 	public void on(VehicleMedium medium) {
 		if (medium.medium == MEDIUM.VM_UNDERWATER)
 			secs_underwater++;
 		else
-			secs_underwater = 0;				
+			secs_underwater = 0;
 	}
-	
+
 	/**
 	 * Actively go to the surface to wait for a plan
 	 */
@@ -291,8 +302,7 @@ public class SoiExecutive extends TimedFSM {
 		setDepth(0);
 		return this::idle;
 	}
-	
-	
+
 	/**
 	 * Wait for a plan to arrive
 	 */
@@ -300,29 +310,35 @@ public class SoiExecutive extends TimedFSM {
 		printFSMState();
 		if (upTemp && !profiles.isEmpty()) {
 			return this::sendProfiles;
-		}
-		else {
+		} else {
 			profiles.clear();
 			print("Waiting for plan...");
 		}
 		return this::idle;
 	}
-	
+
 	private Future<Void> ongoingProfile = null;
+
 	public FSMState sendProfiles(FollowRefState state) {
 		printFSMState();
-		
+
 		boolean canSend = ongoingProfile == null || ongoingProfile.isDone();
-		
+
 		if (profiles.isEmpty())
 			return this::idle;
-		
+
 		if (canSend) {
-			print("Sending vertical profile ("+(profiles.size()-1)+" left)...");
-			ongoingProfile = sendViaIridium(profiles.get(profiles.size()-1), wptSecs);
-			profiles.remove(profiles.get(profiles.size()-1));			
+			print("Sending vertical profile (" + (profiles.size() - 1) + " left)...");
+			try {
+				ongoingProfile = sendViaIridium(profiles.get(profiles.size() - 1), wptSecs);
+				profiles.remove(profiles.get(profiles.size() - 1));
+			} catch (Exception e) {
+				e.printStackTrace();
+				ongoingProfile = null;
+			}
+
 		}
-		
+
 		return this::sendProfiles;
 	}
 
@@ -345,19 +361,18 @@ public class SoiExecutive extends TimedFSM {
 				if (s != null) {
 					double[] pos = WGS84Utilities.toLatLonDepth(s);
 					plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, pos[0], pos[1], speed);
-				} 
-				else
+				} else
 					plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, speed);
-				
+
 				if (plan.getETA().after(deadline)) {
 					int timeDiff = (int) ((plan.getETA().getTime() - deadline.getTime()) / 1000.0);
 					String err = "Deadline would be reached " + timeDiff + " seconds before the end of the plan";
 					printError(err);
 					plan = null;
-					txtMessages.add(err);					
+					txtMessages.add(err);
 					return this::idleAtSurface;
 				}
-				
+
 				SoiCommand reply = new SoiCommand();
 				reply.command = COMMAND.SOICMD_GET_PLAN;
 				reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
@@ -365,12 +380,21 @@ public class SoiExecutive extends TimedFSM {
 				reply.dst = 0xFFFF;
 				reply.plan = plan.asImc();
 				replies.add(reply);
-				
+
 				return this::start_waiting;
-			}
-			else {
-				String txtDeadline = "INFO: Finished plan execution."; 
+			} else {
+				String txtDeadline = "INFO: Finished plan execution.";
 				txtMessages.add(txtDeadline);
+				wpt_index = 0;
+				this.plan = null;
+
+				SoiCommand reply = new SoiCommand();
+				reply.command = COMMAND.SOICMD_GET_PLAN;
+				reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
+				reply.src = remoteSrc;
+				reply.dst = 0xFFFF;
+				reply.plan = null;
+				replies.add(reply);
 				return this::idleAtSurface;
 			}
 		}
@@ -388,15 +412,15 @@ public class SoiExecutive extends TimedFSM {
 	public FSMState descend(FollowRefState ref) {
 		printFSMState();
 		setDepth(maxDepth);
-		
+
 		secs_no_comms++;
 		if (offlineForTooLong()) {
-			String err = "Offline for too long ("+secs_no_comms+")";
+			String err = "Offline for too long (" + secs_no_comms + ")";
 			printError(err);
-			txtMessages.add("ERROR: "+err);
+			txtMessages.add("ERROR: " + err);
 			return this::surface_to_report_error;
 		}
-		
+
 		if (arrivedXY()) {
 			print("Arrived at waypoint " + wpt_index);
 			wpt_index++;
@@ -406,26 +430,24 @@ public class SoiExecutive extends TimedFSM {
 			double[] cur_pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 			double[] target_pos = new double[] { plan.waypoint(wpt_index).getLatitude(),
 					plan.waypoint(wpt_index).getLongitude() };
-			
+
 			double dist = WGS84Utilities.distance(cur_pos[0], cur_pos[1], target_pos[0], target_pos[1]);
 			double min_dist = 4 * cur_pos[2];
-			
+
 			if (dist < min_dist) {
 				print("Starting to ascend.");
 				return this::ascend;
 			}
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		if (arrivedZ()) {
 			setSpeed();
 			if (minDepth < maxDepth)
 				print("Now ascending.");
 			return this::ascend;
-		}
-		else
+		} else
 			return this::descend;
 	}
 
@@ -434,28 +456,27 @@ public class SoiExecutive extends TimedFSM {
 	 */
 	public FSMState ascend(FollowRefState ref) {
 		printFSMState();
-		
 		double target_depth = minDepth;
 		if (minsUnder > 0 && (secs_underwater / 60) >= minsUnder)
-			target_depth = 0;						
-		
+			target_depth = 0;
+
 		setDepth(target_depth);
 
 		secs_no_comms++;
 		if (offlineForTooLong()) {
-			String err = "Offline for too long ("+secs_no_comms+")";
+			String err = "Offline for too long (" + secs_no_comms + ")";
 			printError(err);
-			txtMessages.add("ERROR: "+err);
+			txtMessages.add("ERROR: " + err);
 			return this::surface_to_report_error;
 		}
-		
+
 		if (secs_no_comms / 60 >= minsOff) {
 			print("Periodic surface");
 			return this::start_waiting;
-		}			
+		}
 
 		if (arrivedXY()) {
-            print("Arrived at waypoint " + wpt_index);
+			print("Arrived at waypoint " + wpt_index);
 			wpt_index++;
 			return this::start_waiting;
 		}
@@ -465,25 +486,29 @@ public class SoiExecutive extends TimedFSM {
 				print("Periodic surface");
 				return this::start_waiting;
 			} else {
-				
 				if (maxDepth != target_depth) {
 					print("Now descending (disconnected for " + secs_no_comms + " seconds).");
 					if (upTemp) {
 						try {
-							profiles.add(tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int)maxDepth, 20)));
-						}
-						catch (Exception e) {
-							print(e.getClass().getSimpleName()+" while calculating profile: "+e.getMessage());
+							VerticalProfile prof = tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE,
+									Math.min((int) maxDepth, 20));
+							if (prof != null) {
+								profiles.add(prof);
+								print("Added profile with " + prof.samples.size() + " samples");
+							} else {
+								print("Discarded empty profile");
+							}
+						} catch (Exception e) {
+							print(e.getClass().getSimpleName() + " while calculating profile: " + e.getMessage());
 							e.printStackTrace();
 						}
 					}
 				}
-				
+
 				if (isUnderwater())
 					return this::descend;
-				else 
-					if (align)
-						return this::align;
+				else if (align)
+					return this::align;
 				else
 					return this::dive;
 			}
@@ -491,7 +516,7 @@ public class SoiExecutive extends TimedFSM {
 		} else
 			return this::ascend;
 	}
-	
+
 	/**
 	 * Right before diving, align yaw with target waypoint
 	 */
@@ -499,15 +524,15 @@ public class SoiExecutive extends TimedFSM {
 		printFSMState();
 		EstimatedState state = get(EstimatedState.class);
 		double[] pos = WGS84Utilities.toLatLonDepth(state);
-		
+
 		secs_no_comms++;
 		if (offlineForTooLong()) {
-			String err = "Offline for too long ("+secs_no_comms+")";
+			String err = "Offline for too long (" + secs_no_comms + ")";
 			printError(err);
-			txtMessages.add("ERROR: "+err);
+			txtMessages.add("ERROR: " + err);
 			return this::surface_to_report_error;
 		}
-		
+
 		if (arrivedXY()) {
 			print("Arrived at waypoint " + wpt_index);
 			wpt_index++;
@@ -520,55 +545,53 @@ public class SoiExecutive extends TimedFSM {
 		double cur_ang = Math.toDegrees(state.psi);
 		// Angle difference to destination (degrees)
 		double ang_diff = Math.abs(des_ang - cur_ang);
-		
+
 		if (descRpm > 0)
 			setSpeed(descRpm, SpeedUnits.RPM);
-		
+
 		// go underwater only if aligned with destination
 		if (ang_diff < ANGLE_DIFF_DEGS) {
 			setDepth(maxDepth);
 			return this::dive;
-		}
-		else {
+		} else {
 			setDepth(0);
 			return this::align;
 		}
 	}
-	
+
 	/**
 	 * Go underwater at fixed RPM speed
 	 */
 	public FSMState dive(FollowRefState ref) {
 		printFSMState();
 		double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
-		
+
 		secs_no_comms++;
 		if (offlineForTooLong()) {
-			String err = "Offline for too long ("+secs_no_comms+")";
+			String err = "Offline for too long (" + secs_no_comms + ")";
 			printError(err);
-			txtMessages.add("ERROR: "+err);
+			txtMessages.add("ERROR: " + err);
 			return this::surface_to_report_error;
 		}
-		
+
 		if (arrivedXY()) {
 			print("Arrived at waypoint " + wpt_index);
 			wpt_index++;
 			return this::start_waiting;
 		}
-		
+
 		setDepth(maxDepth);
 		if (descRpm > 0)
 			setSpeed(descRpm, SpeedUnits.RPM);
-		
+
 		if (pos[2] < 2 && pos[2] < maxDepth) {
 			return this::dive;
-		}
-		else {
+		} else {
 			setSpeed();
 			return this::descend;
 		}
 	}
-	
+
 	/**
 	 * Send a position report and any pending replies / errors
 	 */
@@ -578,22 +601,21 @@ public class SoiExecutive extends TimedFSM {
 		int min_wait = wptSecs;
 		if (plan != null && plan.waypoint(wpt_index) != null)
 			min_wait = Math.max(min_wait, plan.waypoint(wpt_index).getDuration());
-		
+
 		// Send "DUNE" report
 		if (count_secs == 0) {
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			sendReport(itfs);
-			sendViaIridium(createStateReport(), max_wait - count_secs - 1);			
+			sendViaIridium(createStateReport(), max_wait - count_secs - 1);
 			print("Will wait from " + min_wait + " to " + max_wait + " seconds to send " + txtMessages.size()
-					+ " texts and " + replies.size() + " command replies.");			
-		}
-		else {
+					+ " texts and " + replies.size() + " command replies.");
+		} else {
 			while (!replies.isEmpty()) {
 				SoiCommand cmd = replies.get(0);
-				sendViaIridium(cmd, max_wait - count_secs -1);
+				sendViaIridium(cmd, max_wait - count_secs - 1);
 				replies.remove(0);
 			}
-			
+
 			while (!txtMessages.isEmpty()) {
 				String txt = txtMessages.get(0);
 				if (txt.length() > 132)
@@ -603,24 +625,23 @@ public class SoiExecutive extends TimedFSM {
 				txtMessages.remove(0);
 			}
 		}
-		
+
 		if (count_secs >= max_wait) {
-			print("Advancing to next waypoint as maximum time was reached.");			
+			print("Advancing to next waypoint as maximum time was reached.");
 			return this::exec;
-		}
-		else if (count_secs > min_wait) {
+		} else if (count_secs > min_wait) {
 			IridiumTxStatus iridiumStatus = get(IridiumTxStatus.class);
-			
+
 			if (iridiumStatus != null && iridiumStatus.timestamp > (System.currentTimeMillis() / 1000.0) - 3
 					&& iridiumStatus.status == STATUS.TXSTATUS_EMPTY) {
-				
-				print("Synchronized with server in "+count_secs+" seconds. Advancing to next waypoint.");
-				 return this::exec;
-			 }
-		}				
-		count_secs++;			
+
+				print("Synchronized with server in " + count_secs + " seconds. Advancing to next waypoint.");
+				return this::exec;
+			}
+		}
+		count_secs++;
 		return this::communicate;
-		
+
 	}
 
 	/**
@@ -636,7 +657,7 @@ public class SoiExecutive extends TimedFSM {
 		print("Surfacing...");
 		return this::wait;
 	}
-	
+
 	/**
 	 * Stop the motor and start waiting to float to the surface
 	 */
@@ -651,26 +672,24 @@ public class SoiExecutive extends TimedFSM {
 
 		return this::report_error;
 	}
-	
+
 	/**
 	 * Wait to arrive at the surface before communications
 	 */
 	public FSMState report_error(FollowRefState ref) {
 		printFSMState();
-		VehicleMedium medium = get(VehicleMedium.class); 
-		
+		VehicleMedium medium = get(VehicleMedium.class);
+
 		// arrived at surface
 		if (medium != null && medium.medium == MEDIUM.VM_WATER) {
 			print("Now at surface, starting communications.");
 			secs_no_comms = 0;
 			count_secs = 0;
 			return this::communicate;
-		}
-		else
+		} else
 			return this::report_error;
 	}
 
-	
 	/**
 	 * Actively go at the surface before communications
 	 */
@@ -678,13 +697,13 @@ public class SoiExecutive extends TimedFSM {
 		printFSMState();
 		secs_no_comms++;
 		if (offlineForTooLong()) {
-			String err = "Offline for too long ("+secs_no_comms+")";
+			String err = "Offline for too long (" + secs_no_comms + ")";
 			printError(err);
-			txtMessages.add("ERROR: "+err);
+			txtMessages.add("ERROR: " + err);
 			return this::surface_to_report_error;
 		}
-		
-		VehicleMedium medium = get(VehicleMedium.class); 
+
+		VehicleMedium medium = get(VehicleMedium.class);
 		// arrived at surface
 		if (medium != null && medium.medium == MEDIUM.VM_WATER) {
 			print("Now at surface, starting communications.");
@@ -693,12 +712,11 @@ public class SoiExecutive extends TimedFSM {
 			secs_no_comms = 0;
 			count_secs = 0;
 			return this::communicate;
-		}
-		else {			
+		} else {
 			return this::wait;
 		}
 	}
-	
+
 	/**
 	 * Set the desired speed based on current ETA and distance
 	 */
@@ -722,47 +740,49 @@ public class SoiExecutive extends TimedFSM {
 			}
 		}
 
-		print("Setting speed according to ETA: "+speed+" m/s.");
+		print("Setting speed according to ETA: " + speed + " m/s.");
 		setSpeed(speed, SpeedUnits.METERS_PS);
 	}
-	
+
 	/**
 	 * Check if the vehicle has been disconnected for too long
-	 * @return <code>true</code> if the vehicle has been more than <code>mins_offline</code> minutes disconnected. 
+	 * 
+	 * @return <code>true</code> if the vehicle has been more than
+	 *         <code>mins_offline</code> minutes disconnected.
 	 */
 	public boolean offlineForTooLong() {
-		 // Check if it has taken too long to go at the surface...
+		// Check if it has taken too long to go at the surface...
 		int max_time = minsOff * 60 * 2;
 		return secs_no_comms > max_time;
 	}
-	
+
 	/**
 	 * Reset watchdog based on timeout parameter
 	 */
 	private void resetDeadline() {
 		deadline = new Date(System.currentTimeMillis() + timeout * 60 * 1000);
-		String txtDeadline = "INFO: Execution will end by "+deadline; 
+		String txtDeadline = "INFO: Execution will end by " + deadline;
 		txtMessages.add(txtDeadline);
 		setDeadline(deadline);
-		print(txtDeadline);		
+		print(txtDeadline);
 	}
-	
 
 	/**
 	 * Generate state report to be sent over Iridium
+	 * 
 	 * @return A {@link StateReport} to be sent over Iridium
 	 */
 	private StateReport createStateReport() {
 		EstimatedState estate = get(EstimatedState.class);
 		FuelLevel flevel = get(FuelLevel.class);
 		PlanControlState pcs = get(PlanControlState.class);
-		
+
 		StateReport report = new StateReport();
 		report.depth = estate == null || estate.depth == -1 ? 0xFFFF : (int) (estate.depth * 10);
 		report.altitude = estate == null || estate.alt == -1 ? 0xFFFF : (int) (estate.alt * 10);
 		report.speed = estate == null ? 0xFFFF : (int) (estate.u * 100);
-		report.fuel = flevel == null ? 255 : (int)flevel.value;
-		
+		report.fuel = flevel == null ? 255 : (int) flevel.value;
+
 		if (estate != null) {
 			double[] loc = WGS84Utilities.toLatLonDepth(estate);
 			report.latitude = (float) loc[0];
@@ -771,8 +791,8 @@ public class SoiExecutive extends TimedFSM {
 			while (rads < 0)
 				rads += (Math.PI * 2);
 			report.heading = (int) ((rads / (Math.PI * 2)) * 65535);
-		}				
-		
+		}
+
 		report.exec_state = -2;
 		if (pcs != null) {
 			switch (pcs.state) {
@@ -784,7 +804,7 @@ public class SoiExecutive extends TimedFSM {
 				break;
 			case PCS_INITIALIZING:
 				report.exec_state = -3;
-				break;				
+				break;
 			case PCS_BLOCKED:
 				report.exec_state = -4;
 				break;
@@ -792,40 +812,45 @@ public class SoiExecutive extends TimedFSM {
 				break;
 			}
 		}
-		
+
 		if (plan != null)
 			report.plan_checksum = plan.checksum();
-		
+
 		report.stime = (int) (System.currentTimeMillis() / 1000);
 		return report;
-		
+
 	}
-	
+
+	private static File CONFIG_FILE = null;
+
+	public void saveConfig(File destination) throws Exception {
+		BufferedWriter writer = new BufferedWriter(new FileWriter(CONFIG_FILE));
+		writer.write("#SOI Executive settings\n\n");
+		for (Field f : getClass().getDeclaredFields()) {
+			Parameter p = f.getAnnotation(Parameter.class);
+			if (p != null) {
+				writer.write("#" + p.description() + "\n");
+				writer.write(f.getName() + "=" + f.get(this) + "\n\n");
+			}
+		}
+		writer.close();
+	}
+
 	public static void main(String[] args) throws Exception {
 		if (args.length != 1) {
 			System.err.println("Usage: java -jar SoiExec.jar <FILE>");
 			System.exit(1);
 		}
 
-		File file = new File(args[0]);
-		if (!file.exists()) {
-			BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-			SoiExecutive tmp = new SoiExecutive();
-			writer.write("#SOI Executive settings\n\n");
-			for (Field f : tmp.getClass().getDeclaredFields()) {
-				Parameter p = f.getAnnotation(Parameter.class);
-				if (p != null) {
-					writer.write("#" + p.description() + "\n");
-					writer.write(f.getName() + "=" + f.get(tmp) + "\n\n");
-				}
-			}
-			System.out.println("Wrote default properties to " + file.getAbsolutePath());
-			writer.close();
+		CONFIG_FILE = new File(args[0]);
+		if (!CONFIG_FILE.exists()) {
+			new SoiExecutive().saveConfig(CONFIG_FILE);
+			System.out.println("Wrote default properties to " + CONFIG_FILE.getAbsolutePath());
 			System.exit(0);
 		}
 
 		Properties props = new Properties();
-		props.load(new FileInputStream(file));
+		props.load(new FileInputStream(CONFIG_FILE));
 
 		SoiExecutive tracker = PojoConfig.create(SoiExecutive.class, props);
 

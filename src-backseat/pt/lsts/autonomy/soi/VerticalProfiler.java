@@ -26,7 +26,7 @@ public class VerticalProfiler<T extends Message> {
 		newSample.depth = (int) Math.round(state.depth * 10);
 		newSample.avg = value.getFloat("value");
 		synchronized (samples) {
-			samples.add(newSample);	
+			samples.add(newSample);				
 		}		
 		lastState = state;
 	}
