@@ -23,16 +23,17 @@ import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
 import pt.lsts.imc4j.msg.FuelLevel;
 import pt.lsts.imc4j.msg.IridiumTxStatus;
+import pt.lsts.imc4j.msg.IridiumTxStatus.STATUS;
 import pt.lsts.imc4j.msg.PlanControl;
 import pt.lsts.imc4j.msg.PlanControl.OP;
 import pt.lsts.imc4j.msg.PlanControlState;
 import pt.lsts.imc4j.msg.ReportControl;
+import pt.lsts.imc4j.msg.Salinity;
 import pt.lsts.imc4j.msg.SoiCommand;
 import pt.lsts.imc4j.msg.SoiCommand.COMMAND;
 import pt.lsts.imc4j.msg.StateReport;
 import pt.lsts.imc4j.msg.Temperature;
 import pt.lsts.imc4j.msg.VehicleMedium;
-import pt.lsts.imc4j.msg.IridiumTxStatus.STATUS;
 import pt.lsts.imc4j.msg.VehicleMedium.MEDIUM;
 import pt.lsts.imc4j.msg.VerticalProfile;
 import pt.lsts.imc4j.msg.VerticalProfile.PARAMETER;
@@ -81,8 +82,12 @@ public class SoiExecutive extends TimedFSM {
 	@Parameter(description = "Speed up before descending")
 	int descRpm = 1300;
 
-	@Parameter(description = "Upload temperature profiles when idle")
+	@Parameter(description = "Upload temperature profiles")
 	boolean upTemp = false;
+	
+	@Parameter(description = "Upload salinity profiles")
+	boolean upSal = true;
+	
 
 	@Parameter(description = "Align with destination waypoint before going underwater")
 	boolean align = true;
@@ -94,6 +99,7 @@ public class SoiExecutive extends TimedFSM {
 	private ArrayList<SoiCommand> replies = new ArrayList<>();
 	private ArrayList<VerticalProfile> profiles = new ArrayList<>();
 	private VerticalProfiler<Temperature> tempProfiler = new VerticalProfiler<>();
+	private VerticalProfiler<Salinity> salProfiler = new VerticalProfiler<>();
 
 	private final String SOI_PLAN_ID = "soi_plan";
 	private final int ANGLE_DIFF_DEGS = 5;
@@ -283,6 +289,11 @@ public class SoiExecutive extends TimedFSM {
 	public void on(Temperature temp) {
 		tempProfiler.setSample(get(EstimatedState.class), temp);
 	}
+	
+	@Consume
+	public void on(Salinity sal) {
+		salProfiler.setSample(get(EstimatedState.class), sal);
+	}
 
 	@Consume
 	public void on(VehicleMedium medium) {
@@ -308,39 +319,11 @@ public class SoiExecutive extends TimedFSM {
 	 */
 	public FSMState idle(FollowRefState state) {
 		printFSMState();
-		if (upTemp && !profiles.isEmpty()) {
-			return this::sendProfiles;
-		} else {
-			profiles.clear();
-			print("Waiting for plan...");
-		}
+		print("Waiting for plan...");
 		return this::idle;
 	}
 
-	private Future<Void> ongoingProfile = null;
-
-	public FSMState sendProfiles(FollowRefState state) {
-		printFSMState();
-
-		boolean canSend = ongoingProfile == null || ongoingProfile.isDone();
-
-		if (profiles.isEmpty())
-			return this::idle;
-
-		if (canSend) {
-			print("Sending vertical profile (" + (profiles.size() - 1) + " left)...");
-			try {
-				ongoingProfile = sendViaIridium(profiles.get(profiles.size() - 1), wptSecs);
-				profiles.remove(profiles.get(profiles.size() - 1));
-			} catch (Exception e) {
-				e.printStackTrace();
-				ongoingProfile = null;
-			}
-
-		}
-
-		return this::sendProfiles;
-	}
+	
 
 	/**
 	 * Execute the next waypoint
@@ -494,7 +477,22 @@ public class SoiExecutive extends TimedFSM {
 									Math.min((int) maxDepth, 20));
 							if (prof != null) {
 								profiles.add(prof);
-								print("Added profile with " + prof.samples.size() + " samples");
+								print("Added temperature profile with " + prof.samples.size() + " samples");
+							} else {
+								print("Discarded empty profile");
+							}
+						} catch (Exception e) {
+							print(e.getClass().getSimpleName() + " while calculating profile: " + e.getMessage());
+							e.printStackTrace();
+						}
+					}
+					if (upSal) {
+						try {
+							VerticalProfile prof = salProfiler.getProfile(PARAMETER.PROF_SALINITY,
+									Math.min((int) maxDepth, 20));
+							if (prof != null) {
+								profiles.add(prof);
+								print("Added salinity profile with " + prof.samples.size() + " samples");
 							} else {
 								print("Discarded empty profile");
 							}
@@ -592,23 +590,26 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 
+	private ArrayList<Future<Void>> sentMessages = new ArrayList<>();	
+	
 	/**
 	 * Send a position report and any pending replies / errors
 	 */
 	public FSMState communicate(FollowRefState ref) {
 		printFSMState();
-		int max_wait = wptSecs * 3;
+		
 		int min_wait = wptSecs;
-		if (plan != null && plan.waypoint(wpt_index) != null)
-			min_wait = Math.max(min_wait, plan.waypoint(wpt_index).getDuration());
-
+		int max_wait = wptSecs * 3;
+		
 		// Send "DUNE" report
 		if (count_secs == 0) {
+			
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			sendReport(itfs);
 			sendViaIridium(createStateReport(), max_wait - count_secs - 1);
 			print("Will wait from " + min_wait + " to " + max_wait + " seconds to send " + txtMessages.size()
-					+ " texts and " + replies.size() + " command replies.");
+					+ " texts, " + replies.size() + " command replies and "+profiles.size()+" profiles.");
+			
 		} else {
 			while (!replies.isEmpty()) {
 				SoiCommand cmd = replies.get(0);
@@ -624,8 +625,13 @@ public class SoiExecutive extends TimedFSM {
 				sendViaIridium(txt, max_wait - count_secs - 1);
 				txtMessages.remove(0);
 			}
+			
+			while (!profiles.isEmpty()) {
+				sendViaIridium(profiles.get(profiles.size() - 1), max_wait - count_secs - 1);
+				profiles.remove(profiles.get(profiles.size() - 1));
+			}
 		}
-
+		
 		if (count_secs >= max_wait) {
 			print("Advancing to next waypoint as maximum time was reached.");
 			return this::exec;
