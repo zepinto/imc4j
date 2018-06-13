@@ -93,7 +93,7 @@ public class SoiExecutive extends TimedFSM {
 	boolean align = true;
 
 	//FIXME initial angle should be 225
-	private FrontTracking frontTracking = new FrontTracking(34.3, 34.5, 5, 25, 25, false);
+	private FrontTracking frontTracking = new FrontTracking(34.3, 34.5, 5, 30, 235, true);
 
 	private Plan plan = new Plan("idle");
 	private int secs_no_comms = 0, count_secs = 0, secs_underwater = 0;
@@ -483,26 +483,16 @@ public class SoiExecutive extends TimedFSM {
 							if (prof != null) {
 								profiles.add(prof);
 								print("Added salinity profile with " + prof.samples.size() + " samples");
-							} else {
+							
 								if (upTemp) {
 									print("checking front crossings...");
 									double salinity = frontTracking.getSalinity(prof);
 									double[] lld = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 									boolean crossed = frontTracking.isOutside(prof);
 									print("Measured salinity: "+salinity);
-									/*if (frontTracking.goingUp)
-										System.out.println(lld[0]+" > "+41.183492);
-									else
-										System.out.println(lld[0]+" < "+41.182561);
-										
-									boolean crossed = (frontTracking.goingUp && lld[0] > 41.183492) || (!frontTracking.goingUp && lld[0] < 41.182561);
-									*/
-									
-									//print("Measured salinity: "+salinity+", crossed the front? " + crossed);
 									print("crossed the front? " + crossed);
 
 									if (crossed) {
-
 										frontTracking.addCrossing(lld[0], lld[1]);
 										print("Crossed the front at "+lld[0]+", "+lld[1]);
 										double[] wpt;
@@ -534,6 +524,7 @@ public class SoiExecutive extends TimedFSM {
 										return this::start_waiting;
 									}
 								}
+							} else {
 								print("Discarded empty profile");
 							}
 						} catch (Exception e) {
