@@ -31,6 +31,7 @@ import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.msg.Salinity;
 import pt.lsts.imc4j.msg.SoiCommand;
 import pt.lsts.imc4j.msg.SoiCommand.COMMAND;
+import pt.lsts.imc4j.msg.SoiCommand.TYPE;
 import pt.lsts.imc4j.msg.StateReport;
 import pt.lsts.imc4j.msg.Temperature;
 import pt.lsts.imc4j.msg.VehicleMedium;
@@ -84,13 +85,15 @@ public class SoiExecutive extends TimedFSM {
 
 	@Parameter(description = "Upload temperature profiles")
 	boolean upTemp = false;
-	
+
 	@Parameter(description = "Upload salinity profiles")
 	boolean upSal = true;
-	
 
 	@Parameter(description = "Align with destination waypoint before going underwater")
 	boolean align = true;
+
+	//FIXME initial angle should be 225
+	private FrontTracking frontTracking = new FrontTracking(34.3, 34.5, 5, 25, 25, false);
 
 	private Plan plan = new Plan("idle");
 	private int secs_no_comms = 0, count_secs = 0, secs_underwater = 0;
@@ -289,7 +292,7 @@ public class SoiExecutive extends TimedFSM {
 	public void on(Temperature temp) {
 		tempProfiler.setSample(get(EstimatedState.class), temp);
 	}
-	
+
 	@Consume
 	public void on(Salinity sal) {
 		salProfiler.setSample(get(EstimatedState.class), sal);
@@ -323,13 +326,12 @@ public class SoiExecutive extends TimedFSM {
 		return this::idle;
 	}
 
-	
-
 	/**
 	 * Execute the next waypoint
 	 */
 	public FSMState exec(FollowRefState state) {
 		printFSMState();
+
 		if (plan == null || plan.waypoints().isEmpty())
 			return this::idleAtSurface;
 
@@ -468,24 +470,12 @@ public class SoiExecutive extends TimedFSM {
 			if (secs_no_comms / 60 >= minsOff) {
 				print("Periodic surface");
 				return this::start_waiting;
-			} else {
+			} 
+
+			else {
 				if (maxDepth != target_depth) {
+
 					print("Now descending (disconnected for " + secs_no_comms + " seconds).");
-					if (upTemp) {
-						try {
-							VerticalProfile prof = tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE,
-									Math.min((int) maxDepth, 20));
-							if (prof != null) {
-								profiles.add(prof);
-								print("Added temperature profile with " + prof.samples.size() + " samples");
-							} else {
-								print("Discarded empty profile");
-							}
-						} catch (Exception e) {
-							print(e.getClass().getSimpleName() + " while calculating profile: " + e.getMessage());
-							e.printStackTrace();
-						}
-					}
 					if (upSal) {
 						try {
 							VerticalProfile prof = salProfiler.getProfile(PARAMETER.PROF_SALINITY,
@@ -494,6 +484,56 @@ public class SoiExecutive extends TimedFSM {
 								profiles.add(prof);
 								print("Added salinity profile with " + prof.samples.size() + " samples");
 							} else {
+								if (upTemp) {
+									print("checking front crossings...");
+									double salinity = frontTracking.getSalinity(prof);
+									double[] lld = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+									boolean crossed = frontTracking.isOutside(prof);
+									print("Measured salinity: "+salinity);
+									/*if (frontTracking.goingUp)
+										System.out.println(lld[0]+" > "+41.183492);
+									else
+										System.out.println(lld[0]+" < "+41.182561);
+										
+									boolean crossed = (frontTracking.goingUp && lld[0] > 41.183492) || (!frontTracking.goingUp && lld[0] < 41.182561);
+									*/
+									
+									//print("Measured salinity: "+salinity+", crossed the front? " + crossed);
+									print("crossed the front? " + crossed);
+
+									if (crossed) {
+
+										frontTracking.addCrossing(lld[0], lld[1]);
+										print("Crossed the front at "+lld[0]+", "+lld[1]);
+										double[] wpt;
+										String info;
+										if (frontTracking.goingUp) {
+											wpt = frontTracking.newWaypointDown();
+											info = "going down to "+wpt[0]+", "+wpt[1];
+										}
+										else {
+											wpt = frontTracking.newWaypointUp();
+											info = "going up to "+wpt[0]+", "+wpt[1];
+										}
+										frontTracking.goingUp = !frontTracking.goingUp;
+										print(info);
+
+										Plan plan = new Plan("front_crossing");
+										Waypoint waypoint = new Waypoint(1, (float)wpt[0], (float)wpt[1]);
+										plan.addWaypoint(waypoint);
+										plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, lld[0], lld[1], speed);
+										this.plan = plan;
+										this.wpt_index = 0;
+
+										SoiCommand cmd = new SoiCommand();
+										cmd.command = COMMAND.SOICMD_GET_PLAN;
+										cmd.type = TYPE.SOITYPE_SUCCESS;
+										cmd.plan = plan.asImc();
+										replies.add(cmd);
+
+										return this::start_waiting;
+									}
+								}
 								print("Discarded empty profile");
 							}
 						} catch (Exception e) {
@@ -590,26 +630,26 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 
-	private ArrayList<Future<Void>> sentMessages = new ArrayList<>();	
-	
+	private ArrayList<Future<Void>> sentMessages = new ArrayList<>();
+
 	/**
 	 * Send a position report and any pending replies / errors
 	 */
 	public FSMState communicate(FollowRefState ref) {
 		printFSMState();
-		
+
 		int min_wait = wptSecs;
 		int max_wait = wptSecs * 3;
-		
+
 		// Send "DUNE" report
 		if (count_secs == 0) {
-			
+
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			sendReport(itfs);
 			sendViaIridium(createStateReport(), max_wait - count_secs - 1);
 			print("Will wait from " + min_wait + " to " + max_wait + " seconds to send " + txtMessages.size()
-					+ " texts, " + replies.size() + " command replies and "+profiles.size()+" profiles.");
-			
+			+ " texts, " + replies.size() + " command replies and " + profiles.size() + " profiles.");
+
 		} else {
 			while (!replies.isEmpty()) {
 				SoiCommand cmd = replies.get(0);
@@ -625,13 +665,13 @@ public class SoiExecutive extends TimedFSM {
 				sendViaIridium(txt, max_wait - count_secs - 1);
 				txtMessages.remove(0);
 			}
-			
+
 			while (!profiles.isEmpty()) {
 				sendViaIridium(profiles.get(profiles.size() - 1), max_wait - count_secs - 1);
 				profiles.remove(profiles.get(profiles.size() - 1));
 			}
 		}
-		
+
 		if (count_secs >= max_wait) {
 			print("Advancing to next waypoint as maximum time was reached.");
 			return this::exec;
