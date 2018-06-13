@@ -93,7 +93,7 @@ public class SoiExecutive extends TimedFSM {
 	boolean align = true;
 
 	//FIXME initial angle should be 225
-	private FrontTracking frontTracking = new FrontTracking(34.3, 34.5, 5, 30, 235, true);
+	private FrontTracking frontTracking = new FrontTracking(34.3, 34.5, 9, 30, 235, true);
 
 	private Plan plan = new Plan("idle");
 	private int secs_no_comms = 0, count_secs = 0, secs_underwater = 0;
