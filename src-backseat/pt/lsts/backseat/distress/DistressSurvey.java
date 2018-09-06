@@ -979,6 +979,8 @@ public class DistressSurvey extends TimedFSM {
         System.out.println(" End Payloads Set");
         
 
+        tracker.setPaused(false);
+        
         tracker.connect(tracker.hostAddr, tracker.hostPort);
         tracker.join();
     }
