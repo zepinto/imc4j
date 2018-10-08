@@ -1,6 +1,8 @@
 package pt.lsts.autonomy.soi;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.Message;
@@ -30,6 +32,36 @@ public class VerticalProfiler<T extends Message> {
 		}		
 		lastState = state;
 	}
+	
+	public Map<Double, Double> getProfileMap(int numDepths) {
+		synchronized (samples) {
+			if (samples.isEmpty())
+				return null;				
+		}
+		double[] sums = new double[numDepths];
+		int[] counts = new int[numDepths];
+		LinkedHashMap<Double, Double> res = new LinkedHashMap<>();
+		
+		synchronized (samples) {
+			for (ProfileSample s : samples) {
+				double depth = (s.depth / 10);
+				int pos = (int) ((depth / maxDepth) * numDepths);
+				if (pos >= numDepths)
+					continue;
+				counts[pos]++;
+				sums[pos] += s.avg;
+			}	
+		}
+		
+		for (int pos = 0; pos < numDepths; pos++) {
+			if (counts[pos] == 0)
+				continue;
+			res.put(((double) pos / numDepths) * maxDepth, sums[pos] / counts[pos]);
+		}
+		
+		return res;
+	}
+
 
 	public VerticalProfile getProfile(VerticalProfile.PARAMETER param, int numDepths) {
 		synchronized (samples) {

@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Properties;
-import java.util.concurrent.Future;
 
 import pt.lsts.backseat.TimedFSM;
 import pt.lsts.endurance.Plan;
@@ -59,10 +58,10 @@ public class SoiExecutive extends TimedFSM {
 	double minSpeed = 0.7;
 
 	@Parameter(description = "DUNE Host Address")
-	String hAddr = "127.0.0.1";
+	public String hAddr = "127.0.0.1";
 
 	@Parameter(description = "DUNE Host Port (TCP)")
-	int hPort = 6006;
+	public int hPort = 6006;
 
 	@Parameter(description = "Minutes before termination")
 	int timeout = 600;
@@ -84,10 +83,9 @@ public class SoiExecutive extends TimedFSM {
 
 	@Parameter(description = "Upload temperature profiles")
 	boolean upTemp = false;
-	
+
 	@Parameter(description = "Upload salinity profiles")
-	boolean upSal = true;
-	
+	boolean upSal = false;
 
 	@Parameter(description = "Align with destination waypoint before going underwater")
 	boolean align = true;
@@ -116,11 +114,10 @@ public class SoiExecutive extends TimedFSM {
 	/**
 	 * In case the last plan failed, report the resulting error
 	 * 
-	 * @param pControl
-	 *            A {@link PlanControl} message
+	 * @param pControl A {@link PlanControl} message
 	 */
 	@Consume
-	public void on(PlanControl pControl) {
+	public final void on(PlanControl pControl) {
 		if (pControl.op == OP.PC_START && pControl.type == PlanControl.TYPE.PC_FAILURE) {
 			if (pControl.plan_id.equals(SOI_PLAN_ID)) {
 				// Error during execution!
@@ -140,11 +137,10 @@ public class SoiExecutive extends TimedFSM {
 	/**
 	 * React to incoming commands
 	 * 
-	 * @param cmd
-	 *            The received command
+	 * @param cmd The received command
 	 */
 	@Consume
-	public void on(SoiCommand cmd) {
+	public final void on(SoiCommand cmd) {
 		if (cmd.type != SoiCommand.TYPE.SOITYPE_REQUEST)
 			return;
 		SoiCommand reply = new SoiCommand();
@@ -201,8 +197,14 @@ public class SoiExecutive extends TimedFSM {
 		case SOICMD_SET_PARAMS:
 			print("CMD: Set Params!");
 			try {
-				for (String key : cmd.settings.keys())
-					PojoConfig.setProperty(this, key, cmd.settings.get(key));
+				for (String key : cmd.settings.keys()) {
+					try {
+						PojoConfig.setProperty(this, key, cmd.settings.get(key));	
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
 				reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 				reply.settings = params();
 
@@ -268,7 +270,7 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	@Consume
-	public void on(EntityParameters params) {
+	public final void on(EntityParameters params) {
 		if (params.name.equals(getClass().getSimpleName())) {
 			for (EntityParameter param : params.params) {
 				try {
@@ -286,17 +288,17 @@ public class SoiExecutive extends TimedFSM {
 	}
 
 	@Consume
-	public void on(Temperature temp) {
+	public final void on(Temperature temp) {
 		tempProfiler.setSample(get(EstimatedState.class), temp);
 	}
-	
+
 	@Consume
-	public void on(Salinity sal) {
+	public final void on(Salinity sal) {
 		salProfiler.setSample(get(EstimatedState.class), sal);
 	}
 
 	@Consume
-	public void on(VehicleMedium medium) {
+	public final void on(VehicleMedium medium) {
 		if (medium.medium == MEDIUM.VM_UNDERWATER)
 			secs_underwater++;
 		else
@@ -319,11 +321,21 @@ public class SoiExecutive extends TimedFSM {
 	 */
 	public FSMState idle(FollowRefState state) {
 		printFSMState();
-		print("Waiting for plan...");
+		onIdle();
 		return this::idle;
 	}
 
-	
+	protected void onIdle() {
+		print("idle...");
+	}
+
+	protected void onSalinityProfile(VerticalProfile salinity) {
+
+	}
+
+	protected void onTemperatureProfile(VerticalProfile salinity) {
+
+	}
 
 	/**
 	 * Execute the next waypoint
@@ -464,6 +476,8 @@ public class SoiExecutive extends TimedFSM {
 			return this::start_waiting;
 		}
 
+
+
 		if (target_depth > 0 && arrivedZ() || !isUnderwater()) {
 			if (secs_no_comms / 60 >= minsOff) {
 				print("Periodic surface");
@@ -471,34 +485,30 @@ public class SoiExecutive extends TimedFSM {
 			} else {
 				if (maxDepth != target_depth) {
 					print("Now descending (disconnected for " + secs_no_comms + " seconds).");
-					if (upTemp) {
-						try {
-							VerticalProfile prof = tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE,
-									Math.min((int) maxDepth, 20));
-							if (prof != null) {
-								profiles.add(prof);
-								print("Added temperature profile with " + prof.samples.size() + " samples");
-							} else {
-								print("Discarded empty profile");
-							}
-						} catch (Exception e) {
-							print(e.getClass().getSimpleName() + " while calculating profile: " + e.getMessage());
-							e.printStackTrace();
+					VerticalProfile salProf = null, tempProf = null;
+
+					try {
+						salProf = salProfiler.getProfile(PARAMETER.PROF_SALINITY,
+								Math.min((int) maxDepth, 20));
+						tempProf = tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int) maxDepth, 20));
+					}
+					catch (Exception e) {
+						print(e.getClass().getSimpleName() + " while calculating profile: " + e.getMessage());
+					}
+					
+					if (tempProf != null) {
+						onTemperatureProfile(tempProf);
+						if (upTemp) {
+							profiles.add(tempProf);
+							print("Added temperature profile with " + tempProf.samples.size() + " samples");
 						}
 					}
-					if (upSal) {
-						try {
-							VerticalProfile prof = salProfiler.getProfile(PARAMETER.PROF_SALINITY,
-									Math.min((int) maxDepth, 20));
-							if (prof != null) {
-								profiles.add(prof);
-								print("Added salinity profile with " + prof.samples.size() + " samples");
-							} else {
-								print("Discarded empty profile");
-							}
-						} catch (Exception e) {
-							print(e.getClass().getSimpleName() + " while calculating profile: " + e.getMessage());
-							e.printStackTrace();
+					
+					if (salProf != null) {
+						onSalinityProfile(salProf);
+						if (upSal) {
+							profiles.add(salProf);
+							print("Added salinity profile with " + salProf.samples.size() + " samples");
 						}
 					}
 				}
@@ -511,8 +521,8 @@ public class SoiExecutive extends TimedFSM {
 					return this::dive;
 			}
 
-		} else
-			return this::ascend;
+		}else return this::ascend;
+
 	}
 
 	/**
@@ -590,26 +600,24 @@ public class SoiExecutive extends TimedFSM {
 		}
 	}
 
-	private ArrayList<Future<Void>> sentMessages = new ArrayList<>();	
-	
 	/**
 	 * Send a position report and any pending replies / errors
 	 */
 	public FSMState communicate(FollowRefState ref) {
 		printFSMState();
-		
+
 		int min_wait = wptSecs;
 		int max_wait = wptSecs * 3;
-		
+
 		// Send "DUNE" report
 		if (count_secs == 0) {
-			
+
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
 			sendReport(itfs);
 			sendViaIridium(createStateReport(), max_wait - count_secs - 1);
 			print("Will wait from " + min_wait + " to " + max_wait + " seconds to send " + txtMessages.size()
-					+ " texts, " + replies.size() + " command replies and "+profiles.size()+" profiles.");
-			
+			+ " texts, " + replies.size() + " command replies and "+profiles.size()+" profiles.");
+
 		} else {
 			while (!replies.isEmpty()) {
 				SoiCommand cmd = replies.get(0);
@@ -625,13 +633,13 @@ public class SoiExecutive extends TimedFSM {
 				sendViaIridium(txt, max_wait - count_secs - 1);
 				txtMessages.remove(0);
 			}
-			
+
 			while (!profiles.isEmpty()) {
 				sendViaIridium(profiles.get(profiles.size() - 1), max_wait - count_secs - 1);
 				profiles.remove(profiles.get(profiles.size() - 1));
 			}
 		}
-		
+
 		if (count_secs >= max_wait) {
 			print("Advancing to next waypoint as maximum time was reached.");
 			return this::exec;
@@ -827,12 +835,13 @@ public class SoiExecutive extends TimedFSM {
 
 	}
 
-	private static File CONFIG_FILE = null;
+	protected static File CONFIG_FILE = null;
 
 	public void saveConfig(File destination) throws Exception {
-		BufferedWriter writer = new BufferedWriter(new FileWriter(CONFIG_FILE));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(destination));
 		writer.write("#SOI Executive settings\n\n");
 		for (Field f : getClass().getDeclaredFields()) {
+			f.setAccessible(true);
 			Parameter p = f.getAnnotation(Parameter.class);
 			if (p != null) {
 				writer.write("#" + p.description() + "\n");
