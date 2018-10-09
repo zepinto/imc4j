@@ -225,7 +225,8 @@ public class SoiExecutive extends TimedFSM {
 
 		case SOICMD_GET_PLAN:
 			print("CMD: Get plan!");
-			reply.plan = plan.asImc();
+			if (plan != null)
+				reply.plan = plan.asImc();
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
 
