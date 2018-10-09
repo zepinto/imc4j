@@ -194,16 +194,19 @@ public class PojoConfig {
 		}
 	}
 
-	private static ArrayList<Field> loadFields(Object pojo) {
+	public static ArrayList<Field> loadFields(Object pojo) {
 		ArrayList<Field> result = new ArrayList<Field>();
 
-		for (Field f : pojo.getClass().getDeclaredFields()) {
-			if (f.getAnnotation(Parameter.class) != null) {
-				f.setAccessible(true);
-				result.add(f);
+		Class<?> c = pojo.getClass();
+		while (!c.equals(Object.class)) {
+			for (Field f : c.getDeclaredFields()) {
+				if (f.getAnnotation(Parameter.class) != null) {
+					f.setAccessible(true);
+					result.add(f);
+				}
 			}
+			c = c.getSuperclass();
 		}
-
 		return result;
 	}
 

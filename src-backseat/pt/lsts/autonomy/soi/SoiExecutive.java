@@ -43,19 +43,19 @@ import pt.lsts.imc4j.util.WGS84Utilities;
 public class SoiExecutive extends TimedFSM {
 
 	@Parameter(description = "Nominal Speed")
-	double speed = 1;
+	public double speed = 1;
 
 	@Parameter(description = "Maximum Depth")
-	double maxDepth = 10;
+	public double maxDepth = 10;
 
 	@Parameter(description = "Minimum Depth")
-	double minDepth = 0.0;
+	public double minDepth = 0.0;
 
 	@Parameter(description = "Maximum Speed")
-	double maxSpeed = 1.5;
+	public double maxSpeed = 1.5;
 
 	@Parameter(description = "Minimum Speed")
-	double minSpeed = 0.7;
+	public double minSpeed = 0.7;
 
 	@Parameter(description = "DUNE Host Address")
 	public String hAddr = "127.0.0.1";
@@ -64,31 +64,31 @@ public class SoiExecutive extends TimedFSM {
 	public int hPort = 6006;
 
 	@Parameter(description = "Minutes before termination")
-	int timeout = 600;
+	public int timeout = 600;
 
 	@Parameter(description = "Maximum time without reporting position")
-	int minsOff = 15;
+	public int minsOff = 15;
 
 	@Parameter(description = "Maximum time without GPS")
-	int minsUnder = 3;
+	public int minsUnder = 3;
 
 	@Parameter(description = "Seconds to idle at each vertex")
-	int wptSecs = 60;
+	public int wptSecs = 60;
 
 	@Parameter(description = "Cyclic execution")
-	boolean cycle = false;
+	public boolean cycle = false;
 
 	@Parameter(description = "Speed up before descending")
-	int descRpm = 1300;
+	public int descRpm = 1300;
 
 	@Parameter(description = "Upload temperature profiles")
-	boolean upTemp = false;
+	public boolean upTemp = false;
 
 	@Parameter(description = "Upload salinity profiles")
-	boolean upSal = false;
+	public boolean upSal = false;
 
 	@Parameter(description = "Align with destination waypoint before going underwater")
-	boolean align = true;
+	public boolean align = true;
 
 	private Plan plan = new Plan("idle");
 	private int secs_no_comms = 0, count_secs = 0, secs_underwater = 0;
@@ -321,20 +321,23 @@ public class SoiExecutive extends TimedFSM {
 	 */
 	public FSMState idle(FollowRefState state) {
 		printFSMState();
-		onIdle();
-		return this::idle;
+		FSMState newState = onIdle();
+		if (newState != null)
+			return newState;
+		else
+			return this::idle;
 	}
 
-	protected void onIdle() {
-		print("idle...");
+	protected FSMState onIdle() {
+		return null;
 	}
 
-	protected void onSalinityProfile(VerticalProfile salinity) {
-
+	protected FSMState onSalinityProfile(VerticalProfile salinity) {
+		return null;
 	}
 
-	protected void onTemperatureProfile(VerticalProfile salinity) {
-
+	protected FSMState onTemperatureProfile(VerticalProfile salinity) {
+		return null;
 	}
 
 	/**
@@ -497,19 +500,25 @@ public class SoiExecutive extends TimedFSM {
 					}
 					
 					if (tempProf != null) {
-						onTemperatureProfile(tempProf);
 						if (upTemp) {
 							profiles.add(tempProf);
 							print("Added temperature profile with " + tempProf.samples.size() + " samples");
 						}
+						
+						FSMState newState = onTemperatureProfile(tempProf);
+						if (newState != null)
+							return newState;
 					}
 					
 					if (salProf != null) {
-						onSalinityProfile(salProf);
 						if (upSal) {
 							profiles.add(salProf);
 							print("Added salinity profile with " + salProf.samples.size() + " samples");
 						}
+						
+						FSMState newState = onSalinityProfile(salProf);
+						if (newState != null)
+							return newState;
 					}
 				}
 
@@ -840,7 +849,7 @@ public class SoiExecutive extends TimedFSM {
 	public void saveConfig(File destination) throws Exception {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(destination));
 		writer.write("#SOI Executive settings\n\n");
-		for (Field f : getClass().getDeclaredFields()) {
+		for (Field f : PojoConfig.loadFields(this)) {
 			f.setAccessible(true);
 			Parameter p = f.getAnnotation(Parameter.class);
 			if (p != null) {
