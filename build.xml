@@ -1,204 +1,230 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project default="drip" name="Create Runnable Jar for Project imc4j">
-    <property name="dir.buildfile" value="."/>
-    <property name="dir.workspace" value="${dir.buildfile}/.."/>
-    <property name="dir.jarfile" value="${dir.buildfile}/dist"/>
+	<property name="dir.buildfile" value="."/>
+	<property name="dir.workspace" value="${dir.buildfile}/.."/>
+	<property name="dir.jarfile" value="${dir.buildfile}/dist"/>
 	<property name="compile-encoding" value="UTF-8" />
-	
+
 	<path id="classpath.dependencies">
-	    <pathelement location="lib/minimal-json-0.9.4.jar" />
-	    <pathelement location="lib/nanohttpd-2.3.1.jar" />
-	  </path>
-	
+		<pathelement location="lib/minimal-json-0.9.4.jar" />
+		<pathelement location="lib/nanohttpd-2.3.1.jar" />
+	</path>
+
 	<target name="compile-backseat">
-	   
-	  </target>
-	
+
+	</target>
+
 	<target name="jar" >
 		<mkdir dir="bin"/>
-			<delete dir="bin"/>
+		<delete dir="bin"/>
 		<mkdir dir="bin"/>
 		<javac encoding="${compile-encoding}" srcdir="src"  destdir="bin" includes="**/*.java" fork="false">
 			<classpath refid="classpath.dependencies"/>
 		</javac>
 		<jar destfile="${dir.jarfile}/imc4j.jar">
 			<fileset dir="${dir.buildfile}/bin"/>
-		    <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
 		</jar>
 	</target>
-	
+
 	<target name="endurance" >
 		<mkdir dir="bin"/>
-			<delete dir="bin"/>
+		<delete dir="bin"/>
 		<mkdir dir="bin"/>
 		<javac encoding="${compile-encoding}" srcdir="src;src-endurance"  destdir="bin" includes="**/*.java" fork="false" target="1.7" source="1.7">
 			<classpath refid="classpath.dependencies"/>
 		</javac>
-	    <copy verbose="true" todir="bin">
-	      <fileset dir="src" includes="**/*.java"/>
-	    </copy>
+		<copy verbose="true" todir="bin">
+			<fileset dir="src" includes="**/*.java"/>
+		</copy>
 		<copy verbose="true" todir="bin">
 			<fileset dir="src-endurance" includes="**/*.java"/>
-	    </copy>
+		</copy>
 		<jar destfile="${dir.jarfile}/endurance.jar">
 			<fileset dir="${dir.buildfile}/bin"/>
-		    <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
 		</jar>
 	</target>
-	
-    <target name="bserver">
-    	 <mkdir dir="bin"/>
-		 <delete dir="bin"/>
-    	 <mkdir dir="bin"/>
-    	        
-    	 <javac encoding="${compile-encoding}" srcdir="src;src-endurance;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
-    	  	<classpath refid="classpath.dependencies"/>
-    	 </javac>
-         <copy todir="bin" overwrite="true">
-            <fileset dir="src-backseat">
-                <include name="**/*.css" />
-                <include name="**/*.js" />
-                <include name="**/*.json" />
-            </fileset>
-            <fileset dir="src-backseat">
-                <include name="**/*.css" />
-                <include name="**/*.js" />
-                <include name="**/*.json" />
-            </fileset>
-        </copy>
-         <jar destfile="${dir.jarfile}/BackSeatServer.jar" filesetmanifest="mergewithoutmain">
-            <manifest>
-                <attribute name="Main-Class" value="pt.lsts.httpd.BackSeatServer"/>
-                <attribute name="Class-Path" value="."/>
-            </manifest>
-            <fileset dir="${dir.buildfile}/bin"/>
-            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
-            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
-         </jar>
-    </target>
 
-    <target name="drip">
-    	 <mkdir dir="bin"/>
-		 <delete dir="bin"/>
-    	 <mkdir dir="bin"/>
-    	        
-    	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat;src-endurance"  destdir="bin" includes="**/*.java" fork="false">
-    	  	<classpath refid="classpath.dependencies"/>
-    	 </javac>
-         <copy todir="bin" overwrite="true">
-            <fileset dir="src-backseat">
-                <include name="**/*.css" />
-                <include name="**/*.js" />
-                <include name="**/*.json" />
-            </fileset>
-            <fileset dir="src-backseat">
-                <include name="**/*.css" />
-                <include name="**/*.js" />
-                <include name="**/*.json" />
-            </fileset>
-        </copy>
-         <jar destfile="${dir.jarfile}/drip/Drip.jar" filesetmanifest="mergewithoutmain">
-            <manifest>
-                <attribute name="Main-Class" value="pt.lsts.backseat.drip.RiverPlumeTracker"/>
-                <attribute name="Class-Path" value="."/>
-            </manifest>
-            <fileset dir="${dir.buildfile}/bin"/>
-            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
-         </jar>
-    </target>
-	
+	<target name="bserver">
+		<mkdir dir="bin"/>
+		<delete dir="bin"/>
+		<mkdir dir="bin"/>
+
+		<javac encoding="${compile-encoding}" srcdir="src;src-endurance;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+			<classpath refid="classpath.dependencies"/>
+		</javac>
+		<copy todir="bin" overwrite="true">
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+		</copy>
+		<jar destfile="${dir.jarfile}/BackSeatServer.jar" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="pt.lsts.httpd.BackSeatServer"/>
+				<attribute name="Class-Path" value="."/>
+			</manifest>
+			<fileset dir="${dir.buildfile}/bin"/>
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
+		</jar>
+	</target>
+
+	<target name="DripExecutive">
+		<javac encoding="${compile-encoding}" srcdir="src;src-endurance;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+			<classpath refid="classpath.dependencies"/>
+		</javac>
+		<copy todir="bin" overwrite="true">
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+		</copy>
+		<jar destfile="${dir.jarfile}/drip/DripExecutive.jar" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="pt.lsts.backseat.drip.DripExecutive" />
+				<attribute name="Class-Path" value="." />
+			</manifest>
+			<fileset dir="${dir.buildfile}/bin" />
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar" />
+		</jar>
+	</target>
+
+	<target name="drip">
+		<mkdir dir="bin" />
+		<delete dir="bin" />
+		<mkdir dir="bin" />
+
+		<javac encoding="${compile-encoding}" srcdir="src;src-backseat;src-endurance" destdir="bin" includes="**/*.java" fork="false">
+			<classpath refid="classpath.dependencies" />
+		</javac>
+		<copy todir="bin" overwrite="true">
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+		</copy>
+		<jar destfile="${dir.jarfile}/drip/Drip.jar" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="pt.lsts.backseat.drip.RiverPlumeTracker"/>
+				<attribute name="Class-Path" value="."/>
+			</manifest>
+			<fileset dir="${dir.buildfile}/bin"/>
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+		</jar>
+	</target>
+
 	<target name="soi">
-	    	 <mkdir dir="bin"/>
-			 <delete dir="bin"/>
-	    	 <mkdir dir="bin"/>
-	    	        
-	    	 <javac encoding="${compile-encoding}" srcdir="src;src-endurance;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
-	    	  	<classpath refid="classpath.dependencies"/>
-	    	 </javac>
-	         <copy todir="bin" overwrite="true">
-	            <fileset dir="src-backseat">
-	                <include name="**/*.css" />
-	                <include name="**/*.js" />
-	                <include name="**/*.json" />
-	            </fileset>
-	            <fileset dir="src-backseat">
-	                <include name="**/*.css" />
-	                <include name="**/*.js" />
-	                <include name="**/*.json" />
-	            </fileset>
-	        </copy>
-	         <jar destfile="${dir.jarfile}/soi/SoiExecutive.jar" filesetmanifest="mergewithoutmain">
-	            <manifest>
-	                <attribute name="Main-Class" value="pt.lsts.autonomy.soi.SoiExecutive"/>
-	                <attribute name="Class-Path" value="."/>
-	            </manifest>
-	            <fileset dir="${dir.buildfile}/bin"/>
-	            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
-	         </jar>
-	    </target>
+		<mkdir dir="bin"/>
+		<delete dir="bin"/>
+		<mkdir dir="bin"/>
+
+		<javac encoding="${compile-encoding}" srcdir="src;src-endurance;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+			<classpath refid="classpath.dependencies"/>
+		</javac>
+		<copy todir="bin" overwrite="true">
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+		</copy>
+		<jar destfile="${dir.jarfile}/soi/SoiExecutive.jar" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="pt.lsts.autonomy.soi.SoiExecutive"/>
+				<attribute name="Class-Path" value="."/>
+			</manifest>
+			<fileset dir="${dir.buildfile}/bin"/>
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+		</jar>
+	</target>
 
 
-    <target name="arpao">
-    	 <mkdir dir="bin"/>
-		 <delete dir="bin"/>
-    	 <mkdir dir="bin"/>
-    	        
-    	 <javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
-    	  	<classpath refid="classpath.dependencies"/>
-    	 </javac>
-         <copy todir="bin" overwrite="true">
-            <fileset dir="src-backseat">
-                <include name="**/*.css" />
-                <include name="**/*.js" />
-                <include name="**/*.json" />
-            </fileset>
-            <fileset dir="src-backseat">
-                <include name="**/*.css" />
-                <include name="**/*.js" />
-                <include name="**/*.json" />
-            </fileset>
-        </copy>
-         <jar destfile="${dir.jarfile}/arpao/ArpaoExec.jar" filesetmanifest="mergewithoutmain">
-            <manifest>
-                <attribute name="Main-Class" value="pt.lsts.autonomy.ArpaoExecutive"/>
-                <attribute name="Class-Path" value="."/>
-            </manifest>
-            <fileset dir="${dir.buildfile}/bin"/>
-            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
-            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
-         </jar>
-    </target>
+	<target name="arpao">
+		<mkdir dir="bin"/>
+		<delete dir="bin"/>
+		<mkdir dir="bin"/>
 
-    <target name="distress">
-        <delete dir="bin" failonerror="no"/>
-        <mkdir dir="bin"/>
+		<javac encoding="${compile-encoding}" srcdir="src;src-backseat"  destdir="bin" includes="**/*.java" fork="false">
+			<classpath refid="classpath.dependencies"/>
+		</javac>
+		<copy todir="bin" overwrite="true">
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+		</copy>
+		<jar destfile="${dir.jarfile}/arpao/ArpaoExec.jar" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="pt.lsts.autonomy.ArpaoExecutive"/>
+				<attribute name="Class-Path" value="."/>
+			</manifest>
+			<fileset dir="${dir.buildfile}/bin"/>
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
+		</jar>
+	</target>
 
-        <copy file="ais.cache" todir="${dir.jarfile}/distress" overwrite="false" failonerror="no" />
+	<target name="distress">
+		<delete dir="bin" failonerror="no"/>
+		<mkdir dir="bin"/>
 
-        <javac encoding="${compile-encoding}" srcdir="src;src-endurance;src-backseat" destdir="bin" includes="**/*.java" fork="false">
-            <classpath refid="classpath.dependencies"/>
-        </javac>
-        <copy todir="bin" overwrite="true">
-            <fileset dir="src-backseat">
-                <include name="**/*.css" />
-                <include name="**/*.js" />
-                <include name="**/*.json" />
-            </fileset>
-            <fileset dir="src-backseat">
-                <include name="**/*.css" />
-                <include name="**/*.js" />
-                <include name="**/*.json" />
-            </fileset>
-        </copy>
-        <jar destfile="${dir.jarfile}/distress/Distress.jar" filesetmanifest="mergewithoutmain">
-            <manifest>
-                <attribute name="Main-Class" value="pt.lsts.backseat.distress.DistressSurvey"/>
-                <attribute name="Class-Path" value="."/>
-            </manifest>
-            <fileset dir="${dir.buildfile}/bin"/>
-            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
-            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
-        </jar>
-    </target>
+		<copy file="ais.cache" todir="${dir.jarfile}/distress" overwrite="false" failonerror="no" />
+
+		<javac encoding="${compile-encoding}" srcdir="src;src-endurance;src-backseat" destdir="bin" includes="**/*.java" fork="false">
+			<classpath refid="classpath.dependencies"/>
+		</javac>
+		<copy todir="bin" overwrite="true">
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+			<fileset dir="src-backseat">
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.json" />
+			</fileset>
+		</copy>
+		<jar destfile="${dir.jarfile}/distress/Distress.jar" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="pt.lsts.backseat.distress.DistressSurvey"/>
+				<attribute name="Class-Path" value="."/>
+			</manifest>
+			<fileset dir="${dir.buildfile}/bin"/>
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+			<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
+		</jar>
+	</target>
 
 </project>
