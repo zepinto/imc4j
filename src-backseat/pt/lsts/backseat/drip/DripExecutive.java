@@ -28,9 +28,6 @@ public class DripExecutive extends SoiExecutive {
 	@Parameter(description = "Longitude, in degrees, of river mouth")
 	double river_lon = -8.679689;
 
-	@Parameter(description = "Maximum depth, in meters, for yoyo profiles")
-	double max_depth = 5.5;
-
 	@Parameter(description = "Number of yoyos to perform on each side of the plume")
 	int yoyo_count = 5;
 
@@ -54,44 +51,30 @@ public class DripExecutive extends SoiExecutive {
 
 	@Parameter(description = "Distance of simulated plume")
 	double plume_dist = 1000;
-
-	@Parameter(description = "DUNE Host Address")
-	String host_addr = "127.0.0.1";
-
-	@Parameter(description = "DUNE Host Port (TCP)")
-	int host_port = 6006;
-
-	@Parameter(description = "Minutes before termination")
-	int mins_timeout = 60;
-
-	@Parameter(description = "Maximum time underwater")
-	int mins_underwater = 15;
-
-	@Parameter(description = "Number where to send reports")
-	String sms_recipient = "";
 	
 	@Parameter(description = "Plume Gradient")
 	double plume_gradient = 5;
-	
 	
 	private final String PLAN_ID = "drip_plan";
 	
 	int num_yoyos = 0;
 	double angle;
-	int count_secs;
 	boolean going_in = false;
+	boolean init = true;
 	
 	public DripExecutive() {
 		setPlanName(PLAN_ID);
-		setDeadline(new Date(System.currentTimeMillis() + mins_timeout * 60 * 1000));
+		setDeadline(new Date(System.currentTimeMillis() + timeout * 60 * 1000));
 		state = this::idleAtSurface;
 	}
 	
 	@Override
 	protected FSMState onIdle() {
 		num_yoyos = 0;
-		angle = start_ang;
-		count_secs = 0;
+		if (init) {
+			angle = start_ang;
+			init = false;
+		}
 		print("DRiP is started.");
 		if (going_in)
 			go_in("initial_transect");
