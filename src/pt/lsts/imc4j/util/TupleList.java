@@ -84,4 +84,24 @@ public class TupleList {
 	public int size() {
 		return list.size();
 	}
+	
+	public boolean hasKey(String key) {
+	    return list.containsKey(key);
+	}
+	
+	public TupleList diff(TupleList other) {
+	      TupleList result = new TupleList();
+	      for (Entry<String, String> e : list.entrySet())
+	      {
+	          if(other.hasKey(e.getKey()) 
+	                  && !other.get(e.getKey()).equals(e.getValue())) {
+	              result.set(e.getKey(), other.get(e.getKey()));
+	          }
+//	          else {
+//	              System.err.println(e.getKey()+" with no changes");
+//	          }
+	      }
+        return result;
+	    
+	}
 }

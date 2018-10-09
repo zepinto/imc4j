@@ -195,25 +195,27 @@ public class SoiExecutive extends TimedFSM {
 			break;
 
 		case SOICMD_SET_PARAMS:
-			print("CMD: Set Params!");
-			try {
-				for (String key : cmd.settings.keys()) {
-					try {
-						PojoConfig.setProperty(this, key, cmd.settings.get(key));	
-					}
-					catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-				reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
-				reply.settings = params();
+	      print("CMD: Set Params!");
+	      TupleList oldSettings  = params();
+	      try {
+	        for (String key : cmd.settings.keys()) {
+	          try {
+	            PojoConfig.setProperty(this, key, cmd.settings.get(key)); 
+	          }
+	          catch (Exception e) {
+	            e.printStackTrace();
+	          }
+	        }
+	        reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
+	        TupleList diffSettings = oldSettings.diff(params());
+	        reply.settings = diffSettings;
+	        reply.info = "parameters changed";
+	        saveConfig(CONFIG_FILE);
+	        print("Config saved to " + CONFIG_FILE.getAbsolutePath());
 
-				saveConfig(CONFIG_FILE);
-				print("Config saved to " + CONFIG_FILE.getAbsolutePath());
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+	      } catch (Exception e) {
+	        e.printStackTrace();
+	      }
 
 			break;
 
