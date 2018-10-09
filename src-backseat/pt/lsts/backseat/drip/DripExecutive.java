@@ -166,8 +166,11 @@ public class DripExecutive extends SoiExecutive {
 			print("Reversing the direction");
 			if(going_in)
 				go_in("got_plume");
-			else
+			else {
+				angle += angle_inc;
+				print("Going with angle "+angle);
 				go_out("got_plume");
+			}
 			return this::start_waiting;
 		}
 		
@@ -177,6 +180,8 @@ public class DripExecutive extends SoiExecutive {
 			return this::start_waiting;
 		}
 		else if (distToMouth < min_dist && going_in) {
+			angle += angle_inc;
+			print("Going with angle "+angle);
 			go_out("no_plume");
 			return this::start_waiting;
 		}
