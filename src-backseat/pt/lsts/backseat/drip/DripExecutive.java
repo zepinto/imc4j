@@ -55,6 +55,10 @@ public class DripExecutive extends SoiExecutive {
 	@Parameter(description = "Plume Gradient")
 	double plume_gradient = 5;
 	
+	@Parameter(description = "Plume Threshold")
+	double plume_threshold = 30;
+	
+	
 	private final String PLAN_ID = "drip_plan";
 	
 	int num_yoyos = 0;
@@ -200,8 +204,18 @@ public class DripExecutive extends SoiExecutive {
 			min = Math.min(min, sal.avg);
 			max = Math.max(max, sal.avg);
 		}
-		boolean inside = (max-min) > plume_gradient;
-		print("Gradient difference is "+(max-min)+", inside: ");
+		
+		boolean inside = false;
+		
+		if (plume_gradient > 0) {
+			inside = (max-min) > plume_gradient;
+			print("Gradient difference is "+(max-min)+", inside: "+inside);
+		}
+		else {
+			inside = min < plume_threshold;
+			print("Min salinity is "+min+", inside: "+inside);
+		}
+		
 		return inside;
 	}
 	
