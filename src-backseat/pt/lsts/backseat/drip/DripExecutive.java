@@ -99,7 +99,18 @@ public class DripExecutive extends SoiExecutive {
 	}
 	
 	private void go_in(String planId) {
-		setTarget(planId, river_lat, river_lon);
+		
+		double lld[] = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
+		
+		double offsets[] = WGS84Utilities.WGS84displacement(river_lat, river_lon, 0, lld[0], lld[1], 0);
+		
+		double angRads = Math.atan2(offsets[1], offsets[0]);
+		
+		//double angRads = Math.toRadians(angle);
+		double offsetX = Math.cos(angRads) * min_dist;
+		double offsetY = Math.sin(angRads) * min_dist;
+		double[] target = WGS84Utilities.WGS84displace(river_lat, river_lon, 0, offsetX, offsetY, 0);
+		setTarget(planId, target[0], target[1]);
 		num_yoyos = 0;
 	}
 	
