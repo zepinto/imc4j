@@ -119,11 +119,19 @@ public class DripExecutive extends SoiExecutive {
 		Plan plan = new Plan(id);
 		
 		double lld[] = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
-		Waypoint wpt1 = new Waypoint(0, (float)lld[0], (float)lld[1]);
-		Waypoint wpt2 = new Waypoint(1, (float)destLat, (float)destLon);
+		double offsets[] = WGS84Utilities.WGS84displacement(lld[0], lld[1], 0, destLat, destLon, 0);
+		double angRads = Math.atan2(offsets[1], offsets[0]);
 		
-		plan.addWaypoint(wpt1);
-		plan.addWaypoint(wpt2);
+		double totalDist = WGS84Utilities.distance(lld[0], lld[1], destLat, destLon) + 100;
+		double offlineDist = minsOff * 60 * speed;
+		int segments = (int) Math.ceil(totalDist / offlineDist);
+		for (int i = 0; i <= segments; i++) {
+			double segDistance = (totalDist / segments) * i;
+			double offX = Math.cos(angRads) * segDistance;
+			double offY = Math.sin(angRads) * segDistance;
+			double[] wpt = WGS84Utilities.WGS84displace(lld[0], lld[1], 0, offX, offY, 0);
+			plan.addWaypoint(new Waypoint(i, (float) wpt[0], (float) wpt[1]));
+		}
 		
 		try {
 			SoiCommand newPlan = new SoiCommand();
@@ -173,11 +181,11 @@ public class DripExecutive extends SoiExecutive {
 		}
 		
 		double distToMouth = WGS84Utilities.distance(lld[0], lld[1], river_lat, river_lon);
-		if (distToMouth > max_dist && !going_in) {
+		if (distToMouth > max_dist-100 && !going_in) {
 			go_in("no_plume");
 			return this::start_waiting;
 		}
-		else if (distToMouth < min_dist && going_in) {
+		else if (distToMouth < min_dist+100 && going_in) {
 			angle += angle_inc;
 			print("Going with angle "+angle);
 			go_out("no_plume");
