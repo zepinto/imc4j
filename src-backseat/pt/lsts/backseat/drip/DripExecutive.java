@@ -125,6 +125,8 @@ public class DripExecutive extends SoiExecutive {
 		double totalDist = WGS84Utilities.distance(lld[0], lld[1], destLat, destLon) + 100;
 		double offlineDist = minsOff * 60 * speed;
 		int segments = (int) Math.ceil(totalDist / offlineDist);
+		while (segments > 10)
+			segments /= 2;
 		for (int i = 0; i <= segments; i++) {
 			double segDistance = (totalDist / segments) * i;
 			double offX = Math.cos(angRads) * segDistance;
