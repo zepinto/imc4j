@@ -119,7 +119,7 @@ public class SoiExecutive extends TimedFSM {
 	@Consume
 	public final void on(PlanControl pControl) {
 		if (pControl.op == OP.PC_START && pControl.type == PlanControl.TYPE.PC_FAILURE) {
-			if (pControl.plan_id.equals(SOI_PLAN_ID)) {
+			if (pControl.plan_id.equals(getPlanName())) {
 				// Error during execution!
 				String err = "Detected error during execution: " + pControl.info;
 				printError(err);
