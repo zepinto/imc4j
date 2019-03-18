@@ -38,6 +38,10 @@ public class TupleList {
 			entries.add(e.getKey()+"="+e.getValue());				
 		return String.join(";", entries);
 	}
+	
+	public void remove(String name) {
+		list.remove(name);
+	}
 
 	public void set(String name, Object value) {
 		if (value != null)

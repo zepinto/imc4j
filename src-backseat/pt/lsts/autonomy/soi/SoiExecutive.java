@@ -6,9 +6,12 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import pt.lsts.backseat.TimedFSM;
 import pt.lsts.endurance.Plan;
@@ -251,7 +254,7 @@ public class SoiExecutive extends TimedFSM {
 		default:
 			break;
 		}
-
+		
 		print("Replying with " + reply);
 
 		try {
@@ -259,8 +262,45 @@ public class SoiExecutive extends TimedFSM {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		replies.add(reply);
+		
+		// If message is too large to send over Iridium, try to split its settings
+		if (reply.serialize().length > 320)
+			replies.addAll(splitSettings(reply, 320));
+		else
+			replies.add(reply);
+		
 		state = this::start_waiting;
+	}
+	
+	private ArrayList<SoiCommand> splitSettings(SoiCommand cmd, int length) {
+		TupleList settings = cmd.settings;
+		List<String> keys = settings.keys().stream().collect(Collectors.toList());
+		Collections.sort(keys);
+		
+		ArrayList<SoiCommand> cmds = new ArrayList<>();
+		SoiCommand clone = null;
+		try {
+			clone = (SoiCommand) SoiCommand.deserialize(cmd.serialize());			
+		} catch (Exception e) {	}
+		clone.settings = new TupleList();
+		
+		for (int i = 0; i < keys.size(); i++) {
+			String key = keys.get(i);
+			
+			clone.settings.set(key, cmd.settings.get(key));
+			
+			if (clone.serialize().length > length) {
+				clone.settings.remove(key);
+				cmds.add(clone);
+				try {
+					clone = (SoiCommand) SoiCommand.deserialize(cmd.serialize());					
+				} catch (Exception e) { }
+				
+				clone.settings = new TupleList();
+				clone.settings.set(key, cmd.settings.get(key));
+			}
+		}
+		return cmds;
 	}
 
 	private TupleList params() {
