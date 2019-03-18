@@ -114,7 +114,8 @@ public class SoiExecutive extends TimedFSM {
 	/**
 	 * In case the last plan failed, report the resulting error
 	 * 
-	 * @param pControl A {@link PlanControl} message
+	 * @param pControl
+	 *            A {@link PlanControl} message
 	 */
 	@Consume
 	public final void on(PlanControl pControl) {
@@ -137,7 +138,8 @@ public class SoiExecutive extends TimedFSM {
 	/**
 	 * React to incoming commands
 	 * 
-	 * @param cmd The received command
+	 * @param cmd
+	 *            The received command
 	 */
 	@Consume
 	public final void on(SoiCommand cmd) {
@@ -195,27 +197,33 @@ public class SoiExecutive extends TimedFSM {
 			break;
 
 		case SOICMD_SET_PARAMS:
-	      print("CMD: Set Params!");
-	      TupleList oldSettings  = params();
-	      try {
-	        for (String key : cmd.settings.keys()) {
-	          try {
-	            PojoConfig.setProperty(this, key, cmd.settings.get(key)); 
-	          }
-	          catch (Exception e) {
-	            e.printStackTrace();
-	          }
-	        }
-	        reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
-	        TupleList diffSettings = oldSettings.diff(params());
-	        reply.settings = diffSettings;
-	        reply.info = "parameters changed";
-	        saveConfig(CONFIG_FILE);
-	        print("Config saved to " + CONFIG_FILE.getAbsolutePath());
+			print("CMD: Set Params!");
+			TupleList oldSettings = params();
+			try {
+				for (String key : cmd.settings.keys()) {
+					try {
+						PojoConfig.setProperty(this, key, cmd.settings.get(key));
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+				reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
+				TupleList diffSettings = oldSettings.diff(params());
 
-	      } catch (Exception e) {
-	        e.printStackTrace();
-	      }
+				reply.settings = diffSettings;
+
+				if (diffSettings.keys().isEmpty()) {
+					reply.info = "no changes";
+				} else {
+					reply.info = "parameters changed";
+				}
+
+				saveConfig(CONFIG_FILE);
+				print("Config saved to " + CONFIG_FILE.getAbsolutePath());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
 			break;
 
@@ -257,18 +265,25 @@ public class SoiExecutive extends TimedFSM {
 
 	private TupleList params() {
 		TupleList settings = new TupleList();
-		for (Field f : getClass().getDeclaredFields()) {
-			f.setAccessible(true);
-			Parameter p = f.getAnnotation(Parameter.class);
-			if (p == null)
-				continue;
-			String name = f.getName();
-			try {
-				settings.set(name, f.get(this));
-			} catch (Exception e) {
 
+		Class<?> clazz = getClass();
+
+		do {
+			for (Field f : clazz.getDeclaredFields()) {
+				f.setAccessible(true);
+				Parameter p = f.getAnnotation(Parameter.class);
+				if (p == null)
+					continue;
+				String name = f.getName();
+				try {
+					settings.set(name, f.get(this));
+				} catch (Exception e) {
+
+				}
 			}
-		}
+			clazz = clazz.getSuperclass();
+		} while (!clazz.equals(Object.class));
+
 		return settings;
 	}
 
@@ -482,8 +497,6 @@ public class SoiExecutive extends TimedFSM {
 			return this::start_waiting;
 		}
 
-
-
 		if (target_depth > 0 && arrivedZ() || !isUnderwater()) {
 			if (secs_no_comms / 60 >= minsOff) {
 				print("Periodic surface");
@@ -494,31 +507,29 @@ public class SoiExecutive extends TimedFSM {
 					VerticalProfile salProf = null, tempProf = null;
 
 					try {
-						salProf = salProfiler.getProfile(PARAMETER.PROF_SALINITY,
-								Math.min((int) maxDepth, 20));
+						salProf = salProfiler.getProfile(PARAMETER.PROF_SALINITY, Math.min((int) maxDepth, 20));
 						tempProf = tempProfiler.getProfile(PARAMETER.PROF_TEMPERATURE, Math.min((int) maxDepth, 20));
-					}
-					catch (Exception e) {
+					} catch (Exception e) {
 						print(e.getClass().getSimpleName() + " while calculating profile: " + e.getMessage());
 					}
-					
+
 					if (tempProf != null) {
 						if (upTemp) {
 							profiles.add(tempProf);
 							print("Added temperature profile with " + tempProf.samples.size() + " samples");
 						}
-						
+
 						FSMState newState = onTemperatureProfile(tempProf);
 						if (newState != null)
 							return newState;
 					}
-					
+
 					if (salProf != null) {
 						if (upSal) {
 							profiles.add(salProf);
 							print("Added salinity profile with " + salProf.samples.size() + " samples");
 						}
-						
+
 						FSMState newState = onSalinityProfile(salProf);
 						if (newState != null)
 							return newState;
@@ -533,7 +544,8 @@ public class SoiExecutive extends TimedFSM {
 					return this::dive;
 			}
 
-		}else return this::ascend;
+		} else
+			return this::ascend;
 
 	}
 
@@ -628,7 +640,7 @@ public class SoiExecutive extends TimedFSM {
 			sendReport(itfs);
 			sendViaIridium(createStateReport(), max_wait - count_secs - 1);
 			print("Will wait from " + min_wait + " to " + max_wait + " seconds to send " + txtMessages.size()
-			+ " texts, " + replies.size() + " command replies and "+profiles.size()+" profiles.");
+					+ " texts, " + replies.size() + " command replies and " + profiles.size() + " profiles.");
 
 		} else {
 			while (!replies.isEmpty()) {
