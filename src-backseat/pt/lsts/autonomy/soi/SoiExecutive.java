@@ -300,6 +300,11 @@ public class SoiExecutive extends TimedFSM {
 				clone.settings.set(key, cmd.settings.get(key));
 			}
 		}
+		
+		if (!clone.settings.keys().isEmpty()) {
+			cmds.add(clone);
+		}
+		
 		return cmds;
 	}
 
