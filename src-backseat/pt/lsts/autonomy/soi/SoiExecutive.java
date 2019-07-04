@@ -183,7 +183,17 @@ public class SoiExecutive extends TimedFSM {
 					reply.plan = null;
 					break;
 				}
+				
+				// ignore waypoints in the past
 				wpt_index = 0;
+				Date now = new Date();
+				
+				for (; wpt_index < plan.waypoints().size(); wpt_index++) {
+					if (plan.waypoint(wpt_index).getArrivalTime().after(now))
+						break;
+					print("Skipping waypoint "+wpt_index+" as it is in the past.");
+				}
+				
 				reply.plan = plan.asImc();
 
 				print("Start executing this plan:");
@@ -418,6 +428,7 @@ public class SoiExecutive extends TimedFSM {
 			if (cycle && plan != null) {
 				print("Starting over (cyclic)...");
 				wpt_index = 0;
+				plan.removeSchedule();
 				EstimatedState s = get(EstimatedState.class);
 				if (s != null) {
 					double[] pos = WGS84Utilities.toLatLonDepth(s);
@@ -764,8 +775,8 @@ public class SoiExecutive extends TimedFSM {
 		VehicleMedium medium = get(VehicleMedium.class);
 
 		// arrived at surface
-		if (medium != null && medium.medium == MEDIUM.VM_WATER) {
-			print("Now at surface, starting communications.");
+		if (medium != null && medium.medium != MEDIUM.VM_UNDERWATER) {
+			print("Starting communications.");
 			secs_no_comms = 0;
 			count_secs = 0;
 			return this::communicate;
@@ -788,7 +799,7 @@ public class SoiExecutive extends TimedFSM {
 
 		VehicleMedium medium = get(VehicleMedium.class);
 		// arrived at surface
-		if (medium != null && medium.medium == MEDIUM.VM_WATER) {
+		if (medium != null && medium.medium != MEDIUM.VM_UNDERWATER) {
 			print("Now at surface, starting communications.");
 			double[] pos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
 			setLocation(pos[0], pos[1]);
@@ -864,7 +875,7 @@ public class SoiExecutive extends TimedFSM {
 		report.depth = estate == null || estate.depth == -1 ? 0xFFFF : (int) (estate.depth * 10);
 		report.altitude = estate == null || estate.alt == -1 ? 0xFFFF : (int) (estate.alt * 10);
 		report.speed = estate == null ? 0xFFFF : (int) (estate.u * 100);
-		report.fuel = flevel == null ? 255 : (int) flevel.value;
+		report.fuel = flevel == null ? 255 : (int) (flevel.value * 254);
 
 		if (estate != null) {
 			double[] loc = WGS84Utilities.toLatLonDepth(estate);
