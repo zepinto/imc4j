@@ -161,7 +161,11 @@ public class SoiExecutive extends TimedFSM {
 			print("CMD: Exec plan!");
 			if (cmd.plan == null || cmd.plan.waypoints.isEmpty()) {
 				plan = null;
-			} else {
+                print("Received an empty plan.");
+                reply.plan = null;
+                reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;                
+			} 
+            else {
 				plan = Plan.parse(cmd.plan);
 
 				if (!plan.scheduledInTheFuture()) {

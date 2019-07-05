@@ -202,6 +202,15 @@ public class Plan {
 		scheduleWaypoints(startTime, minDuration, start.getLatitude(), start.getLongitude(), speed);
 	}
 
+	public void removeSchedule() {
+		synchronized (waypoints) {
+			for (Waypoint waypoint : waypoints) {
+                waypoint.setArrivalTime(null);            
+            }
+		}		
+	}
+
+
 	public String toString() {
 		JsonObject pp = new JsonObject();
 		pp.add("id", getPlanId());
