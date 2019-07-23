@@ -176,11 +176,23 @@ public class Plan {
 			waypoints.remove(index);
 		}
 	}
+	
+	public void removeSchedule() {
+		synchronized (waypoints) {
+			for (Waypoint waypoint : waypoints) {
+				waypoint.setArrivalTime(null);
+			}
+		}
+	}
 
 	public void scheduleWaypoints(long startTime, double minDuration, double lat, double lon, double speed) {
 		long curTime = startTime + (long)(minDuration * 1000);
 		synchronized (waypoints) {
 			for (Waypoint waypoint : waypoints) {
+				// skip waypoints in the past
+				if (waypoint.getArrivalTime() != null && waypoint.getArrivalTime().before(new Date()))
+					continue;
+				
 				double distance = WGS84Utilities.distance(lat, lon, waypoint.getLatitude(), waypoint.getLongitude());
 				double timeToReach = distance / speed;
 				waypoint.setDuration(Math.max(waypoint.getDuration(), (int)minDuration));
