@@ -227,4 +227,30 @@
 		</jar>
 	</target>
 
+	<target name="imcwan">
+			<delete dir="bin" failonerror="no"/>
+			<mkdir dir="bin"/>
+
+			<javac encoding="${compile-encoding}" srcdir="src;src-imcwan" destdir="bin" includes="**/*.java" fork="false">
+				<classpath refid="classpath.dependencies"/>
+			</javac>
+			<jar destfile="${dir.jarfile}/WanClient.jar" filesetmanifest="mergewithoutmain">
+				<manifest>
+					<attribute name="Main-Class" value="pt.lsts.imcwan.ImcWanClient"/>
+					<attribute name="Class-Path" value="."/>
+				</manifest>
+				<fileset dir="${dir.buildfile}/bin"/>
+				<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+				<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
+			</jar>
+			<jar destfile="${dir.jarfile}/WanServer.jar" filesetmanifest="mergewithoutmain">
+				<manifest>
+					<attribute name="Main-Class" value="pt.lsts.imcwan.ImcWanServer"/>
+					<attribute name="Class-Path" value="."/>
+				</manifest>
+				<fileset dir="${dir.buildfile}/bin"/>
+				<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>
+				<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
+			</jar>	
+		</target>
 </project>
