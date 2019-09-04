@@ -185,33 +185,70 @@ public class Plan {
 		}
 	}
 
-	public void scheduleWaypoints(long startTime, double minDuration, double lat, double lon, double speed) {
-		long curTime = startTime + (long)(minDuration * 1000);
+	public void scheduleWaypoints(long startTime, double minDuration, double lat, double lon, double speed, double secsOffline) {
+		// add the current position of the vehicle as first waypoint
 		synchronized (waypoints) {
-			for (Waypoint waypoint : waypoints) {
+			waypoints.add(0, new Waypoint(0, (float)lat, (float)lon));
+		}
+		scheduleWaypoints(startTime, minDuration, speed, secsOffline);
+	}
+
+	public void scheduleWaypoints(long startTime, double minDuration, double speed, double secsOffline) {
+		if (waypoints.isEmpty())
+			return;
+
+		long curTime = startTime + (long)(minDuration * 1000);		
+		double maxDist = secsOffline * speed;
+		
+		if (secsOffline <= 0)
+			maxDist = Double.MAX_VALUE;
+		
+		synchronized (waypoints) {
+			ArrayList<Waypoint> newWaypoints = new ArrayList<Waypoint>();
+			
+			int count = 1;
+			
+			for (int i = 1; i < waypoints.size(); i++) {
+				Waypoint previous = waypoints.get(i-1);
+				Waypoint current = waypoints.get(i);
+				double[] offsets = WGS84Utilities.WGS84displacement(previous.getLatitude(), previous.getLongitude(), 0,
+						current.getLatitude(), current.getLongitude(), 0);
+				double distance = WGS84Utilities.distance(previous.getLatitude(), previous.getLongitude(),
+						current.getLatitude(), current.getLongitude());	
+				double angle = Math.atan2(offsets[1], offsets[0]);
+				
+				int segments = (int) Math.ceil(distance / maxDist);
+				while (segments > 5)
+					segments /= 2;
+				for (int j = 0; j < segments; j++) {
+					double segDistance = (distance / segments) * j;
+					double offX = Math.cos(angle) * segDistance;
+					double offY = Math.sin(angle) * segDistance;
+					double[] wpt = WGS84Utilities.WGS84displace(previous.getLatitude(), previous.getLongitude(), 0, offX, offY, 0);
+					newWaypoints.add(new Waypoint(count++,  (float) wpt[0], (float) wpt[1]));
+				}
+			}
+			newWaypoints.add(waypoints.get(waypoints.size()-1));
+			
+			Waypoint prev = newWaypoints.get(0);
+			for (Waypoint waypoint : newWaypoints) {
 				// skip waypoints in the past
 				if (waypoint.getArrivalTime() != null && waypoint.getArrivalTime().before(new Date()))
 					continue;
 				
-				double distance = WGS84Utilities.distance(lat, lon, waypoint.getLatitude(), waypoint.getLongitude());
-				double timeToReach = distance / speed;
-				waypoint.setDuration(Math.max(waypoint.getDuration(), (int)minDuration));
-				curTime += (long) (1000.0 * timeToReach);
+				if (prev != waypoint) {
+					double distance = WGS84Utilities.distance(prev.getLatitude(), prev.getLongitude(),
+							waypoint.getLatitude(), waypoint.getLongitude());
+					double timeToReach = distance / speed;
+					waypoint.setDuration(Math.max(waypoint.getDuration(), (int)minDuration));
+					curTime += (long) (1000.0 * timeToReach);
+				}
 				waypoint.setArrivalTime(new Date(curTime));
-				
 				curTime += (long) (1000.0 * waypoint.getDuration());
-				lat = waypoint.getLatitude();
-				lon = waypoint.getLongitude();
+				prev = waypoint;
 			}
-		}
-	}
-
-	public void scheduleWaypoints(long startTime, double minDuration, double speed) {
-		if (waypoints.isEmpty())
-			return;
-
-		Waypoint start = waypoints.get(0);
-		scheduleWaypoints(startTime, minDuration, start.getLatitude(), start.getLongitude(), speed);
+			waypoints = newWaypoints;			
+		}				
 	}
 
 	public String toString() {
@@ -265,6 +302,10 @@ public class Plan {
 	
 
 	public static void main(String[] args) throws Exception {
+		
+		
+		double x = Math.ceil(20 / Double.MAX_VALUE);
+		System.out.println(x);
 		Plan plan = new Plan("test");
 		ScheduledGoto goto1 = new ScheduledGoto();
 		goto1.lat = Math.toRadians(41);

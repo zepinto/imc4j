@@ -92,6 +92,9 @@ public class SoiExecutive extends TimedFSM {
 
 	@Parameter(description = "Align with destination waypoint before going underwater")
 	public boolean align = true;
+	
+	@Parameter(description = "Split transects based on maximum offline time")
+	public boolean split = false;	
 
 	private Plan plan = new Plan("idle");
 	private int secs_no_comms = 0, count_secs = 0, secs_underwater = 0;
@@ -168,9 +171,9 @@ public class SoiExecutive extends TimedFSM {
 					EstimatedState s = get(EstimatedState.class);
 					if (s != null) {
 						double[] pos = WGS84Utilities.toLatLonDepth(s);
-						plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, pos[0], pos[1], speed);
+						plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, pos[0], pos[1], speed, split? minsOff * 60 : 0);
 					} else
-						plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, speed);
+						plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, speed, split? minsOff * 60 : 0);
 				}
 
 				if (plan.getETA().after(deadline)) {
@@ -198,7 +201,7 @@ public class SoiExecutive extends TimedFSM {
 
 				print("Start executing this plan:");
 				print("" + plan);
-
+				print("Plan serialization size is "+reply.serialize().length);
 			}
 			reply.type = SoiCommand.TYPE.SOITYPE_SUCCESS;
 			break;
@@ -432,9 +435,9 @@ public class SoiExecutive extends TimedFSM {
 				EstimatedState s = get(EstimatedState.class);
 				if (s != null) {
 					double[] pos = WGS84Utilities.toLatLonDepth(s);
-					plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, pos[0], pos[1], speed);
+					plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, pos[0], pos[1], speed, minsOff * 60);
 				} else
-					plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, speed);
+					plan.scheduleWaypoints(System.currentTimeMillis(), wptSecs, speed, minsOff * 60);
 
 				if (plan.getETA().after(deadline)) {
 					int timeDiff = (int) ((plan.getETA().getTime() - deadline.getTime()) / 1000.0);
