@@ -83,9 +83,9 @@ public class DistressSurvey extends TimedFSM {
     
     @Parameter(description = "Maximum time underwater (minutes)")
     private int minsUnderwater = 15;
-    @Parameter(description = "Surface on Corners")
+    @Parameter(description = "Periodic surface for position")
     private boolean usePeriodicSurfaceForPos = false;
-    @Parameter(description = "Surface on Corners")
+    @Parameter(description = "Surface on corners")
     private boolean surfaceOnCorners = false;
     
     @Parameter(description = "Wait Distress Underwater")
