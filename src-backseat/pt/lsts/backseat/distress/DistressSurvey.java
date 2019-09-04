@@ -129,7 +129,7 @@ public class DistressSurvey extends TimedFSM {
     private double surveyDeltaAltitudeFromTarget = 5;
     @Parameter(description = "Approach Lenght Offset")
     private double approachLenghtOffset = 50;
-    @Parameter(description = "Survey Side (true) or Around (false)")
+    @Parameter(description = "Survey Side (true) or Around Target (false)")
     private boolean surveySideOrAround = false;
 
     @Parameter(description = "Target Width")
