@@ -12,10 +12,10 @@ import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.util.SerializationUtils;
 
 /**
- * Reply sent in response to a communications request.
+ * Reply sent in response to a TCP sending request.
  */
-public class TransmissionStatus extends Message {
-	public static final int ID_STATIC = 516;
+public class TCPStatus extends Message {
+	public static final int ID_STATIC = 522;
 
 	@FieldType(
 			type = IMCField.TYPE_UINT16
@@ -29,26 +29,19 @@ public class TransmissionStatus extends Message {
 	public STATUS status = STATUS.values()[0];
 
 	/**
-	 * The meaning of this field depends on the operation and is
-	 * explained in the operation's description.
+	 * Error description.
 	 */
-	@FieldType(
-			type = IMCField.TYPE_FP32,
-			units = "m"
-	)
-	public float range = 0f;
-
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT
 	)
 	public String info = "";
 
 	public String abbrev() {
-		return "TransmissionStatus";
+		return "TCPStatus";
 	}
 
 	public int mgid() {
-		return 516;
+		return 522;
 	}
 
 	public byte[] serializeFields() {
@@ -57,7 +50,6 @@ public class TransmissionStatus extends Message {
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeShort(req_id);
 			_out.writeByte((int)(status != null? status.value() : 0));
-			_out.writeFloat(range);
 			SerializationUtils.serializePlaintext(_out, info);
 			return _data.toByteArray();
 		}
@@ -71,7 +63,6 @@ public class TransmissionStatus extends Message {
 		try {
 			req_id = buf.getShort() & 0xFFFF;
 			status = STATUS.valueOf(buf.get() & 0xFF);
-			range = buf.getFloat();
 			info = SerializationUtils.deserializePlaintext(buf);
 		}
 		catch (Exception e) {
@@ -80,21 +71,17 @@ public class TransmissionStatus extends Message {
 	}
 
 	public enum STATUS {
-		TSTAT_IN_PROGRESS(0l),
+		TCPSTAT_QUEUED(0l),
 
-		TSTAT_SENT(1l),
+		TCPSTAT_SENT(1l),
 
-		TSTAT_DELIVERED(51l),
+		TCPSTAT_INPUT_FAILURE(100l),
 
-		TSTAT_MAYBE_DELIVERED(52l),
+		TCPSTAT_HOST_UNKNOWN(101l),
 
-		TSTAT_RANGE_RECEIVED(60l),
+		TCPSTAT_CANT_CONNECT(102l),
 
-		TSTAT_INPUT_FAILURE(101l),
-
-		TSTAT_TEMPORARY_FAILURE(102l),
-
-		TSTAT_PERMANENT_FAILURE(103l);
+		TCPSTAT_ERROR(103l);
 
 		protected long value;
 

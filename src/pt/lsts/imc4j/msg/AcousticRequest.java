@@ -12,21 +12,32 @@ import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.util.SerializationUtils;
 
 /**
- * Reply sent in response to a communications request.
+ * Request Acoustic sending.
  */
-public class TransmissionStatus extends Message {
-	public static final int ID_STATIC = 516;
+public class AcousticRequest extends Message {
+	public static final int ID_STATIC = 215;
 
 	@FieldType(
 			type = IMCField.TYPE_UINT16
 	)
 	public int req_id = 0;
 
+	/**
+	 * The name of the system where to send this message.
+	 */
 	@FieldType(
-			type = IMCField.TYPE_UINT8,
-			units = "Enumerated"
+			type = IMCField.TYPE_PLAINTEXT
 	)
-	public STATUS status = STATUS.values()[0];
+	public String destination = "";
+
+	/**
+	 * Period of time to send message (in seconds).
+	 */
+	@FieldType(
+			type = IMCField.TYPE_FP64,
+			units = "s"
+	)
+	public double timeout = 0;
 
 	/**
 	 * The meaning of this field depends on the operation and is
@@ -39,16 +50,25 @@ public class TransmissionStatus extends Message {
 	public float range = 0f;
 
 	@FieldType(
-			type = IMCField.TYPE_PLAINTEXT
+			type = IMCField.TYPE_UINT8,
+			units = "Enumerated"
 	)
-	public String info = "";
+	public TYPE type = TYPE.values()[0];
+
+	/**
+	 * Argument for message send ('MSG') or ('RAW') but in this case expects DevDataBinary message requests.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_MESSAGE
+	)
+	public Message msg = null;
 
 	public String abbrev() {
-		return "TransmissionStatus";
+		return "AcousticRequest";
 	}
 
 	public int mgid() {
-		return 516;
+		return 215;
 	}
 
 	public byte[] serializeFields() {
@@ -56,9 +76,11 @@ public class TransmissionStatus extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeShort(req_id);
-			_out.writeByte((int)(status != null? status.value() : 0));
+			SerializationUtils.serializePlaintext(_out, destination);
+			_out.writeDouble(timeout);
 			_out.writeFloat(range);
-			SerializationUtils.serializePlaintext(_out, info);
+			_out.writeByte((int)(type != null? type.value() : 0));
+			SerializationUtils.serializeInlineMsg(_out, msg);
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -70,35 +92,31 @@ public class TransmissionStatus extends Message {
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
 			req_id = buf.getShort() & 0xFFFF;
-			status = STATUS.valueOf(buf.get() & 0xFF);
+			destination = SerializationUtils.deserializePlaintext(buf);
+			timeout = buf.getDouble();
 			range = buf.getFloat();
-			info = SerializationUtils.deserializePlaintext(buf);
+			type = TYPE.valueOf(buf.get() & 0xFF);
+			msg = SerializationUtils.deserializeInlineMsg(buf);
 		}
 		catch (Exception e) {
 			throw new IOException(e);
 		}
 	}
 
-	public enum STATUS {
-		TSTAT_IN_PROGRESS(0l),
+	public enum TYPE {
+		TYPE_ABORT(0l),
 
-		TSTAT_SENT(1l),
+		TYPE_RANGE(1l),
 
-		TSTAT_DELIVERED(51l),
+		TYPE_REVERSE_RANGE(2l),
 
-		TSTAT_MAYBE_DELIVERED(52l),
+		TYPE_MSG(3l),
 
-		TSTAT_RANGE_RECEIVED(60l),
-
-		TSTAT_INPUT_FAILURE(101l),
-
-		TSTAT_TEMPORARY_FAILURE(102l),
-
-		TSTAT_PERMANENT_FAILURE(103l);
+		TYPE_RAW(4l);
 
 		protected long value;
 
-		STATUS(long value) {
+		TYPE(long value) {
 			this.value = value;
 		}
 
@@ -106,13 +124,13 @@ public class TransmissionStatus extends Message {
 			return value;
 		}
 
-		public static STATUS valueOf(long value) throws IllegalArgumentException {
-			for (STATUS v : STATUS.values()) {
+		public static TYPE valueOf(long value) throws IllegalArgumentException {
+			for (TYPE v : TYPE.values()) {
 				if (v.value == value) {
 					return v;
 				}
 			}
-			throw new IllegalArgumentException("Invalid value for STATUS: "+value);
+			throw new IllegalArgumentException("Invalid value for TYPE: "+value);
 		}
 	}
 }

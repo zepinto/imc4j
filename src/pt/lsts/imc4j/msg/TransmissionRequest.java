@@ -51,7 +51,18 @@ public class TransmissionRequest extends Message {
 	public double deadline = 0;
 
 	/**
+	 * The meaning of this field depends on the operation and is
+	 * explained in the operation's description.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_FP32,
+			units = "m"
+	)
+	public float range = 0f;
+
+	/**
 	 * Type of data to be transmitted.
+	 * Abort and Range mode can only be used with comm_mean=ACOUSTIC
 	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT8,
@@ -99,6 +110,7 @@ public class TransmissionRequest extends Message {
 			_out.writeByte((int)(comm_mean != null? comm_mean.value() : 0));
 			SerializationUtils.serializePlaintext(_out, destination);
 			_out.writeDouble(deadline);
+			_out.writeFloat(range);
 			_out.writeByte((int)(data_mode != null? data_mode.value() : 0));
 			SerializationUtils.serializeInlineMsg(_out, msg_data);
 			SerializationUtils.serializePlaintext(_out, txt_data);
@@ -117,6 +129,7 @@ public class TransmissionRequest extends Message {
 			comm_mean = COMM_MEAN.valueOf(buf.get() & 0xFF);
 			destination = SerializationUtils.deserializePlaintext(buf);
 			deadline = buf.getDouble();
+			range = buf.getFloat();
 			data_mode = DATA_MODE.valueOf(buf.get() & 0xFF);
 			msg_data = SerializationUtils.deserializeInlineMsg(buf);
 			txt_data = SerializationUtils.deserializePlaintext(buf);
@@ -134,7 +147,11 @@ public class TransmissionRequest extends Message {
 
 		CMEAN_SATELLITE(2l),
 
-		CMEAN_GSM(3l);
+		CMEAN_GSM(3l),
+
+		CMEAN_ANY(4l),
+
+		CMEAN_ALL(5l);
 
 		protected long value;
 
@@ -161,7 +178,13 @@ public class TransmissionRequest extends Message {
 
 		DMODE_TEXT(1l),
 
-		DMODE_RAW(2l);
+		DMODE_RAW(2l),
+
+		DMODE_ABORT(3l),
+
+		DMODE_RANGE(4l),
+
+		DMODE_REVERSE_RANGE(5l);
 
 		protected long value;
 

@@ -111,6 +111,10 @@ public class MessageFactory {
 
 	public static final int ID_RemoteCommand = 188;
 
+	public static final int ID_CommSystemsQuery = 189;
+
+	public static final int ID_TelemetryMsg = 190;
+
 	public static final int ID_LblRange = 200;
 
 	public static final int ID_LblBeacon = 202;
@@ -126,6 +130,10 @@ public class MessageFactory {
 	public static final int ID_AcousticSystems = 213;
 
 	public static final int ID_AcousticLink = 214;
+
+	public static final int ID_AcousticRequest = 215;
+
+	public static final int ID_AcousticStatus = 216;
 
 	public static final int ID_Rpm = 250;
 
@@ -413,6 +421,8 @@ public class MessageFactory {
 
 	public static final int ID_StationKeepingExtended = 496;
 
+	public static final int ID_Magnetometer = 499;
+
 	public static final int ID_VehicleState = 500;
 
 	public static final int ID_VehicleCommand = 501;
@@ -450,6 +460,14 @@ public class MessageFactory {
 	public static final int ID_SmsRequest = 517;
 
 	public static final int ID_SmsStatus = 518;
+
+	public static final int ID_VtolState = 519;
+
+	public static final int ID_ArmingState = 520;
+
+	public static final int ID_TCPRequest = 521;
+
+	public static final int ID_TCPStatus = 522;
 
 	public static final int ID_Abort = 550;
 
@@ -610,6 +628,10 @@ public class MessageFactory {
 	public static final int ID_SadcReadings = 907;
 
 	public static final int ID_DmsDetection = 908;
+
+	public static final int ID_TotalMagIntensity = 2006;
+
+	public static final int ID_HomePosition = 909;
 
 	public static Message create(int mgid) {
 		switch(mgid) {
@@ -775,6 +797,12 @@ public class MessageFactory {
 			case ID_RemoteCommand: {
 				return new RemoteCommand();
 			}
+			case ID_CommSystemsQuery: {
+				return new CommSystemsQuery();
+			}
+			case ID_TelemetryMsg: {
+				return new TelemetryMsg();
+			}
 			case ID_LblRange: {
 				return new LblRange();
 			}
@@ -798,6 +826,12 @@ public class MessageFactory {
 			}
 			case ID_AcousticLink: {
 				return new AcousticLink();
+			}
+			case ID_AcousticRequest: {
+				return new AcousticRequest();
+			}
+			case ID_AcousticStatus: {
+				return new AcousticStatus();
 			}
 			case ID_Rpm: {
 				return new Rpm();
@@ -1228,6 +1262,9 @@ public class MessageFactory {
 			case ID_StationKeepingExtended: {
 				return new StationKeepingExtended();
 			}
+			case ID_Magnetometer: {
+				return new Magnetometer();
+			}
 			case ID_VehicleState: {
 				return new VehicleState();
 			}
@@ -1284,6 +1321,18 @@ public class MessageFactory {
 			}
 			case ID_SmsStatus: {
 				return new SmsStatus();
+			}
+			case ID_VtolState: {
+				return new VtolState();
+			}
+			case ID_ArmingState: {
+				return new ArmingState();
+			}
+			case ID_TCPRequest: {
+				return new TCPRequest();
+			}
+			case ID_TCPStatus: {
+				return new TCPStatus();
 			}
 			case ID_Abort: {
 				return new Abort();
@@ -1525,6 +1574,12 @@ public class MessageFactory {
 			case ID_DmsDetection: {
 				return new DmsDetection();
 			}
+			case ID_TotalMagIntensity: {
+				return new TotalMagIntensity();
+			}
+			case ID_HomePosition: {
+				return new HomePosition();
+			}
 			default: {
 				return null;
 			}
@@ -1699,6 +1754,12 @@ public class MessageFactory {
 			case "RemoteCommand": {
 				return ID_RemoteCommand;
 			}
+			case "CommSystemsQuery": {
+				return ID_CommSystemsQuery;
+			}
+			case "TelemetryMsg": {
+				return ID_TelemetryMsg;
+			}
 			case "LblRange": {
 				return ID_LblRange;
 			}
@@ -1722,6 +1783,12 @@ public class MessageFactory {
 			}
 			case "AcousticLink": {
 				return ID_AcousticLink;
+			}
+			case "AcousticRequest": {
+				return ID_AcousticRequest;
+			}
+			case "AcousticStatus": {
+				return ID_AcousticStatus;
 			}
 			case "Rpm": {
 				return ID_Rpm;
@@ -2152,6 +2219,9 @@ public class MessageFactory {
 			case "StationKeepingExtended": {
 				return ID_StationKeepingExtended;
 			}
+			case "Magnetometer": {
+				return ID_Magnetometer;
+			}
 			case "VehicleState": {
 				return ID_VehicleState;
 			}
@@ -2208,6 +2278,18 @@ public class MessageFactory {
 			}
 			case "SmsStatus": {
 				return ID_SmsStatus;
+			}
+			case "VtolState": {
+				return ID_VtolState;
+			}
+			case "ArmingState": {
+				return ID_ArmingState;
+			}
+			case "TCPRequest": {
+				return ID_TCPRequest;
+			}
+			case "TCPStatus": {
+				return ID_TCPStatus;
 			}
 			case "Abort": {
 				return ID_Abort;
@@ -2448,6 +2530,12 @@ public class MessageFactory {
 			}
 			case "DmsDetection": {
 				return ID_DmsDetection;
+			}
+			case "TotalMagIntensity": {
+				return ID_TotalMagIntensity;
+			}
+			case "HomePosition": {
+				return ID_HomePosition;
 			}
 			default: {
 				return -1;
