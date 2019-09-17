@@ -12,10 +12,10 @@ import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.util.SerializationUtils;
 
 /**
- * Reply sent in response to a communications request.
+ * Reply sent in response to a Acoustic Text sending request.
  */
-public class TransmissionStatus extends Message {
-	public static final int ID_STATIC = 516;
+public class AcousticStatus extends Message {
+	public static final int ID_STATIC = 216;
 
 	@FieldType(
 			type = IMCField.TYPE_UINT16
@@ -26,7 +26,21 @@ public class TransmissionStatus extends Message {
 			type = IMCField.TYPE_UINT8,
 			units = "Enumerated"
 	)
+	public TYPE type = TYPE.values()[0];
+
+	@FieldType(
+			type = IMCField.TYPE_UINT8,
+			units = "Enumerated"
+	)
 	public STATUS status = STATUS.values()[0];
+
+	/**
+	 * Status description.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_PLAINTEXT
+	)
+	public String info = "";
 
 	/**
 	 * The meaning of this field depends on the operation and is
@@ -38,17 +52,12 @@ public class TransmissionStatus extends Message {
 	)
 	public float range = 0f;
 
-	@FieldType(
-			type = IMCField.TYPE_PLAINTEXT
-	)
-	public String info = "";
-
 	public String abbrev() {
-		return "TransmissionStatus";
+		return "AcousticStatus";
 	}
 
 	public int mgid() {
-		return 516;
+		return 216;
 	}
 
 	public byte[] serializeFields() {
@@ -56,9 +65,10 @@ public class TransmissionStatus extends Message {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
 			_out.writeShort(req_id);
+			_out.writeByte((int)(type != null? type.value() : 0));
 			_out.writeByte((int)(status != null? status.value() : 0));
-			_out.writeFloat(range);
 			SerializationUtils.serializePlaintext(_out, info);
+			_out.writeFloat(range);
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -70,31 +80,63 @@ public class TransmissionStatus extends Message {
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
 			req_id = buf.getShort() & 0xFFFF;
+			type = TYPE.valueOf(buf.get() & 0xFF);
 			status = STATUS.valueOf(buf.get() & 0xFF);
-			range = buf.getFloat();
 			info = SerializationUtils.deserializePlaintext(buf);
+			range = buf.getFloat();
 		}
 		catch (Exception e) {
 			throw new IOException(e);
 		}
 	}
 
+	public enum TYPE {
+		TYPE_ABORT(0l),
+
+		TYPE_RANGE(1l),
+
+		TYPE_REVERSE_RANGE(2l),
+
+		TYPE_MSG(3l),
+
+		TYPE_RAW(4l);
+
+		protected long value;
+
+		TYPE(long value) {
+			this.value = value;
+		}
+
+		long value() {
+			return value;
+		}
+
+		public static TYPE valueOf(long value) throws IllegalArgumentException {
+			for (TYPE v : TYPE.values()) {
+				if (v.value == value) {
+					return v;
+				}
+			}
+			throw new IllegalArgumentException("Invalid value for TYPE: "+value);
+		}
+	}
+
 	public enum STATUS {
-		TSTAT_IN_PROGRESS(0l),
+		STATUS_QUEUED(0l),
 
-		TSTAT_SENT(1l),
+		STATUS_IN_PROGRESS(1l),
 
-		TSTAT_DELIVERED(51l),
+		STATUS_SENT(2l),
 
-		TSTAT_MAYBE_DELIVERED(52l),
+		STATUS_RANGE_RECEIVED(3l),
 
-		TSTAT_RANGE_RECEIVED(60l),
+		STATUS_BUSY(100l),
 
-		TSTAT_INPUT_FAILURE(101l),
+		STATUS_INPUT_FAILURE(101l),
 
-		TSTAT_TEMPORARY_FAILURE(102l),
+		STATUS_ERROR(102l),
 
-		TSTAT_PERMANENT_FAILURE(103l);
+		STATUS_UNSUPPORTED(666l);
 
 		protected long value;
 
