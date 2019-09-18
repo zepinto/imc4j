@@ -545,11 +545,6 @@ public class SoiExecutive extends TimedFSM {
 			return this::surface_to_report_error;
 		}
 
-		if (secs_no_comms / 60 >= minsOff) {
-			print("Periodic surface");
-			return this::start_waiting;
-		}
-
 		if (arrivedXY()) {
 			print("Arrived at waypoint " + wpt_index);
 			wpt_index++;
