@@ -3,12 +3,6 @@ package pt.lsts.backseat;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import pt.lsts.imc4j.annotations.Consume;
@@ -37,7 +31,6 @@ import pt.lsts.imc4j.msg.Reference;
 import pt.lsts.imc4j.msg.Reference.FLAGS;
 import pt.lsts.imc4j.msg.SetEntityParameters;
 import pt.lsts.imc4j.msg.TransmissionRequest;
-import pt.lsts.imc4j.msg.TransmissionRequest.COMM_MEAN;
 import pt.lsts.imc4j.msg.TransmissionRequest.DATA_MODE;
 import pt.lsts.imc4j.msg.TransmissionStatus;
 import pt.lsts.imc4j.msg.TransmissionStatus.STATUS;
@@ -53,20 +46,11 @@ public abstract class BackSeatDriver extends TcpClient {
 	protected boolean paused = true, finished = false;
 	protected String endPlan = null, plan_name = "back_seat";
 	private Reference reference = new Reference();
-	private ExecutorService executor = Executors.newCachedThreadPool();
 	private final double MAX_NEAR_DIST = 50;
 	
 	private static boolean IRIDIUM_SIMULATION = false;
 	
-	private ConcurrentHashMap<COMM_MEAN, LinkedBlockingDeque<TransmissionRequest>> pendingRequests = new ConcurrentHashMap<>();
-	private ConcurrentHashMap<COMM_MEAN, TransmissionRequest> ongoingRequests = new ConcurrentHashMap<>();
-	
-	{
-		for (COMM_MEAN mean : COMM_MEAN.values()) {
-			pendingRequests.put(mean, new LinkedBlockingDeque<>());
-			//ongoingRequests.put(mean, null);
-		}		
-	}
+	private LinkedHashMap<Integer, TransmissionRequest> iridiumTransmissions = new LinkedHashMap<>();
 	
 	public void setLocation(double latDegs, double lonDegs) {
 		reference.lat = Math.toRadians(latDegs);
@@ -288,23 +272,22 @@ public abstract class BackSeatDriver extends TcpClient {
 		VehicleMedium medium = get(VehicleMedium.class);
 		if (medium == null || medium.medium == MEDIUM.VM_UNDERWATER)
 			return;
-		
-		synchronized (requests_sent) {
-			for (Entry<Integer, Message> entry : requests_sent.entrySet()) {
+	
+		synchronized (iridiumTransmissions) {
+			for (Entry<Integer, TransmissionRequest> entry : iridiumTransmissions.entrySet()) {
 				TransmissionStatus status = new TransmissionStatus();
 				status.req_id = entry.getKey();
 				status.status = STATUS.TSTAT_DELIVERED;
-				requests_sent.put(entry.getKey(), status);
-				ongoingRequests.clear();
 				System.out.println("Simulated delivery of "+entry.getKey());
-			}			
-		}		
+				dispatch(status);
+				
+			}
+		}
 		
-		IridiumTxStatus status = new IridiumTxStatus();
-		status.src = remoteSrc;		
-		status.status = IridiumTxStatus.STATUS.TXSTATUS_EMPTY;
-		dispatch(status);
-		
+		IridiumTxStatus empty = new IridiumTxStatus();
+		empty.src = remoteSrc;		
+		empty.status = IridiumTxStatus.STATUS.TXSTATUS_EMPTY;
+		dispatch(empty);
 	}
 	
 	@Periodic(5000)
@@ -431,29 +414,37 @@ public abstract class BackSeatDriver extends TcpClient {
 		setParam(entity, "Active", "false");
 	}
 
-	private LinkedHashMap<Integer, Message> requests_sent = new LinkedHashMap<>();
 	private AtomicInteger request_id = new AtomicInteger(10000);
 
 	@Consume
 	public void on(TransmissionStatus status) {
-		if (status.src != remoteSrc)
-			return;
+		print("Received transmission status: " + status);
 
-		synchronized (requests_sent) {
-			if (requests_sent.containsKey(status.req_id)) {
-				requests_sent.put(status.req_id, status);
-			}
+		if (!iridiumTransmissions.containsKey(status.req_id)) {
+			print("Unrecognized transmission status: " + status);
+			return;
 		}
 		
-		TransmissionRequest ongoing = ongoingRequests.searchValues(1, t -> t.req_id == status.req_id? t : null);
-		if (ongoing != null && status.status != TransmissionStatus.STATUS.TSTAT_IN_PROGRESS) {
-			print("Request "+ongoing.req_id+" has finished: "+status.status);
-			ongoingRequests.remove(ongoing.comm_mean);
-			sendPending();
+		print("Iridium transmission status changed: " + status);
+		switch (status.status) {
+		case TSTAT_DELIVERED:
+		case TSTAT_MAYBE_DELIVERED:
+		case TSTAT_RANGE_RECEIVED:
+			print("Request " + status.req_id + " has been transmitted: " + status.status+" / "+status.info);
+			iridiumTransmissions.remove(status.req_id);
+			break;
+		case TSTAT_INPUT_FAILURE:
+		case TSTAT_TEMPORARY_FAILURE:
+		case TSTAT_PERMANENT_FAILURE:
+			print("Request " + status.req_id + " could not be transmitted: " + status.status+" / "+status.info);
+			iridiumTransmissions.remove(status.req_id);
+			break;
+		default:
+			break;
 		}
 	}
 
-	protected TransmissionRequest createRequest(Message msg, TransmissionRequest.COMM_MEAN mean, int ttl) {
+	protected TransmissionRequest inlineMsgRequest(Message msg, TransmissionRequest.COMM_MEAN mean, int ttl) {
 		TransmissionRequest request = new TransmissionRequest();
 		request.data_mode = DATA_MODE.DMODE_INLINEMSG;
 		request.msg_data = msg;
@@ -464,7 +455,7 @@ public abstract class BackSeatDriver extends TcpClient {
 		return request;
 	}
 
-	protected TransmissionRequest createRequest(String text, TransmissionRequest.COMM_MEAN mean, int ttl) {
+	protected TransmissionRequest txtMessageRequest(String text, TransmissionRequest.COMM_MEAN mean, int ttl) {
 		TransmissionRequest request = new TransmissionRequest();
 		request.data_mode = DATA_MODE.DMODE_TEXT;
 		request.txt_data = text;
@@ -475,109 +466,38 @@ public abstract class BackSeatDriver extends TcpClient {
 		return request;
 	}
 
-	protected void waitFor(TransmissionRequest request) throws Exception {
-		long deadline = (long) (request.deadline * 1000.0);
-		while (System.currentTimeMillis() < deadline) {
-			Thread.sleep(100);
-			synchronized (requests_sent) {
-				if (requests_sent.get(request.req_id) instanceof TransmissionStatus) {
-					TransmissionStatus status = (TransmissionStatus) requests_sent.get(request.req_id);
-					switch (status.status) {
-					case TSTAT_DELIVERED:
-					case TSTAT_SENT:
-					case TSTAT_MAYBE_DELIVERED:
-						requests_sent.remove(request.req_id);			
-						return;
-					case TSTAT_INPUT_FAILURE:
-					case TSTAT_TEMPORARY_FAILURE:
-					case TSTAT_PERMANENT_FAILURE:
-						requests_sent.remove(request.req_id);
-						throw new Exception(status.info);
-					default:
-						break;
-					}
-				}
-			}
+	protected void sendViaIridium(Message msg, int ttl) {
+		TransmissionRequest request = inlineMsgRequest(msg, TransmissionRequest.COMM_MEAN.CMEAN_SATELLITE, ttl);
+		try {
+			send(request);
+			iridiumTransmissions.put(request.req_id, request);
+			print("Request to send "+msg.abbrev()+" over Iridium: "+request.req_id);
 		}
-		requests_sent.remove(request.req_id);
-		throw new Exception("Transmission timed out.");
-	}
-	
-	void sendPending() {
-		for (TransmissionRequest.COMM_MEAN mean : pendingRequests.keySet()) {
-			// is there a transmission that can be sent now?
-			if (!ongoingRequests.containsKey(mean)) {
-				TransmissionRequest req;
-				do {
-					req = pendingRequests.get(mean).pollFirst();
-				}
-				while (req != null && req.deadline < System.currentTimeMillis()/1000.0);
-				
-				if (req != null) {
-					ongoingRequests.put(mean, req);
-					
-					try {
-						send(req);
-						if (req.data_mode == DATA_MODE.DMODE_TEXT)
-							print("Sending "+req.req_id+" request using "+mean+": "+req.txt_data);
-						else if (req.data_mode == DATA_MODE.DMODE_INLINEMSG)
-							print("Sending "+req.req_id+" request using "+mean+": "+req.msg_data);
-						else
-							print("Sending "+req.req_id+" request using "+mean+": "+req.raw_data);
-						requests_sent.put(req.req_id, req);
-					}							
-					catch (Exception e) {
-						e.printStackTrace();
-					}	
-				}				
-			}
+		catch (Exception e) {
+			print("Could not transmit Iridium message: "+e.getMessage());
 		}
 	}
 
-	protected int messagesPending() {
-		return ongoingRequests.size() + pendingRequests.values().stream().mapToInt(t -> t.size()).sum();
-	}
-	
-	protected Future<Void> sendVia(Message msg, TransmissionRequest.COMM_MEAN mean, int ttl) {
-		final TransmissionRequest request = createRequest(msg, mean, ttl);
-		pendingRequests.get(mean).add(request);
-		print("Request to send "+msg.abbrev()+" using "+mean+" within "+ttl+" seconds");
-		sendPending();
-		
-		return executor.submit(new Callable<Void>() {
-
-			@Override
-			public Void call() throws Exception {
-				waitFor(request);
-				return null;
-			}
-		});
-		
+	protected void sendViaIridium(String text, int ttl) {
+		TransmissionRequest request = txtMessageRequest(text, TransmissionRequest.COMM_MEAN.CMEAN_SATELLITE, ttl);
+		try {
+			send(request);
+			iridiumTransmissions.put(request.req_id, request);
+			print("Request to send text '"+text+"' over Iridium: "+request.req_id);
+		}
+		catch (Exception e) {
+			print("Error while trying to send Iridium request: "+e.getMessage());
+		}
 	}
 
-	protected Future<Void> sendVia(String text, TransmissionRequest.COMM_MEAN mean, int ttl) {
-		System.out.println(mean+"_TX: "+text);
-		final TransmissionRequest request = createRequest(text, mean, ttl);
-		pendingRequests.get(mean).add(request);
-		sendPending();
-		return executor.submit(new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
-				waitFor(request);
-				return null;
-			}
-		});
-	}
-	
-	protected Future<Void> sendViaIridium(Message msg, int ttl) {
-		return sendVia(msg, TransmissionRequest.COMM_MEAN.CMEAN_SATELLITE, ttl);
-	}
-
-	protected Future<Void> sendViaIridium(String text, int ttl) {
-		return sendVia(text, TransmissionRequest.COMM_MEAN.CMEAN_SATELLITE, ttl);
-	}
-
-	protected Future<Void> sendViaSms(String text, int ttl) {
-		return sendVia(text, TransmissionRequest.COMM_MEAN.CMEAN_GSM, ttl);
+	protected void sendViaSms(String text, int ttl) {
+		TransmissionRequest request = txtMessageRequest(text, TransmissionRequest.COMM_MEAN.CMEAN_GSM, ttl);
+		try {
+			send(request);
+			print("Request to send text '"+text+"' over SMS: "+request.req_id);
+		}
+		catch (Exception e) {
+			print("Error while trying to send GSM request: "+e.getMessage());
+		}
 	}
 }

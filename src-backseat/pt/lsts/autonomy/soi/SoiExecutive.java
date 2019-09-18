@@ -545,11 +545,6 @@ public class SoiExecutive extends TimedFSM {
 			return this::surface_to_report_error;
 		}
 
-		if (secs_no_comms / 60 >= minsOff) {
-			print("Periodic surface");
-			return this::start_waiting;
-		}
-
 		if (arrivedXY()) {
 			print("Arrived at waypoint " + wpt_index);
 			wpt_index++;
@@ -692,7 +687,7 @@ public class SoiExecutive extends TimedFSM {
 		int min_wait = wptSecs;
 		int max_wait = wptSecs * 3;
 
-		// Send "DUNE" report
+		// Send "DUNE" report at communication start
 		if (count_secs == 0) {
 
 			EnumSet<ReportControl.COMM_INTERFACE> itfs = EnumSet.of(ReportControl.COMM_INTERFACE.CI_GSM);
@@ -701,9 +696,11 @@ public class SoiExecutive extends TimedFSM {
 			print("Will wait from " + min_wait + " to " + max_wait + " seconds to send " + txtMessages.size()
 					+ " texts, " + replies.size() + " command replies and " + profiles.size() + " profiles.");
 
-		} else {
+		} 
+		else {
 			while (!replies.isEmpty()) {
 				SoiCommand cmd = replies.get(0);
+				print("Replying to command using Iridium: "+cmd);
 				sendViaIridium(cmd, max_wait - count_secs - 1);
 				replies.remove(0);
 			}
