@@ -4,13 +4,15 @@
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 
 NAME="Distress"
-RUN_HOME="/opt/lsts/distress"
+#RUN_HOME="/opt/lsts/distress"
+RUN_HOME="$(pwd)"
 JARNAME="Distress.jar"
-SERVER_PORT="80"
+SERVER_PORT="8080"
 CLASS_BACKSEAT="pt.lsts.backseat.distress.DistressSurvey"
 
 CLASS_SERVER="pt.lsts.httpd.BackSeatServer"
-JAVA="/opt/lsts/jre/bin/java"
+#JAVA="/opt/lsts/jre/bin/java"
+JAVA="java"
 DATE=`date +%Y-%m-%d_%H-%M-%S`
 OUTPUT="$RUN_HOME/log/$DATE.log"
 LATEST="$RUN_HOME/latest.log"
