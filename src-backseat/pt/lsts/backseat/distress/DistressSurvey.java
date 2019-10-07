@@ -83,9 +83,9 @@ public class DistressSurvey extends TimedFSM {
     
     @Parameter(description = "Maximum time underwater (minutes)")
     private int minsUnderwater = 15;
-    @Parameter(description = "Surface on Corners")
+    @Parameter(description = "Periodic surface for position")
     private boolean usePeriodicSurfaceForPos = false;
-    @Parameter(description = "Surface on Corners")
+    @Parameter(description = "Surface on corners")
     private boolean surfaceOnCorners = false;
     
     @Parameter(description = "Wait Distress Underwater")
@@ -129,7 +129,7 @@ public class DistressSurvey extends TimedFSM {
     private double surveyDeltaAltitudeFromTarget = 5;
     @Parameter(description = "Approach Lenght Offset")
     private double approachLenghtOffset = 50;
-    @Parameter(description = "Survey Side (true) or Around (false)")
+    @Parameter(description = "Survey Side (true) or Around Target (false)")
     private boolean surveySideOrAround = false;
 
     @Parameter(description = "Target Width")
