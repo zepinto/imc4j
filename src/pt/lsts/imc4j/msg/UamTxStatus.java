@@ -79,7 +79,11 @@ public class UamTxStatus extends Message {
 
 		UTS_UNSUPPORTED(6l),
 
-		UTS_INV_SIZE(7l);
+		UTS_INV_SIZE(7l),
+
+		UTS_SENT(8l),
+
+		UTS_DELIVERED(9l);
 
 		protected long value;
 

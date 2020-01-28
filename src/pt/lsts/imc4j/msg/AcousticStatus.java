@@ -130,6 +130,8 @@ public class AcousticStatus extends Message {
 
 		STATUS_RANGE_RECEIVED(3l),
 
+		STATUS_DELIVERED(4l),
+
 		STATUS_BUSY(100l),
 
 		STATUS_INPUT_FAILURE(101l),

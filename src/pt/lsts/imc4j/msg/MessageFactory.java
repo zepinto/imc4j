@@ -123,6 +123,8 @@ public class MessageFactory {
 
 	public static final int ID_AcousticMessage = 206;
 
+	public static final int ID_SimAcousticMessage = 207;
+
 	public static final int ID_AcousticOperation = 211;
 
 	public static final int ID_AcousticSystemsQuery = 212;
@@ -569,6 +571,8 @@ public class MessageFactory {
 
 	public static final int ID_UamRxRange = 817;
 
+	public static final int ID_UamTxRange = 818;
+
 	public static final int ID_FormCtrlParam = 820;
 
 	public static final int ID_FormationEval = 821;
@@ -814,6 +818,9 @@ public class MessageFactory {
 			}
 			case ID_AcousticMessage: {
 				return new AcousticMessage();
+			}
+			case ID_SimAcousticMessage: {
+				return new SimAcousticMessage();
 			}
 			case ID_AcousticOperation: {
 				return new AcousticOperation();
@@ -1484,6 +1491,9 @@ public class MessageFactory {
 			case ID_UamRxRange: {
 				return new UamRxRange();
 			}
+			case ID_UamTxRange: {
+				return new UamTxRange();
+			}
 			case ID_FormCtrlParam: {
 				return new FormCtrlParam();
 			}
@@ -1771,6 +1781,9 @@ public class MessageFactory {
 			}
 			case "AcousticMessage": {
 				return ID_AcousticMessage;
+			}
+			case "SimAcousticMessage": {
+				return ID_SimAcousticMessage;
 			}
 			case "AcousticOperation": {
 				return ID_AcousticOperation;
@@ -2440,6 +2453,9 @@ public class MessageFactory {
 			}
 			case "UamRxRange": {
 				return ID_UamRxRange;
+			}
+			case "UamTxRange": {
+				return ID_UamTxRange;
 			}
 			case "FormCtrlParam": {
 				return ID_FormCtrlParam;
