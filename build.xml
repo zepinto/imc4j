@@ -253,4 +253,24 @@
 				<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/nanohttpd-2.3.1.jar"/>
 			</jar>	
 		</target>
+	
+	<target name="tcpstream" >
+			<mkdir dir="bin"/>
+			<delete dir="bin"/>
+			<mkdir dir="bin"/>
+			<javac encoding="${compile-encoding}" srcdir="src"  destdir="bin" includes="**/*.java" fork="false">
+				<classpath refid="classpath.dependencies"/>
+			</javac>
+			<copy verbose="true" todir="bin">
+				<fileset dir="src" includes="**/*.java"/>
+			</copy>
+			<jar destfile="${dir.jarfile}/TcpStream.jar">
+				<manifest>
+					<attribute name="Main-Class" value="pt.lsts.imc4j.net.TcpStream"/>
+					<attribute name="Class-Path" value="."/>
+				</manifest>
+				<fileset dir="${dir.buildfile}/bin"/>
+				<zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/lib/minimal-json-0.9.4.jar"/>				
+			</jar>
+		</target>
 </project>
