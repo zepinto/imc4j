@@ -138,7 +138,7 @@ public class TcpStream {
 
 	public void on(Message msg) {
 		String line = toString(msg);
-		System.out.println(line);
+		//System.out.println(line);
 		ArrayList<ClientConnection> defunct = new ArrayList<TcpStream.ClientConnection>();
 		
 		clients.forEach(c -> {
