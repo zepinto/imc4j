@@ -15,6 +15,8 @@ import javax.xml.bind.DatatypeConverter;
 
 import pt.lsts.imc4j.annotations.Consume;
 import pt.lsts.imc4j.annotations.FieldType;
+import pt.lsts.imc4j.msg.LogBookEntry;
+import pt.lsts.imc4j.msg.LogBookEntry.TYPE;
 import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.util.LsfReader;
 
@@ -22,13 +24,13 @@ public class TcpStream {
 
 	private ServerSocket server;
 	private ArrayList<ClientConnection> clients = new ArrayList<TcpStream.ClientConnection>();
+	TcpClient client = new TcpClient();
 
 	public TcpStream(String duneHostname, int dunePort, int serverPort) throws Exception {
 		startServer(serverPort);
-		TcpClient client = new TcpClient();
-		new Thread(startServer(serverPort)).start();		
+		new Thread(startServer(serverPort)).start();
 		client.register(this);
-		System.out.println("connecting to "+duneHostname+":"+dunePort);
+		System.out.println("connecting to " + duneHostname + ":" + dunePort);
 		client.connect(duneHostname, dunePort);
 	}
 
@@ -42,13 +44,13 @@ public class TcpStream {
 		while ((message = reader.nextMessage()) != null) {
 			double ellapsed = (System.currentTimeMillis() - startRealTime) / 1000.0;
 			double simTime = startSimTime + ellapsed;
-			
+
 			while (message.timestamp > simTime) {
 				Thread.sleep(10);
 				ellapsed = (System.currentTimeMillis() - startRealTime) / 1000.0;
 				simTime = startSimTime + ellapsed;
 			}
-				
+
 			on(message);
 		}
 	}
@@ -58,7 +60,7 @@ public class TcpStream {
 			try {
 				System.out.println("Starting server");
 				server = new ServerSocket(port);
-				
+
 				Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 					try {
 						server.close();
@@ -69,11 +71,12 @@ public class TcpStream {
 						e.printStackTrace();
 					}
 				}));
+				System.out.println("Waiting for connections");
 
 				while (true) {
-					System.out.println("Waiting for connections");
 					Socket connectionSocket = server.accept();
 					ClientConnection conn = new ClientConnection(connectionSocket);
+					System.out.println("Client connected: " + conn.clientSocket.getRemoteSocketAddress());
 					clients.add(conn);
 					conn.start();
 				}
@@ -84,8 +87,8 @@ public class TcpStream {
 		};
 	}
 
-	//private NumberFormat doubles = new DecimalFormat("0.00000000");
-	//private NumberFormat floats = new DecimalFormat("0.000");
+	// private NumberFormat doubles = new DecimalFormat("0.00000000");
+	// private NumberFormat floats = new DecimalFormat("0.000");
 
 	private String toString(Message msg) {
 		StringBuilder builder = new StringBuilder(msg.abbrev());
@@ -120,12 +123,6 @@ public class TcpStream {
 					builder.append(",MessageList[]");
 					break;
 				}
-				/*case TYPE_FP32:
-					builder.append(",").append(f.get(msg));
-					break;
-				case TYPE_FP64:
-					builder.append(",").append(f.get(msg));
-					break;*/
 				default:
 					builder.append(",").append(f.get(msg));
 					break;
@@ -140,9 +137,9 @@ public class TcpStream {
 	@Consume
 	public void on(Message msg) {
 		String line = toString(msg);
-		System.out.println(line);
+		// System.out.println(line);
 		ArrayList<ClientConnection> defunct = new ArrayList<TcpStream.ClientConnection>();
-		
+
 		clients.forEach(c -> {
 			try {
 				if (!c.running)
@@ -153,7 +150,7 @@ public class TcpStream {
 				e.printStackTrace();
 			}
 		});
-		
+
 		for (ClientConnection c : defunct)
 			clients.remove(c);
 	}
@@ -171,7 +168,29 @@ public class TcpStream {
 	}
 
 	public void on(Socket client, String command) {
-		System.out.println(client.getRemoteSocketAddress() + " sent " + command);
+		LogBookEntry lbe = new LogBookEntry();
+		lbe.text = command;
+		lbe.src = this.client.remoteSrc;
+		lbe.htime = System.currentTimeMillis() / 1000.0;
+		lbe.context = "Abnormal Behavior";
+		if (command.toLowerCase().contains("warning")) {
+			if (command.contains(",")) {
+				String timestamp = command.substring(command.indexOf(",") + 1).trim();
+				lbe.htime = Double.valueOf(timestamp);
+				lbe.text = command.substring(0, command.indexOf(",") - 1).trim();
+			}
+			lbe.type = TYPE.LBET_WARNING;
+		} else {
+			lbe.type = TYPE.LBET_INFO;
+		}
+
+		try {
+			this.client.send(lbe);			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		System.err.println(client.getRemoteSocketAddress() + " sent " + command);
 	}
 
 	class ClientConnection extends Thread {
@@ -201,7 +220,8 @@ public class TcpStream {
 					else
 						on(clientSocket, line);
 				} catch (IOException e) {
-					e.printStackTrace();
+					System.err.println(
+							"Connection with " + clientSocket.getRemoteSocketAddress() + " closed: " + e.getMessage());
 					break;
 				}
 			}
