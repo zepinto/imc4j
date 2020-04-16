@@ -1,4 +1,3 @@
-include 'core'
 include 'endurance'
 include 'generator'
 include 'backseat'
