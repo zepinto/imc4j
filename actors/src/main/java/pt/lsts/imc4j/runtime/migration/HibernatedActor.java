@@ -13,7 +13,6 @@ import pt.lsts.imc4j.msg.NeptusBlob;
 import pt.lsts.imc4j.runtime.IMCRuntime;
 import pt.lsts.imc4j.runtime.actors.AbstractActor;
 import pt.lsts.imc4j.runtime.actors.ActorContext;
-import pt.lsts.imc4j.test.ActorTest;
 import pt.lsts.imc4j.util.CompressionUtils;
 import pt.lsts.imc4j.util.PojoConfig;
 
@@ -81,24 +80,4 @@ public class HibernatedActor implements Serializable {
 		className = actor.getClass().getName();
 		loadSpec();
 	}
-
-	public static void main(String[] args) throws Exception {
-		ActorContext context = new IMCRuntime();
-		ActorTest at = new ActorTest(context);
-		context.start();
-				
-		Thread.sleep(15000);
-		
-		System.out.println("now doing hibernation...");
-		context.unregister(at);
-		HibernatedActor h = new HibernatedActor(at);
-		
-		NeptusBlob blob = h.asBlob();
-		HibernatedActor h2 = HibernatedActor.fromBlob(blob);
-		
-		Thread.sleep(15000);
-		System.out.println("now reviving...");		
-		h2.wakeUp(context);
-	}
-
 }
