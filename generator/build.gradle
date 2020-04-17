@@ -1,11 +1,39 @@
+plugins {
+    id "de.undercouch.download" version "1.2"
+}
+
+apply plugin: 'de.undercouch.download'
+
 dependencies {
     compile 'com.squareup:javapoet:1.12.1'
 }
 
-task generateMessages(type: JavaExec) {
+import de.undercouch.gradle.tasks.download.Download
 
+task generateMessages(type: JavaExec) {
+    description = 'Generate Message classes'
+    group = 'Generator'
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'pt.lsts.imc4j.generator.IMCGenerator'
+    workingDir = 'src/main/'
+    // arguments to pass to the application
+
+    args "$parent.rootDir/src/main/resources/IMC.xml", "$parent.rootDir/src/main/java"
 }
 
-task updateXml(type: JavaExec) {
+task downloadImc(type: Download) {
+    description = 'Download IMC.xml from IMC master branch'
+    group = 'Generator'
+    src 'https://raw.githubusercontent.com/LSTS/imc/master/IMC.xml'
+    dest 'src/main/resources/IMC.xml'
 
+    doLast {
+        println("IMC.xml downloaded to '$dest'.")
+    }
+}
+
+task updateImc {
+    description = 'Download IMC from master and generate classes'
+    group = 'Generator'
+    dependsOn = [downloadImc, generateMessages]
 }

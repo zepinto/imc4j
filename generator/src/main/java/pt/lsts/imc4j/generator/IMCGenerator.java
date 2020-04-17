@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -37,8 +38,9 @@ public class IMCGenerator {
 
 	private static final String pkgMsgs = "pt.lsts.imc4j.msg";
 	private static final String pkgDefs = "pt.lsts.imc4j.def";
-	private static final String outDir = "src";
-	
+	private static String outDir = "src";
+
+
 	static LinkedHashMap<String, TypeSpec> bitfields = null;
 	static LinkedHashMap<String, TypeSpec> enums = null;
 	static LinkedHashMap<String, TypeSpec> groups = null;
@@ -716,9 +718,19 @@ public class IMCGenerator {
 
 	public static void main(String[] args) throws Exception {
 		long time = System.currentTimeMillis();
+
+		File specsFile = null;
+		if (args.length == 2) {
+			specsFile = new File(args[0]);
+			outDir = args[1];
+		}
+		else {
+			specsFile = new File("res/IMC.xml");
+		}
+
 		File msgsDir = new File(outDir+File.separatorChar+pkgMsgs.replace('.', File.separatorChar));
 		File defsDir = new File(outDir+File.separatorChar+pkgDefs.replace('.', File.separatorChar));
-		
+
 		System.out.println("Deleting "+pkgMsgs+" folder");
 		if (msgsDir.exists()) {
 			for (Path p : Files.walk(msgsDir.toPath()).sorted((a, b) -> b.compareTo(a)).toArray(Path[]::new))
@@ -730,8 +742,8 @@ public class IMCGenerator {
 			for (Path p : Files.walk(defsDir.toPath()).sorted((a, b) -> b.compareTo(a)).toArray(Path[]::new))
 				Files.delete(p);
 		}
-		
-		generateClasses(new File("res/IMC.xml"), new File(outDir));
+
+		generateClasses(specsFile, new File(outDir));
 		System.out.println("Generation took "+(System.currentTimeMillis() - time)+" milliseconds");
 	}
 }
