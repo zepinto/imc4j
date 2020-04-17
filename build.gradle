@@ -26,3 +26,7 @@ task dist(type: Jar) {
     with jar
     destinationDir = new java.io.File("$rootDir/dist")
 }
+
+clean {
+    delete fileTree(dir: 'dist' , include: '**/*.jar')
+}
