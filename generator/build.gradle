@@ -1,0 +1,11 @@
+dependencies {
+    compile 'com.squareup:javapoet:1.12.1'
+}
+
+task generateMessages(type: JavaExec) {
+
+}
+
+task updateXml(type: JavaExec) {
+
+}

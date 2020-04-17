@@ -1,43 +1,23 @@
 allprojects {
-    apply plugin: 'java'
- 
+    version = '1.0.0'
+    
     repositories {
         mavenCentral()
     }
+
+    apply plugin: 'java'
+   
     dependencies {
-        compile 'com.eclipsesource.minimal-json:minimal-json:0.9.5'
-    }
+        compile 'com.eclipsesource.minimal-json:minimal-json:0.9.5'        
+    }  
+
+   jar {
+      from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+   }
 }
 
 subprojects {
    dependencies {
      compile rootProject
-   }
-}
-
-project(':generator') {
-   dependencies {
-      compile 'com.squareup:javapoet:1.12.1'
-   }
-}
-
-project(':actors') {
-   dependencies {
-      compile 'org.glassfish.grizzly:grizzly-core:2.3.28'
-      compile 'com.squareup:otto:1.3.8'      
-   }
-}
-
-project(':backseat') {
-   dependencies {
-      compile project(':endurance')     
-      compile 'org.nanohttpd:nanohttpd:2.3.0'
-      compile 'org.knowm.xchart:xchart:3.6.2'
-   }
-}
-
-project(':sim') {
-   dependencies {
-      compile project(':actors')      
    }
 }
