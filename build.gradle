@@ -6,18 +6,23 @@ allprojects {
     }
 
     apply plugin: 'java'
-   
+    apply plugin: 'maven'
+
     dependencies {
         compile 'com.eclipsesource.minimal-json:minimal-json:0.9.5'        
-    }  
-
-   jar {
-      from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-   }
+    }
 }
 
 subprojects {
    dependencies {
      compile rootProject
    }
+}
+
+task dist(type: Jar) {
+    description = 'Generate fatjar for IMC API'
+    group = 'Distribution'
+    from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+    destinationDir = new java.io.File("$rootDir/dist")
 }

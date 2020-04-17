@@ -13,6 +13,8 @@ def jarTask(jarName, destFolder, mainClass) {
     return tasks.create(jarName, Jar) {
         group 'Distribution'
         description "Generate ${jarName}.jar"
+
+        from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
         with jar
 
         manifest {
