@@ -1,0 +1,38 @@
+
+apply plugin: 'application'
+
+mainClassName = 'pt.lsts.autonomy.soi.SoiExecutive'
+
+dependencies {
+    compile project(':endurance')     
+    compile 'org.nanohttpd:nanohttpd:2.3.0'
+    compile 'org.knowm.xchart:xchart:3.6.2'
+}
+
+def jarTask(jarName, destFolder, mainClass) {
+    return tasks.create(jarName, Jar) {
+        group 'Distribution'
+        description "Generate ${jarName}.jar"
+
+        from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+        with jar
+
+        manifest {
+            attributes 'Main-Class': mainClass
+        }
+
+        archiveName "${jarName}.jar"
+        destinationDir (new java.io.File("$rootDir/$destFolder"))
+    }
+}
+
+jarTask('SoiExecutive', '/dist/soi', 'pt.lsts.autonomy.soi.SoiExecutive')
+jarTask('DripExecutive', '/dist/drip', 'pt.lsts.backseat.drip.DripExecutive')
+jarTask('ArpaoExec', '/dist/arpao', 'pt.lsts.autonomy.ArpaoExecutive')
+jarTask('Distress', '/dist/distress', 'pt.lsts.backseat.distress.DistressSurvey')
+
+task execJars {
+    group 'Distribution'
+    description "Generate Executives Jar archives"
+    dependsOn = ['SoiExecutive', 'DripExecutive', 'ArpaoExec', 'Distress']
+}
