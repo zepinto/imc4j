@@ -13,6 +13,6 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: 8
-    - uses: OrangeLabs-moe/gradle-actions@v5.0-openjdk-8
-      with:
-        arguments: build
+    - name: Build with Gradle
+      run: ./gradlew build
+  
