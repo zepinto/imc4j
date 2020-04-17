@@ -79,11 +79,13 @@ public abstract class Message extends AbstractMessage {
 	}
 
 	/**
-	 * The identification number of the message */
+	 * The identification number of the message
+	 */
 	public abstract int mgid();
 
 	/**
-	 * The name (abbreviation) of the message */
+	 * The name (abbreviation) of the message
+	 */
 	public abstract String abbrev();
 
 	public final String toString() {
@@ -91,21 +93,25 @@ public abstract class Message extends AbstractMessage {
 	}
 
 	/**
-	 * Serialize this message's payload */
+	 * Serialize this message's payload
+	 */
 	public abstract byte[] serializeFields();
 
 	/**
-	 * Deserialize this message's payload */
+	 * Deserialize this message's payload
+	 */
 	public abstract void deserializeFields(ByteBuffer buf) throws IOException;
 
 	/**
-	 * Serialize this message */
+	 * Serialize this message
+	 */
 	public byte[] serialize() {
 		return SerializationUtils.serializeMessage(this);
 	}
 
 	/**
-	 * Read a message from a byte array */
+	 * Read a message from a byte array
+	 */
 	public static Message deserialize(byte[] data) throws Exception {
 		return SerializationUtils.deserializeMessage(data);
 	}
