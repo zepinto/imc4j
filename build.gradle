@@ -1,5 +1,5 @@
 allprojects {
-    version = '1.0.0'
+    version = '1.0.1'
     
     repositories {
         mavenCentral()
@@ -19,14 +19,6 @@ subprojects {
    }
 }
 
-task dist(type: Jar) {
-    description = 'Generate fatjar for IMC API'
-    group = 'Distribution'
-    from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-    destinationDir = new java.io.File("$rootDir/dist")
-}
-
 clean {
     delete fileTree(dir: 'dist' , include: '**/*.jar')
 }
@@ -39,9 +31,7 @@ publishing {
     publications {
         maven(MavenPublication) {
             groupId = 'pt.lsts.imc4j'
-            artifactId = 'core'
-            version = '1.0.0'
-
+            artifactId = 'core'	    
             from components.java
         }
     }

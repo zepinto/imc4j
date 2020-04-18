@@ -1,0 +1,10 @@
+jar.baseName = "imc4j"
+
+task dist(type: Jar) {
+    description = 'Generate fatjar for IMC API'
+    group = 'Distribution'
+    from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+    baseName = "imc4j"
+    destinationDir = new java.io.File("$rootDir/dist")
+}

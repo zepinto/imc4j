@@ -12,8 +12,6 @@ dependencies {
 import de.undercouch.gradle.tasks.download.Download
 
 task generateMessages(type: JavaExec) {
-    description = 'Generate Message classes'
-    group = 'Generator'
     classpath = sourceSets.main.runtimeClasspath
     main = 'pt.lsts.imc4j.generator.IMCGenerator'
     workingDir = 'src/main/'
@@ -23,13 +21,15 @@ task generateMessages(type: JavaExec) {
 }
 
 task downloadImc(type: Download) {
-    description = 'Download IMC.xml from IMC master branch'
-    group = 'Generator'
     src 'https://raw.githubusercontent.com/LSTS/imc/master/IMC.xml'
     dest 'core/src/main/resources/IMC.xml'
 
     doLast {
         println("IMC.xml downloaded to '$dest'.")
+        def commit = new groovy.json.JsonSlurper().parse('https://api.github.com/repos/LSTS/imc/commits/master'.toURL()).sha;
+        File shaFile = new File('core/src/main/resources/IMC.sha')
+        shaFile.text = "$commit";
+        println("IMC SHA: ${commit}")
     }
 }
 
