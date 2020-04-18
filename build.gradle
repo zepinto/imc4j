@@ -1,38 +1,26 @@
 allprojects {
-    version = '1.0.1'
-    
+    version = '1.0.2'
     repositories {
         mavenCentral()
     }
-
-    apply plugin: 'java'
     apply plugin: 'maven-publish'
-
-    dependencies {
-        compile 'com.eclipsesource.minimal-json:minimal-json:0.9.5'        
-    }
+    apply plugin: 'java'
 }
 
 subprojects {
-   dependencies {
-     compile rootProject
-   }
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                groupId = 'pt.lsts.imc4j'
+                from components.java
+            }
+        }
+    }
 }
-
 clean {
     delete fileTree(dir: 'dist' , include: '**/*.jar')
 }
 
 task sourcesJar(type: Jar) {
     from sourceSets.main.allJava
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId = 'pt.lsts.imc4j'
-            artifactId = 'core'	    
-            from components.java
-        }
-    }
 }

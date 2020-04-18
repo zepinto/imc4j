@@ -1,5 +1,9 @@
 jar.baseName = "imc4j"
 
+dependencies {
+    compile 'com.eclipsesource.minimal-json:minimal-json:0.9.5'
+}
+
 task dist(type: Jar) {
     description = 'Generate fatjar for IMC API'
     group = 'Distribution'
@@ -8,3 +12,4 @@ task dist(type: Jar) {
     baseName = "imc4j"
     destinationDir = new java.io.File("$rootDir/dist")
 }
+
