@@ -197,7 +197,8 @@ public class SerializationUtils {
 		
 		return count;			
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	public static <T extends Message> ArrayList<T> deserializeMsgList(ByteBuffer buf) throws IOException {
 		ArrayList<T> msgs = new ArrayList<>();
 		int numMsgs = buf.getShort() & 0xFFFF;
