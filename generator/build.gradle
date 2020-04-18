@@ -5,6 +5,7 @@ plugins {
 apply plugin: 'de.undercouch.download'
 
 dependencies {
+    compile project(':core')
     compile 'com.squareup:javapoet:1.12.1'
 }
 
@@ -18,14 +19,14 @@ task generateMessages(type: JavaExec) {
     workingDir = 'src/main/'
     // arguments to pass to the application
 
-    args "$parent.rootDir/src/main/resources/IMC.xml", "$parent.rootDir/src/main/java"
+    args "$parent.rootDir/core/src/main/resources/IMC.xml", "$parent.rootDir/core/src/main/java"
 }
 
 task downloadImc(type: Download) {
     description = 'Download IMC.xml from IMC master branch'
     group = 'Generator'
     src 'https://raw.githubusercontent.com/LSTS/imc/master/IMC.xml'
-    dest 'src/main/resources/IMC.xml'
+    dest 'core/src/main/resources/IMC.xml'
 
     doLast {
         println("IMC.xml downloaded to '$dest'.")
