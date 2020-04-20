@@ -10,7 +10,9 @@ import java.util.List;
 public class NetworkUtils {
 
 	public static List<String> getNetworkInterfaces() {
-		List<String> itfs = getNetworkInterfaces(true);
+		List<String> itfs = getNetworkInterfaces(false);
+		if (itfs.isEmpty())
+			itfs = getNetworkInterfaces(true);
 		return itfs;
 	}
 	
