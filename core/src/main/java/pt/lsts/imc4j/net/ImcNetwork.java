@@ -10,7 +10,6 @@ import pt.lsts.imc4j.util.PeriodicCallbacks;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -246,12 +245,6 @@ public class ImcNetwork implements ImcTransport.MsgHandler, ImcConsumable {
         ImcNetwork network = new ImcNetwork("MyImcNode", 45645, SystemType.UUV);
         network.setConnectionPolicy(p -> true);
         network.startListening(7001);
-        Thread.sleep(20_000);
-        network.subscribe(LogBookEntry.class, System.out::println);
-        ImcPeer xp1 = network.waitFor("lauv-xplore-1").get(1, TimeUnit.MINUTES);
-        ImcPeer xp2 = network.waitFor("lauv-xplore-2").get(1, TimeUnit.MINUTES);
-        xp1.send(new Abort());
-        xp2.send(new Abort());
-        network.stop();
+        network.subscribe(Message.class, m -> System.out.println(m.abbrev() + " from " + m.src));
     }
 }

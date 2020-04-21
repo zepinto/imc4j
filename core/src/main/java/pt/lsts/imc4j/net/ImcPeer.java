@@ -8,8 +8,6 @@ import pt.lsts.imc4j.util.ImcConsumable;
 
 import java.net.InetSocketAddress;
 import java.util.LinkedHashSet;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

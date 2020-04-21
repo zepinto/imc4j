@@ -35,6 +35,16 @@ public interface ImcConsumable {
      */
     @SuppressWarnings("unchecked")
     default <M extends Message> void publish(M m) {
-        consumers.getOrDefault(m.getClass(), new ArrayList<>()).forEach(c -> executor.execute(() -> ((Consumer<M>)c).accept(m)));
+        // Create a list of all types (concrete and abstract)
+        ArrayList<Class<?>> types = new ArrayList<>();
+        Class<?> clazz = m.getClass();
+        types.add(clazz);
+        while (clazz != Message.class) {
+            types.add(clazz.getSuperclass());
+            clazz = clazz.getSuperclass();
+        }
+        // send events to subscribers
+        for (Class<?> clz : types)
+            consumers.getOrDefault(clz, new ArrayList<>()).forEach(c -> executor.execute(() -> ((Consumer<M>)c).accept(m)));
     }
 }

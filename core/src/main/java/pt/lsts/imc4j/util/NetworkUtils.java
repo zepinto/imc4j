@@ -17,7 +17,7 @@ public class NetworkUtils {
 	}
 	
 	public static List<String> getNetworkInterfaces(boolean includeLoopback) {
-		ArrayList<String> itfs = new ArrayList<String>();
+		ArrayList<String> itfs = new ArrayList<>();
 		try {
 			Enumeration<NetworkInterface> nis = NetworkInterface.getNetworkInterfaces();
 			while (nis.hasMoreElements()) {
