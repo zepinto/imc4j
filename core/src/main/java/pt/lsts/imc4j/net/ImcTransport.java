@@ -8,7 +8,10 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.*;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,7 +72,6 @@ public class ImcTransport extends Thread {
         for (discoveryPort = 30100; discoveryPort <= 30105; discoveryPort++) {
             try {
                 discovery.bind(new InetSocketAddress(discoveryPort));
-                System.out.println("Discovery bound to port " + discoveryPort);
                 break;
             } catch (Exception e) {
                 // try next one
@@ -82,7 +84,6 @@ public class ImcTransport extends Thread {
 
     @Override
     public void run() {
-        System.out.println("IMC Transport is running");
         while (true) {
             try {
                 selector.select();
@@ -256,7 +257,6 @@ public class ImcTransport extends Thread {
         InetAddress broadcast = InetAddress.getByName("255.255.255.255");
         DatagramSocket socket = new DatagramSocket();
         socket.setBroadcast(true);
-
         byte[] buffer = m.serialize();
 
         for (int port = 30100; port <= 30105; port++) {
@@ -271,7 +271,6 @@ public class ImcTransport extends Thread {
         InetAddress multicastGroup = InetAddress.getByName("224.0.75.69");
         MulticastSocket socket = new MulticastSocket();
         socket.joinGroup(multicastGroup);
-
         byte[] buffer = m.serialize();
 
         for (int port = 30100; port <= 30105; port++) {

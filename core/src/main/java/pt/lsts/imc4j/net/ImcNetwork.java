@@ -2,19 +2,17 @@ package pt.lsts.imc4j.net;
 
 import pt.lsts.imc4j.annotations.Periodic;
 import pt.lsts.imc4j.def.SystemType;
-import pt.lsts.imc4j.msg.Announce;
-import pt.lsts.imc4j.msg.EstimatedState;
-import pt.lsts.imc4j.msg.Heartbeat;
-import pt.lsts.imc4j.msg.Message;
-import pt.lsts.imc4j.util.AbstractMessage;
+import pt.lsts.imc4j.msg.*;
+import pt.lsts.imc4j.util.ImcConsumable;
 import pt.lsts.imc4j.util.NetworkUtils;
 import pt.lsts.imc4j.util.PeriodicCallbacks;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -22,22 +20,23 @@ import java.util.stream.Collectors;
 /**
  * This class implements a connection to an IMC Network
  */
-public class ImcNetwork implements ImcTransport.MsgHandler {
+public class ImcNetwork implements ImcTransport.MsgHandler, ImcConsumable {
     private final ImcTransport imcTransport;
     private final Announce localNode;
     private final ConcurrentHashMap<Integer, ImcPeer> peers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ImcPeer> peersByName = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Class<? extends Message>, ArrayList<Consumer<? extends Message>>> consumers
             = new ConcurrentHashMap<>();
-    Predicate<ImcPeer> connectionPolicy = p -> true;
+    Predicate<ImcPeer> connectionPolicy = p -> false;
 
     /**
      * Constructor creates a local IMC node (not connected initially).
      * @param sysName The name of the local IMC node
      * @param imcId The IMC ID for the local IMC node
      * @param sysType The type of system of the local IMC node
-     * @see {@link #bindTcp(int)}
-     * @see {@link #bindUdp(int)}
-     * @see {@link #bindDiscovery()}
+     * @see {@link #listenTcp(int)}
+     * @see {@link #listenUdp(int)}
+     * @see {@link #listenDiscovery()}
      */
     private ImcNetwork(String sysName, int imcId, SystemType sysType) {
         localNode = new Announce();
@@ -94,15 +93,17 @@ public class ImcNetwork implements ImcTransport.MsgHandler {
         ImcPeer peer = peers.get(msg.src);
         if (peer == null) {
             if (msg.mgid() == Announce.ID_STATIC) {
-                peer = new ImcPeer((Announce) msg);
+                peer = new ImcPeer((Announce) msg, localNode.src);
                 if (connectionPolicy.test(peer))
                     peer.setActive(true);
+                peersByName.put(((Announce)msg).sys_name, peer);
             }
             else
                 return;
         }
         peer.setMessage(msg);
         peers.putIfAbsent(msg.src, peer);
+        publish(msg);
     }
 
     /**
@@ -110,7 +111,7 @@ public class ImcNetwork implements ImcTransport.MsgHandler {
      * @param port The port where to listen for incoming UDP traffic
      * @throws IOException In case the port cannot be opened
      */
-    public void bindUdp(int port) throws IOException {
+    public void listenUdp(int port) throws IOException {
         imcTransport.bindUdp(port);
         StringBuilder buf = new StringBuilder(localNode.services);
         for (String itf : NetworkUtils.getNetworkInterfaces())
@@ -123,7 +124,7 @@ public class ImcNetwork implements ImcTransport.MsgHandler {
      * @param port The port where to listen for incoming TCP traffic
      * @throws IOException In case the port cannot be opened
      */
-    public void bindTcp(int port) throws IOException {
+    public void listenTcp(int port) throws IOException {
         imcTransport.bindTcp(port);
         StringBuilder buf = new StringBuilder(localNode.services);
         for (String itf : NetworkUtils.getNetworkInterfaces())
@@ -135,18 +136,25 @@ public class ImcNetwork implements ImcTransport.MsgHandler {
      * Start discovering other IMP peers using broadcast and multicast
      * @throws IOException In case cannot listen to broadcast / multicast traffic
      */
-    public void bindDiscovery() throws IOException {
+    public void listenDiscovery() throws IOException {
         imcTransport.bindDiscovery();
     }
 
+    public void startListening(int port) throws IOException {
+        listenUdp(port);
+        listenTcp(port);
+        listenDiscovery();
+        start();
+    }
     /**
      * Start listening (should be called after binding to UDP / TCP)
-     * @see {@link #bindTcp(int)}
-     * @see {@link #bindUdp(int)}
-     * @see {@link #bindDiscovery()}
+     * @see {@link #listenTcp(int)}
+     * @see {@link #listenUdp(int)}
+     * @see {@link #listenDiscovery()}
      */
     public void start() {
-        imcTransport.start();
+        if (!imcTransport.isAlive())
+            imcTransport.start();
     }
 
     /**
@@ -157,10 +165,37 @@ public class ImcNetwork implements ImcTransport.MsgHandler {
         PeriodicCallbacks.unregister(this);
     }
 
+    /**
+     * Retrieve a peer by its ID.
+     * @param imcId The IMC ID of the remote peer
+     * @return The peer corresponding to the given ID
+     * @throws Exception If the peer is not (currently) connected
+     */
+    public ImcPeer peer(int imcId) throws Exception {
+        if (peers.containsKey(imcId))
+            return peers.get(imcId);
+        throw new Exception("Peer is not connected: "+imcId);
+    }
+
+    /**
+     * Retrieve a peer by its Name.
+     * @param name The name of the remote peer
+     * @return The peer corresponding to the given name
+     * @throws Exception If the peer is not (yet) connected
+     */
+    public ImcPeer peer(String name) throws Exception {
+        if (peers.containsKey(name))
+            return peersByName.get(name);
+        throw new Exception("Peer is not connected: "+name);
+    }
+
     @Periodic(10_000)
     private void clearDeadPeers() {
         List<ImcPeer> deadPeers = peers.values().stream().filter(p -> !p.isAlive()).collect(Collectors.toList());
-        deadPeers.forEach(d -> peers.remove(d.getId()));
+        deadPeers.forEach(d -> {
+            peers.remove(d.getId());
+            peersByName.remove(d.getName());
+        });
     }
 
     @Periodic(10_000)
@@ -177,24 +212,46 @@ public class ImcNetwork implements ImcTransport.MsgHandler {
 
     @Periodic
     private void sendHeartbeats() {
-        Heartbeat hb = new Heartbeat();
-        hb.src = localNode.src;
         peers.forEachValue(1, peer -> {
             try {
-                if (peer.isActive())
-                    ImcTransport.sendViaUdp(hb, peer.getUdpAddress().getHostName(), peer.getUdpAddress().getPort());
+                if (peer.isActive() && peer.hasUdp())
+                    peer.send(new Heartbeat());
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
     }
 
+    /**
+     * Wait until a named peer becomes online
+     * @param name The name of the peer to wait for
+     * @return The ImcPeer after it has connected
+     */
+    private Future<ImcPeer> waitFor(String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                while (true) {
+                    if (peersByName.containsKey(name))
+                        return peersByName.get(name);
+                    Thread.sleep(100);
+                }
+            }
+            catch (InterruptedException e) {
+                throw new CompletionException(e);
+            }
+        });
+    }
+
     public static void main(String[] args) throws Exception {
-        ImcNetwork network = new ImcNetwork("MyImcNode", 45645, SystemType.CCU);
-        network.bindUdp(6009);
-        network.bindTcp(7080);
-        network.bindDiscovery();
-        network.setConnectionPolicy(p -> p.getType() == SystemType.UUV);
-        network.start();
+        ImcNetwork network = new ImcNetwork("MyImcNode", 45645, SystemType.UUV);
+        network.setConnectionPolicy(p -> true);
+        network.startListening(7001);
+        Thread.sleep(20_000);
+        network.subscribe(LogBookEntry.class, System.out::println);
+        ImcPeer xp1 = network.waitFor("lauv-xplore-1").get(1, TimeUnit.MINUTES);
+        ImcPeer xp2 = network.waitFor("lauv-xplore-2").get(1, TimeUnit.MINUTES);
+        xp1.send(new Abort());
+        xp2.send(new Abort());
+        network.stop();
     }
 }

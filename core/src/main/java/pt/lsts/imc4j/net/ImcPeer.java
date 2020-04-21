@@ -4,55 +4,144 @@ import pt.lsts.imc4j.def.SystemType;
 import pt.lsts.imc4j.msg.Announce;
 import pt.lsts.imc4j.msg.Heartbeat;
 import pt.lsts.imc4j.msg.Message;
+import pt.lsts.imc4j.util.ImcConsumable;
 
 import java.net.InetSocketAddress;
 import java.util.LinkedHashSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ImcPeer {
+/**
+ * This class represents an IMC peer in the network from which messages can arrive and can be sent to
+ */
+public class ImcPeer implements ImcConsumable {
 
     private Announce lastAnnounce = null;
     private Heartbeat lastHeartbeat = null;
     private String services = "";
     private long lastMessageMillis = 0;
     private static final long aliveThresholdMillis = 30_000;
-    private int remoteId;
-    private InetSocketAddress tcpAddress = null;
-    private InetSocketAddress udpAddress = null;
-
-    private boolean active = false;
-
-    private Pattern pProto = Pattern
+    private final Pattern pProto = Pattern
             .compile("imc\\+(.*)://(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+):(\\d+)/");
 
-    public ImcPeer(Announce announce) {
+    private int remoteId, localId;
+    private InetSocketAddress tcpAddress = null;
+    private InetSocketAddress udpAddress = null;
+    private boolean active = false;
+
+    /**
+     * Constructor. Create a Peer given its first announce and local id.
+     * @param announce The announce received from peer.
+     * @param localId The IMC ID of the local node
+     */
+    public ImcPeer(Announce announce, int localId) {
         this.lastAnnounce = announce;
         this.remoteId = announce.src;
+        this.localId = localId;
         setMessage(announce);
     }
 
+    /**
+     * @return the remote IMC ID
+     */
     public int getId() {
         return lastAnnounce.src;
     }
 
+    /**
+     * @return the name of the remote peer as stated in its Announce.
+     */
     public String getName() {
         return lastAnnounce.sys_name;
     }
 
+    /**
+     * @return the type of the remote peer as stated in its Announce.
+     */
     public SystemType getType() {
         return lastAnnounce.sys_type;
     }
 
-    public InetSocketAddress getTcpAddress() {
+    /**
+     * Checks if new information is being received from remote peer
+     * @return <code>true</code> if last received message is still "fresh".
+     */
+    boolean isAlive() {
+        return (System.currentTimeMillis() - lastMessageMillis) < aliveThresholdMillis;
+    }
+
+    /**
+     * (De)activate transmission to this peer.
+     * @param active If set to <code>true</code>, network will send heartbeat to this peer.
+     */
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    /**
+     * Check if this peer is active.
+     * @return <code>true</code> if the peer is marked active
+     */
+    public boolean isActive() {
+        return active;
+    }
+
+    /**
+     * Send a message unreliably to this peer
+     * @param m The message to send
+     * @throws Exception If the peer doesn't have an UDP endpoint
+     */
+    public void send(Message m) throws Exception {
+        m.src = localId;
+        m.dst = remoteId;
+        if (udpAddress != null)
+            ImcTransport.sendViaUdp(m, udpAddress.getHostName(), udpAddress.getPort());
+        else
+            throw new Exception("Peer does not have a UDP endpoint");
+    }
+
+    /**
+     * Send a message reliably to this peer
+     * @param m The message to send
+     * @throws Exception If the peer doesn't have a TCP endpoint
+     */
+    public Future<Void> deliver(Message m) throws Exception {
+        m.src = localId;
+        m.dst = remoteId;
+        if (getTcpAddress() != null)
+            return ImcTransport.sendViaTcp(m, tcpAddress.getHostName(), tcpAddress.getPort());
+        else
+            throw new Exception("Peer does not have a TCP endpoint");
+    }
+
+    /**
+     * Check whether this peer can be contacted using TCP
+     * @return <code>true</code> if a TCP endpoint exists for this peer
+     */
+    public boolean hasTcp() {
+        return tcpAddress != null;
+    }
+
+    /**
+     * Check whether this peer can be contacted using UDP
+     * @return <code>true</code> if a UDP endpoint exists for this peer
+     */
+    public boolean hasUdp() {
+        return udpAddress != null;
+    }
+
+    protected InetSocketAddress getTcpAddress() {
         return tcpAddress;
     }
 
-    public InetSocketAddress getUdpAddress() {
+    protected InetSocketAddress getUdpAddress() {
         return udpAddress;
     }
 
-    public void setMessage(Message m) {
+    protected void setMessage(Message m) {
         lastMessageMillis = System.currentTimeMillis();
         switch (m.mgid()) {
             case Heartbeat.ID_STATIC:
@@ -68,6 +157,8 @@ public class ImcPeer {
             default:
                 break;
         }
+
+        publish(m);
     }
 
     private void parseServices(String services) {
@@ -93,17 +184,5 @@ public class ImcPeer {
             udpAddress = udpAddresses.iterator().next();
         if (tcpAddresses.iterator().hasNext())
             tcpAddress = tcpAddresses.iterator().next();
-    }
-
-    boolean isAlive() {
-        return (System.currentTimeMillis() - lastMessageMillis) < aliveThresholdMillis;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public boolean isActive() {
-        return active;
     }
 }
