@@ -1,11 +1,11 @@
 package pt.lsts.imc4j.net;
 
+import pt.lsts.imc4j.def.SystemType;
 import pt.lsts.imc4j.msg.Announce;
 import pt.lsts.imc4j.msg.Heartbeat;
 import pt.lsts.imc4j.msg.Message;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.LinkedHashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,24 +15,33 @@ public class ImcPeer {
     private Announce lastAnnounce = null;
     private Heartbeat lastHeartbeat = null;
     private String services = "";
-    private long lastHeartbeatMillis = 0;
+    private long lastMessageMillis = 0;
     private static final long aliveThresholdMillis = 30_000;
     private int remoteId;
     private InetSocketAddress tcpAddress = null;
     private InetSocketAddress udpAddress = null;
-
 
     private boolean active = false;
 
     private Pattern pProto = Pattern
             .compile("imc\\+(.*)://(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+):(\\d+)/");
 
-    public ImcPeer(int imcId) {
-        this.remoteId = imcId;
+    public ImcPeer(Announce announce) {
+        this.lastAnnounce = announce;
+        this.remoteId = announce.src;
+        setMessage(announce);
     }
 
-    public int getImcId() {
-        return remoteId;
+    public int getId() {
+        return lastAnnounce.src;
+    }
+
+    public String getName() {
+        return lastAnnounce.sys_name;
+    }
+
+    public SystemType getType() {
+        return lastAnnounce.sys_type;
     }
 
     public InetSocketAddress getTcpAddress() {
@@ -43,10 +52,10 @@ public class ImcPeer {
         return udpAddress;
     }
 
-    public void setMessage(Message m, SocketAddress source) {
+    public void setMessage(Message m) {
+        lastMessageMillis = System.currentTimeMillis();
         switch (m.mgid()) {
             case Heartbeat.ID_STATIC:
-                lastHeartbeatMillis = System.currentTimeMillis();
                 lastHeartbeat = (Heartbeat) m;
                 break;
             case Announce.ID_STATIC:
@@ -87,18 +96,14 @@ public class ImcPeer {
     }
 
     boolean isAlive() {
-        return (System.currentTimeMillis() - lastHeartbeatMillis) < aliveThresholdMillis;
+        return (System.currentTimeMillis() - lastMessageMillis) < aliveThresholdMillis;
     }
 
-    void setActive(boolean active) {
+    public void setActive(boolean active) {
         this.active = active;
     }
 
     public boolean isActive() {
         return active;
-    }
-
-    long getLastHeartBeatMillis() {
-        return lastHeartbeatMillis;
     }
 }

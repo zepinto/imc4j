@@ -112,28 +112,51 @@ public class ImcTransport extends Thread {
         client.register(selector, SelectionKey.OP_READ);
     }
 
+    private byte[] toArray(ByteBuffer buffer) {
+        int pos = buffer.position();
+        byte[] ret = new byte[pos];
+        buffer.rewind();
+        buffer.get(ret);
+        return ret;
+    }
+
     private void handleRead(SelectionKey key) throws IOException {
 
         if (key.channel() == udpServer) {
-            udpServer.receive(udpBuffer);
-
-            try {
+            byte[] buff;
+            synchronized (udpBuffer) {
                 udpBuffer.clear();
-                readMessage(udpBuffer, udpServer.getRemoteAddress());
-            } catch (Exception e) {
-                System.err.println("Error reading message from udp peer: " + udpServer.getRemoteAddress() + ": " + e.getMessage());
-                e.printStackTrace();
+                udpServer.receive(udpBuffer);
+                buff = toArray(udpBuffer);
             }
-        } else if (key.channel() == discovery) {
-            discovery.receive(multicastBuffer);
             try {
-                multicastBuffer.clear();
-                readMessage(multicastBuffer, discovery.getRemoteAddress());
-            } catch (Exception e) {
-                System.err.println("Error reading message from discovery: " + discovery.getRemoteAddress() + ": " + e.getMessage());
+                if (buff.length >= 20) {
+                    Message m = Message.deserialize(buff);
+                    messageReceived(m, null);
+                }
+            }
+            catch (Exception e) {
                 e.printStackTrace();
             }
-        } else {
+        }
+        else if (key.channel() == discovery) {
+            byte[] buff;
+            synchronized (multicastBuffer) {
+                multicastBuffer.clear();
+                discovery.receive(multicastBuffer);
+                buff = toArray(multicastBuffer);
+            }
+            try {
+                if (buff.length >= 20) {
+                    Message m = Message.deserialize(buff);
+                    messageReceived(m, null);
+                }
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        else {
             SocketChannel client = (SocketChannel) key.channel();
 
             ByteBuffer clientBuffer = incomingData.getOrDefault(client, ByteBuffer.allocate(64 * 1024));
@@ -167,18 +190,12 @@ public class ImcTransport extends Thread {
     private Message readMessage(ByteBuffer buffer, SocketAddress source) throws Exception {
         int pos = buffer.position();
         buffer.rewind();
-
         short s = buffer.getShort();
 
         if (s != Message.SYNC_WORD) {
             if (s == Short.reverseBytes(Message.SYNC_WORD))
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
             else {
-                System.out.printf("%02X %02X", s&0xFF00 >> 8, s&0x00FF);
-                for (int i = 2; i < pos; i++) {
-                    System.out.printf(" %02X", buffer.get());
-                }
-                System.out.println();
                 throw new IOException(String.format("Invalid Synchronization number: %X", s));
             }
         }
@@ -215,8 +232,6 @@ public class ImcTransport extends Thread {
     public static void sendViaUdp(Message m, String hostname, int port) throws IOException {
         DatagramChannel datagramChannel = DatagramChannel.open();
         datagramChannel.bind(null);
-        if (hostname.equals("255.255.255.255"))
-            datagramChannel.setOption(StandardSocketOptions.SO_BROADCAST, true);
         ByteBuffer byteBuffer = ByteBuffer.wrap(m.serialize());
         InetSocketAddress inetSocketAddress = new InetSocketAddress(hostname, port);
         datagramChannel.send(byteBuffer, inetSocketAddress);
@@ -238,28 +253,32 @@ public class ImcTransport extends Thread {
     }
 
     public static void broadcast(Message m) throws IOException {
-        for (int port = 30100; port <= 30105; port++)
-            sendViaUdp(m, "255.255.255.255", port);
+        InetAddress broadcast = InetAddress.getByName("255.255.255.255");
+        DatagramSocket socket = new DatagramSocket();
+        socket.setBroadcast(true);
+
+        byte[] buffer = m.serialize();
+
+        for (int port = 30100; port <= 30105; port++) {
+            DatagramPacket packet
+                    = new DatagramPacket(buffer, buffer.length, broadcast, port);
+            socket.send(packet);
+        }
+        socket.close();
     }
 
     public static void multicast(Message m) throws IOException {
-        String multicastAddress = "224.0.75.69";
-        DatagramChannel datagramChannel = DatagramChannel.open();
-        datagramChannel.bind(null);
-        Enumeration<NetworkInterface> nis = NetworkInterface.getNetworkInterfaces();
-        while (nis.hasMoreElements()) {
-            NetworkInterface itf = nis.nextElement();
-            if (itf.isLoopback() && nis.hasMoreElements())
-                continue;
-            for (int port = 30100; port <= 30105; port++) {
-                datagramChannel.setOption(StandardSocketOptions
-                        .IP_MULTICAST_IF, itf);
-                ByteBuffer byteBuffer = ByteBuffer.wrap(m.serialize());
-                InetSocketAddress inetSocketAddress = new
-                        InetSocketAddress(multicastAddress, port);
-                datagramChannel.send(byteBuffer, inetSocketAddress);
-            }
+        InetAddress multicastGroup = InetAddress.getByName("224.0.75.69");
+        MulticastSocket socket = new MulticastSocket();
+        socket.joinGroup(multicastGroup);
+
+        byte[] buffer = m.serialize();
+
+        for (int port = 30100; port <= 30105; port++) {
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, multicastGroup, port);
+            socket.send(packet);
         }
+        socket.close();
     }
 
     public void addHandler(MsgHandler imcHandler) {

@@ -217,14 +217,4 @@ public class SerializationUtils {
 		}
 		return crc;
 	}
-
-	public static <M extends Message> M clone(M message) {
-		try {
-			return (M) SerializationUtils.deserializeMessage(message.serialize());
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-			return message;
-		}
-	}
 }
