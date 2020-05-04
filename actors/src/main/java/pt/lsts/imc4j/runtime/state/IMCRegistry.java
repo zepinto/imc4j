@@ -9,8 +9,6 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.glassfish.grizzly.filterchain.BaseFilter;
-
 import pt.lsts.imc4j.def.SystemType;
 import pt.lsts.imc4j.msg.Announce;
 import pt.lsts.imc4j.msg.EntityList;
@@ -22,7 +20,7 @@ import pt.lsts.imc4j.util.TupleList;
  * 
  * @author zp
  */
-public class IMCRegistry extends BaseFilter {
+public class IMCRegistry {
 
 	private LinkedHashMap<String, Peer> peers = new LinkedHashMap<>();
 	private LinkedHashMap<Integer, String> peerNames = new LinkedHashMap<>();
