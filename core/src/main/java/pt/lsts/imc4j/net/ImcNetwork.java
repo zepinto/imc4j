@@ -37,7 +37,7 @@ public class ImcNetwork implements ImcTransport.MsgHandler, ImcConsumable {
      * @see {@link #listenUdp(int)}
      * @see {@link #listenDiscovery()}
      */
-    private ImcNetwork(String sysName, int imcId, SystemType sysType) {
+    public ImcNetwork(String sysName, int imcId, SystemType sysType) {
         localNode = new Announce();
         localNode.sys_name = sysName;
         localNode.sys_type = sysType;
