@@ -19,15 +19,6 @@ import pt.lsts.imc4j.annotations.Parameter;
  */
 public class PojoConfig {
 
-	@Parameter
-	double test = 50.1;
-
-	@Parameter
-	double test3 = 50.4;
-
-	@Parameter
-	String[] tests = { "a", "b" };
-
 	private static final String[] validTypes = new String[] { "boolean", "Boolean", "byte", "Byte", "short", "Short",
 			"int", "Integer", "long", "Long", "float", "Float", "double", "Double", "String", "String[]", "byte[]" };
 
@@ -232,11 +223,5 @@ public class PojoConfig {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	public static void main(String[] args) throws Exception {
-		PojoConfig pojo = PojoConfig.create(PojoConfig.class, new String[] { "-Dtest=40" });
-		System.out.println(pojo.test);
-		System.out.println(PojoConfig.getProperties(pojo));
 	}
 }

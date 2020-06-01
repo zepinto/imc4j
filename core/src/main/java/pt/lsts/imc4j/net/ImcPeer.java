@@ -7,6 +7,7 @@ import pt.lsts.imc4j.msg.Message;
 import pt.lsts.imc4j.util.ImcConsumable;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.LinkedHashSet;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
@@ -28,6 +29,7 @@ public class ImcPeer implements ImcConsumable {
     private int remoteId, localId;
     private InetSocketAddress tcpAddress = null;
     private InetSocketAddress udpAddress = null;
+    private SocketAddress remoteAddress = null;
     private boolean active = false;
 
     /**
@@ -35,10 +37,11 @@ public class ImcPeer implements ImcConsumable {
      * @param announce The announce received from peer.
      * @param localId The IMC ID of the local node
      */
-    public ImcPeer(Announce announce, int localId) {
+    public ImcPeer(Announce announce, SocketAddress remoteAddress, int localId) {
         this.lastAnnounce = announce;
         this.remoteId = announce.src;
         this.localId = localId;
+        this.remoteAddress = remoteAddress;
         setMessage(announce);
     }
 
@@ -170,6 +173,10 @@ public class ImcPeer implements ImcConsumable {
                 String proto = mProto.group(1);
                 String hostname = mProto.group(2) + "." + mProto.group(3) + "."
                         + mProto.group(4) + "." + mProto.group(5);
+
+                if (!ReachableCache.isReachableBlocking(hostname))
+                    continue;
+
                 int port = Integer.parseInt(mProto.group(6));
 
                 if (proto.equals("udp"))

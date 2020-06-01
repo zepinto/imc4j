@@ -92,7 +92,7 @@ public class ImcNetwork implements ImcTransport.MsgHandler, ImcConsumable {
         ImcPeer peer = peers.get(msg.src);
         if (peer == null) {
             if (msg.mgid() == Announce.ID_STATIC) {
-                peer = new ImcPeer((Announce) msg, localNode.src);
+                peer = new ImcPeer((Announce) msg, remoteAddress, localNode.src);
                 if (connectionPolicy.test(peer))
                     peer.setActive(true);
                 peersByName.put(((Announce)msg).sys_name, peer);
@@ -243,8 +243,12 @@ public class ImcNetwork implements ImcTransport.MsgHandler, ImcConsumable {
 
     public static void main(String[] args) throws Exception {
         ImcNetwork network = new ImcNetwork("MyImcNode", 45645, SystemType.UUV);
-        network.setConnectionPolicy(p -> true);
         network.startListening(7001);
+        network.setConnectionPolicy(p -> true);
+        network.subscribe(Announce.class, ann -> {
+            System.out.println(ann);
+        });
+
         network.subscribe(Message.class, m -> System.out.println(m.abbrev() + " from " + m.src));
     }
 }

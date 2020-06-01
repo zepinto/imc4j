@@ -133,7 +133,7 @@ public class ImcTransport extends Thread {
             try {
                 if (buff.length >= 20) {
                     Message m = Message.deserialize(buff);
-                    messageReceived(m, null);
+                    messageReceived(m, ((DatagramChannel)key.channel()).socket().getRemoteSocketAddress());
                 }
             }
             catch (Exception e) {
@@ -142,6 +142,9 @@ public class ImcTransport extends Thread {
         }
         else if (key.channel() == discovery) {
             byte[] buff;
+
+
+
             synchronized (multicastBuffer) {
                 multicastBuffer.clear();
                 discovery.receive(multicastBuffer);
@@ -150,7 +153,7 @@ public class ImcTransport extends Thread {
             try {
                 if (buff.length >= 20) {
                     Message m = Message.deserialize(buff);
-                    messageReceived(m, null);
+                    messageReceived(m, ((DatagramChannel)key.channel()).socket().getRemoteSocketAddress());
                 }
             }
             catch (Exception e) {
