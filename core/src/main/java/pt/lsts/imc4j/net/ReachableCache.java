@@ -2,14 +2,11 @@ package pt.lsts.imc4j.net;
 
 import java.net.InetAddress;
 import java.util.LinkedHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.Map;
+import java.util.concurrent.*;
 
 /**
  * This class is used to check if a remote peer is reachable
- * It caches results for 60 seconds
  */
 public class ReachableCache {
 
@@ -47,6 +44,34 @@ public class ReachableCache {
             }
             return reachabilityCache.get(hostname).isReachable();
         }
+    }
+
+    public static String firstReachable(long timeout, String... hostnames) {
+        long endTime = System.currentTimeMillis() + timeout;
+
+        LinkedHashMap<String, Future<Boolean>> pings = new LinkedHashMap<>();
+
+        for (String host : hostnames)
+            pings.put(host, isReachable(host));
+
+        while(System.currentTimeMillis() < endTime) {
+            try {
+                Thread.sleep(25);
+                for (Map.Entry<String, Future<Boolean>> ping : pings.entrySet()) {
+                    try {
+                        if (ping.getValue().isDone() && ping.getValue().get())
+                            return ping.getKey();
+                    }
+                    catch (Exception e) {
+                        // nothing
+                    }
+                }
+            }
+            catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private static class HostReachability {

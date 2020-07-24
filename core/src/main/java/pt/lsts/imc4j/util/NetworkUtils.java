@@ -25,6 +25,9 @@ public class NetworkUtils {
 				try {
 					if (ni.isLoopback() && !includeLoopback)
 						continue;
+					// skip inactive interfaces
+					if (!ni.isUp())
+						continue;
 				} catch (Exception e) {
 					continue;
 				}

@@ -183,7 +183,7 @@ public class ImcNetwork implements ImcTransport.MsgHandler, ImcConsumable {
      * @throws Exception If the peer is not (yet) connected
      */
     public ImcPeer peer(String name) throws Exception {
-        if (peers.containsKey(name))
+        if (peersByName.containsKey(name))
             return peersByName.get(name);
         throw new Exception("Peer is not connected: "+name);
     }
