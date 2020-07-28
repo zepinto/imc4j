@@ -1,15 +1,15 @@
 package pt.lsts.imc4j.util;
 
-import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.def.SystemType;
 import pt.lsts.imc4j.def.ZUnits;
 import pt.lsts.imc4j.msg.*;
 import pt.lsts.imc4j.net.ImcNetwork;
-import pt.lsts.imc4j.util.WGS84Utilities;
-
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class PlanCreator {
     private double latitude = 0;
@@ -81,11 +81,12 @@ public class PlanCreator {
         int count = 1;
         for (Waypoint wpt : coords) {
             double ned[] = new double[3];
-            ned[0] = Math.cos(Math.toRadians(rotation)) * wpt.x - Math.sin(Math.toRadians(rotation)) * wpt.y;
-            ned[1] = Math.sin(Math.toRadians(rotation)) * wpt.x + Math.cos(Math.toRadians(rotation)) * wpt.y;
+            ned[0] = Math.cos(Math.toRadians(rotation) * wpt.x);
+            ned[1] = Math.sin(Math.toRadians(rotation) * wpt.y);
             ned[2] = wpt.z;
 
             double lld[] = WGS84Utilities.WGS84displace(latitude, longitude, 0, ned[0], ned[1], ned[2]);
+
 
             if (wpt.duration == 0) {
                 Goto man = new Goto();
@@ -93,8 +94,6 @@ public class PlanCreator {
                 man.lon = Math.toRadians(lld[1]);
                 man.z_units = ned[2] >= 0? ZUnits.DEPTH : ZUnits.ALTITUDE;
                 man.z = (float) Math.abs(ned[2]);
-                man.speed_units = SpeedUnits.METERS_PS;
-                man.speed = (float)speed;
                 PlanManeuver pm = new PlanManeuver();
                 pm.data = man;
                 pm.maneuver_id = String.format("wpt%02d", count++);
@@ -107,8 +106,6 @@ public class PlanCreator {
                 man.z_units = ZUnits.DEPTH;
                 man.z = 0;
                 man.duration = (int) wpt.duration;
-                man.speed_units = SpeedUnits.METERS_PS;
-                man.speed = (float)speed;
                 PlanManeuver pm = new PlanManeuver();
                 pm.data = man;
                 pm.maneuver_id = String.format("wpt%02d", count++);
@@ -122,8 +119,6 @@ public class PlanCreator {
                 man.z = (float) Math.abs(ned[2]);
                 man.duration = (int) wpt.duration;
                 man.radius = 15;
-                man.speed_units = SpeedUnits.METERS_PS;
-                man.speed = (float)speed;
                 PlanManeuver pm = new PlanManeuver();
                 pm.data = man;
                 pm.maneuver_id = String.format("wpt%02d", count++);
@@ -136,7 +131,7 @@ public class PlanCreator {
             PlanTransition transition = new PlanTransition();
             transition.source_man = plan.maneuvers.get(i).maneuver_id;
             transition.dest_man = plan.maneuvers.get(i+1).maneuver_id;
-            transition.conditions = "ManeuverIsDone";
+            transition.conditions = "maneuverIsDone";
             plan.transitions.add(transition);
         }
 
@@ -151,7 +146,9 @@ public class PlanCreator {
         ImcNetwork network = new ImcNetwork("PlanCreator", 9000, SystemType.CCU);
         network.setConnectionPolicy(p -> p.getName().equals(vehicle));
         network.startListening(9000);
-
+        network.bind(Message.class, m -> {
+            System.out.println(m.abbrev());
+        });
         while (true) {
             try {
                 network.peer(vehicle);
@@ -223,17 +220,87 @@ public class PlanCreator {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        PlanCreator creator = new PlanCreator();
-        creator.setLatitude(41.18502485);
-        creator.setLongitude(-8.7061885);
-        creator.setRotation(-130);
-        creator.addPoint(0, 0, 0, 0);
-        creator.addPoint(60, 0, 0, 0);
-        creator.addPoint(60, 40, 0, 0);
-        creator.addPoint(0, 40, 0, 0);
-        creator.addPoint(0, 0, 0, 30);
+    public static void command(Path path) throws Exception {
 
-        creator.commandPlan("lauv-nemo-1");
+        ArrayList<String> lines = new ArrayList<>();
+
+
+        Files.readAllLines(path).forEach(l -> {
+            String line = l.trim().toLowerCase();
+            if (line.isEmpty() || line.startsWith("#"))
+                return;
+
+            lines.add(line);
+        });
+        PlanCreator creator = new PlanCreator();
+        String vehicle = lines.remove(0);
+        creator.setLatitude(Double.valueOf(lines.remove(0)));
+        creator.setLongitude(Double.valueOf(lines.remove(0)));
+        creator.setRotation(Double.valueOf(lines.remove(0)));
+        creator.setSpeed(Double.valueOf(lines.remove(0)));
+        while (!lines.isEmpty()) {
+            String[] parts = lines.remove(0).split("\\s");
+            if (parts.length == 3)
+                creator.addPoint(
+                        Double.valueOf(parts[0]),
+                        Double.valueOf(parts[1]),
+                        Double.valueOf(parts[2])
+                );
+            else
+                creator.addPoint(
+                        Double.valueOf(parts[0]),
+                        Double.valueOf(parts[1]),
+                        Double.valueOf(parts[2]),
+                        Double.valueOf(parts[3])
+                );
+        }
+        creator.commandPlan(vehicle);
+    }
+
+    public static void createTemplate(File f) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(f));
+
+        writer.write("#Vehicle to command the plan to\n");
+        writer.write("lauv-xplore-1\n");
+        writer.write("\n");
+
+        writer.write("#Origin latitude (in degrees)\n");
+        writer.write("41.185\n");
+        writer.write("\n");
+
+        writer.write("#Origin longitude (in degrees)\n");
+        writer.write("-8.706\n");
+        writer.write("\n");
+
+        writer.write("#Yaw rotation (in degrees)\n");
+        writer.write("-130.0\n");
+        writer.write("\n");
+
+        writer.write("#Vehicle speed (in m/s)\n");
+        writer.write("1.0\n");
+        writer.write("\n");
+
+        writer.write("#List of waypoints in the form x y z duration\n");
+        writer.write("0 0 0 0\n");
+        writer.write("100 0 0 0\n");
+        writer.write("100 100 0 0\n");
+        writer.write("0 100 0 0\n");
+        writer.write("0 0 0 60\n");
+
+        writer.close();
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            System.err.println("Usage ./pcreator [filename]");
+            System.exit(1);
+        }
+        File f = new File(args[0]);
+        if (!f.exists()) {
+            PlanCreator.createTemplate(f);
+            System.out.println("Example plan template created in "+f.getName()+".");
+            System.exit(0);
+        }
+        PlanCreator.command(f.toPath());
     }
 }

@@ -17,3 +17,14 @@ task dist(type: Jar) {
     destinationDirectory = new java.io.File("$rootDir/dist")
 }
 
+task pcreator(type: Jar) {
+    description = 'Generate pcreator.jar'
+    group = 'Distribution'
+    from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    manifest {
+        attributes 'Main-Class': 'pt.lsts.imc4j.util.PlanCreator'
+    }
+    with jar
+    archiveBaseName = "pcreator"
+    destinationDirectory = new java.io.File("$rootDir/dist")
+}
