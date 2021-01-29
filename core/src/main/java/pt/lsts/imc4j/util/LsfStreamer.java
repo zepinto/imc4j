@@ -8,6 +8,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.Iterator;
@@ -181,12 +182,12 @@ public class LsfStreamer<M extends Message> implements AutoCloseable, Iterator<M
 
 	public static void main(String[] args) throws IOException {
 		// header
-		System.out.println("Timestamp,Frequency,MinimumRange,MaximumRange,NumSamples,[Data...]");
+		System.out.println("Timestamp,Frequency,MinimumRange,MaximumRange,NumSamples,[Data...]");		
 		
 		// stream messages of type SonarData
-		LsfStreamer.of(Path.of("/home/zp/Desktop/JavaTests/Data.lsf.gz"), SonarData.class).stream()		
+		LsfStreamer.of(Paths.get("/home/zp/Desktop/echosounder/Data.lsf"), SonarData.class).stream()		
 				// filter by type
-				.filter(m -> m.type == TYPE.ST_ECHOSOUNDER)				
+				.filter(m -> m.type == TYPE.ST_ECHOSOUNDER)
 				.forEach(m -> {
 					Instant i = Instant.ofEpochMilli((long)(m.timestamp * 1000));
 					System.out.print(i+","+m.frequency+","+m.min_range+","+m.max_range+","+m.data.length);
