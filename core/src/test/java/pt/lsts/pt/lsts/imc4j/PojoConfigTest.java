@@ -7,7 +7,7 @@ import pt.lsts.imc4j.util.PojoConfig;
 
 public class PojoConfigTest {
 
-    class SimplePojo {
+    public static class SimplePojo {
         @Parameter
         double test = 50.1;
 
