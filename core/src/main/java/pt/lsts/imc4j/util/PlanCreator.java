@@ -1,5 +1,6 @@
 package pt.lsts.imc4j.util;
 
+import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.def.SystemType;
 import pt.lsts.imc4j.def.ZUnits;
 import pt.lsts.imc4j.msg.*;
@@ -68,11 +69,14 @@ public class PlanCreator {
     }
 
     public void addPoint(double x, double y, double z) {
-        coords.add(new Waypoint(x,y,z,0));
+        Waypoint wpt = new Waypoint(x,y,z,0);
+        coords.add(wpt);
+
     }
 
     public void addPoint(double x, double y, double z, double duration) {
-        coords.add(new Waypoint(x,y,z,duration));
+        Waypoint wpt = new Waypoint(x,y,z,duration);
+        coords.add(wpt);        
     }
 
     PlanSpecification createPlan(String id) {
@@ -81,19 +85,22 @@ public class PlanCreator {
         int count = 1;
         for (Waypoint wpt : coords) {
             double ned[] = new double[3];
-            ned[0] = Math.cos(Math.toRadians(rotation) * wpt.x);
-            ned[1] = Math.sin(Math.toRadians(rotation) * wpt.y);
+            ned[0] = Math.cos(Math.toRadians(rotation)) * wpt.x - Math.sin(Math.toRadians(rotation)) * wpt.y;
+            ned[1] = Math.cos(Math.toRadians(rotation)) * wpt.y + Math.sin(Math.toRadians(rotation)) * wpt.x;            
             ned[2] = wpt.z;
 
+            System.out.println(ned[0]+","+ned[1]+","+ned[2]);
             double lld[] = WGS84Utilities.WGS84displace(latitude, longitude, 0, ned[0], ned[1], ned[2]);
-
-
+            
             if (wpt.duration == 0) {
                 Goto man = new Goto();
                 man.lat = Math.toRadians(lld[0]);
                 man.lon = Math.toRadians(lld[1]);
                 man.z_units = ned[2] >= 0? ZUnits.DEPTH : ZUnits.ALTITUDE;
                 man.z = (float) Math.abs(ned[2]);
+                man.speed = (float)speed;
+                man.speed_units = SpeedUnits.METERS_PS;
+
                 PlanManeuver pm = new PlanManeuver();
                 pm.data = man;
                 pm.maneuver_id = String.format("wpt%02d", count++);
@@ -105,6 +112,8 @@ public class PlanCreator {
                 man.lon = Math.toRadians(lld[1]);
                 man.z_units = ZUnits.DEPTH;
                 man.z = 0;
+                man.speed = (float)speed;
+                man.speed_units = SpeedUnits.METERS_PS;
                 man.duration = (int) wpt.duration;
                 PlanManeuver pm = new PlanManeuver();
                 pm.data = man;
@@ -119,6 +128,8 @@ public class PlanCreator {
                 man.z = (float) Math.abs(ned[2]);
                 man.duration = (int) wpt.duration;
                 man.radius = 15;
+                man.speed = (float)speed;
+                man.speed_units = SpeedUnits.METERS_PS;
                 PlanManeuver pm = new PlanManeuver();
                 pm.data = man;
                 pm.maneuver_id = String.format("wpt%02d", count++);
@@ -218,6 +229,10 @@ public class PlanCreator {
             this.y = y;
             this.z = z;
         }
+
+        public String toString() {            
+            return String.format("wpt(%f,%f,%f,%f)",x,y,z,duration);
+        }
     }
 
     public static void command(Path path) throws Exception {
@@ -238,6 +253,7 @@ public class PlanCreator {
         creator.setLongitude(Double.valueOf(lines.remove(0)));
         creator.setRotation(Double.valueOf(lines.remove(0)));
         creator.setSpeed(Double.valueOf(lines.remove(0)));
+
         while (!lines.isEmpty()) {
             String[] parts = lines.remove(0).split("\\s");
             if (parts.length == 3)
@@ -291,6 +307,7 @@ public class PlanCreator {
     }
 
     public static void main(String[] args) throws Exception {
+        args = new String[] {"/home/zp/Desktop/eumr-tna/plan.txt"};
         if (args.length == 0) {
             System.err.println("Usage ./pcreator [filename]");
             System.exit(1);
