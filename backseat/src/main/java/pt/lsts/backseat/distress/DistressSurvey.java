@@ -5,6 +5,7 @@ package pt.lsts.backseat.distress;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -31,6 +32,9 @@ import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.msg.Announce;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
+import pt.lsts.imc4j.msg.Goto;
+import pt.lsts.imc4j.msg.Maneuver;
+import pt.lsts.imc4j.msg.PlanDB;
 import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.util.AngleUtils;
 import pt.lsts.imc4j.util.PojoConfig;
@@ -74,10 +78,13 @@ public class DistressSurvey extends TimedFSM {
     @Parameter(description = "DUNE Host Address")
     private String hostAddr = "127.0.0.1";
     @Parameter(description = "DUNE Host Port (TCP)")
-    private int hostPort = 6003;
+    private int hostPort = 6006;
     @Parameter(description = "DUNE plan to execute right after termination")
     private String endPlanToUse = "rendezvous";
-    
+
+    @Parameter(description = "Name prefix for created plans")
+    private String planCreationPrefix = "dissub-";
+
     @Parameter(description = "Minutes before termination")
     private int minutesTimeout = 60;
     
@@ -225,10 +232,11 @@ public class DistressSurvey extends TimedFSM {
         deadline = new Date(System.currentTimeMillis() + minutesTimeout * 60 * 1000);
         if (!endPlanToUse.isEmpty()) {
             endPlan = endPlanToUse;
-            System.out.println("Will terminate by " + deadline + " and execute '" + endPlanToUse + "'");
+            print("Will terminate by " + deadline + " and execute '" + endPlanToUse + "'");
         }
-        else
-            System.out.println("Will terminate by " + deadline);
+        else {
+            print("Will terminate by " + deadline);
+        }
 
         if (aisByTCP) {
             aisTxtTcp = new TCPClientConnection(aisHostAddr, aisHostPort);
@@ -350,7 +358,7 @@ public class DistressSurvey extends TimedFSM {
      */
     private void parseAISTxtSentence(String sentence) {
         boolean res = AisCsvParser.process(sentence);
-        System.out.println("Parsing AIS " + res + "  >> " + sentence);
+        print("Parsing AIS " + res + "  >> " + sentence);
     }
 
     private void retransmitAISTxtSentence(String sentence) {
@@ -432,9 +440,20 @@ public class DistressSurvey extends TimedFSM {
         else
             setSpeed(speed, SpeedUnits.METERS_PS);
     }
-    
+
+    private SpeedUnits getCourseSpeedUnit() {
+        if (speedUnits.equalsIgnoreCase("rpm"))
+            return SpeedUnits.RPM;
+        else
+            return SpeedUnits.METERS_PS;
+    }
+
     private void setSurveySpeed() {
         setCourseSpeed();
+    }
+
+    private SpeedUnits getSurveySpeedUnit() {
+        return getCourseSpeedUnit();
     }
 
     @SuppressWarnings("unused")
@@ -600,6 +619,18 @@ public class DistressSurvey extends TimedFSM {
         return posRef;
     }
 
+    private <M extends Maneuver> void sendPlanToVehicleDb(String planName, M... maneuvers) {
+        try {
+            PlanDB msg = PlanPointsUtil.createPlanDBAdd(PlanPointsUtil
+                    .createPlanSpecification(planCreationPrefix + planName, maneuvers));
+            if (msg != null)
+                send(msg);
+        }
+        catch (IOException e) {
+            printError(e.getMessage());
+        }
+    }
+
     private void markState(FSMState state) {
         stateToReturnTo = state;
     }
@@ -615,6 +646,8 @@ public class DistressSurvey extends TimedFSM {
         double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
         setLoiterRef(loiterPos[0], loiterPos[1], workingDepth);
         setCourseSpeed();
+        sendPlanToVehicleDb("loiter-underwater", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
+                workingDepth, speed, getCourseSpeedUnit()));
 
         switch (surveyStage) {
             case ON_GOING:
@@ -624,6 +657,8 @@ public class DistressSurvey extends TimedFSM {
                 if (keepInParkingPosAtStart && (Double.isFinite(latDegParking) && Double.isFinite(lonDegParking))) {
                     print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
                     setLoiterRef(latDegParking, lonDegParking, workingDepth);
+                    sendPlanToVehicleDb("loiter-park", PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
+                            workingDepth, speed, getCourseSpeedUnit()));
                 }
                 break;
         }
@@ -647,7 +682,9 @@ public class DistressSurvey extends TimedFSM {
             atWaitingUnderwaterMillis = curTimeMillis;
             double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
             setLoiterRef(loiterPos[0], loiterPos[1], workingDepth);
-            
+            sendPlanToVehicleDb("loiter-underwater", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
+                    workingDepth, speed, getCourseSpeedUnit()));
+
             switch (surveyStage) {
                 case ON_GOING:
                     break;
@@ -656,6 +693,8 @@ public class DistressSurvey extends TimedFSM {
                     if (keepInParkingPosAtStart && (Double.isFinite(latDegParking) && Double.isFinite(lonDegParking))) {
                         print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
                         setLoiterRef(latDegParking, lonDegParking, workingDepth);
+                        sendPlanToVehicleDb("loiter-park", PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
+                                workingDepth, speed, getCourseSpeedUnit()));
                     }
                     break;
             }
@@ -688,6 +727,8 @@ public class DistressSurvey extends TimedFSM {
         double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
         setSurfaceLoiterRef(loiterPos[0], loiterPos[1]);
         setCourseSpeed();
+        sendPlanToVehicleDb("loiter-surface", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
+                0, speed, getCourseSpeedUnit()));
 
         // if (isUnderwater())
             atSurfaceMillis = -1;
@@ -727,6 +768,8 @@ public class DistressSurvey extends TimedFSM {
             atSurfaceMillis = curTimeMillis;
             double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
             setSurfaceLoiterRef(loiterPos[0], loiterPos[1]);
+            sendPlanToVehicleDb("loiter-surface", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
+                    0, speed, getCourseSpeedUnit()));
         }
         
         switch (surveyStage) {
@@ -737,6 +780,8 @@ public class DistressSurvey extends TimedFSM {
                 if (keepInParkingPosAtStart && (Double.isFinite(latDegParking) && Double.isFinite(lonDegParking))) {
                     print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
                     setSurfaceLoiterRef(latDegParking, lonDegParking);
+                    sendPlanToVehicleDb("loiter-park", PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
+                            0, speed, getCourseSpeedUnit()));
                 }
                 break;
         }
@@ -782,6 +827,8 @@ public class DistressSurvey extends TimedFSM {
         
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setCourseSpeed();
+        sendPlanToVehicleDb("approach-survey-point", PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
+                posRef[2], speed, getCourseSpeedUnit()));
         
         return this::approachSurveyPointStayState;
     }
@@ -805,6 +852,8 @@ public class DistressSurvey extends TimedFSM {
         
         if (distToNewRef > deltaDistToAdjustApproach) {
             setGoingRef(newPosRef[0], newPosRef[1], newPosRef[2]);
+            sendPlanToVehicleDb("approach-go", PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
+                    newPosRef[2], speed, getCourseSpeedUnit()));
             return this::approachSurveyPointStayState;
         }
         
@@ -850,7 +899,9 @@ public class DistressSurvey extends TimedFSM {
         double[] posRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setSurveySpeed();
-        
+        sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
+                posRef[2], speed, getSurveySpeedUnit()));
+
         return this::firstSurveyPointStayState;
     }
 
@@ -868,6 +919,8 @@ public class DistressSurvey extends TimedFSM {
 
         if (distToNewRef > deltaDistToAdjustApproach) {
             setGoingRef(newPosRef[0], newPosRef[1], newPosRef[2]);
+            sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
+                    newPosRef[2], speed, getSurveySpeedUnit()));
             return this::firstSurveyPointStayState;
         }
         
