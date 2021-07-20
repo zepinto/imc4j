@@ -211,7 +211,12 @@ public class DistressSurvey extends TimedFSM {
     private double lonDegParking = Double.NaN;
 
     private HashMap<String, HashMap<String, String>> payloadToActivate = new LinkedHashMap<>();
-    
+
+    private double patternLatDegsForPlan = Double.NaN;
+    private double patternLonDegsForPlan = Double.NaN;
+    private double patternDepthForPlan = Double.NaN;
+    private List<double[]> patternPathOffsetsForPlan = new ArrayList<>();
+
     public DistressSurvey() {
         if (waitDistressUnderwater) {
             stateToReturnTo = this::loiterUnderwaterState;
@@ -540,14 +545,12 @@ public class DistressSurvey extends TimedFSM {
     }
     
     private double[] calcApproachPoint(double latDegs, double lonDegs, double depth,
-            double headingDegs, ApproachCornerEnum approachCorner, SurveyPathEnum surfacePointIdx,
-            List<double[]> refPoints) {
+            double headingDegs, List<double[]> refPoints) {
         surfacePointIdx = SurveyPathEnum.FIRST;
-        return calcSurveyLinePoint(latDegs, lonDegs, approachCorner, surfacePointIdx, refPoints);
+        return calcSurveyLinePoint(latDegs, lonDegs, refPoints);
     }
 
-    private List<double[]> calcSurveyLinePathOffsets(double depth, double headingDegs,
-            ApproachCornerEnum approachCorner, SurveyPathEnum surfacePointIdx) {
+    private List<double[]> calcSurveyLinePathOffsets(double depth, double headingDegs) {
         double angRads = Math.toRadians(headingDegs);
 
         double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
@@ -615,8 +618,7 @@ public class DistressSurvey extends TimedFSM {
         return refPoints;
     }
 
-    private double[] calcSurveyLinePoint(double latDegs, double lonDegs, ApproachCornerEnum approachCorner,
-            SurveyPathEnum surfacePointIdx, List<double[]> refPoints) {
+    private double[] calcSurveyLinePoint(double latDegs, double lonDegs, List<double[]> refPoints) {
         double offsetX;
         double offsetY;
         double offsetZ;
@@ -658,6 +660,31 @@ public class DistressSurvey extends TimedFSM {
         
         double[] posRef = new double[] { latDegsRef, lonDegsRef, offsetZ };
         return posRef;
+    }
+
+    private void resetPatternPathOffsetsForPlan(double refLatDegs, double refLonDegs, double refDepth) {
+        patternLatDegsForPlan = refLatDegs;
+        patternLonDegsForPlan = refLonDegs;
+        patternDepthForPlan = refDepth;
+        patternPathOffsetsForPlan.clear();
+    }
+
+    private void addOffsetToPatternList(double refLatDegs, double refLonDegs, double refDepth,
+            int indexToStartChange, List<double[]> refPointsSublist) {
+        // Delete the values still not executed
+        patternPathOffsetsForPlan.subList(indexToStartChange, patternPathOffsetsForPlan.size()).clear();
+        if (patternLatDegsForPlan == refLatDegs && patternLonDegsForPlan == refLonDegs) {
+            patternPathOffsetsForPlan.addAll(refPointsSublist);
+        } else {
+            List<double[]> nOffsets = refPointsSublist.stream().map(o -> {
+                double[] nLLD = WGS84Utilities.WGS84displace(refLatDegs, refLonDegs, refDepth,
+                        o[0], o[1], o[2]);
+                double[] nNED = WGS84Utilities.WGS84displacement(patternLatDegsForPlan, patternLonDegsForPlan,
+                        patternDepthForPlan, nLLD[0], nLLD[1], nLLD[2]);
+                return nNED;
+            }).collect(Collectors.toList());
+            patternPathOffsetsForPlan.addAll(nOffsets);
+        }
     }
 
     private <M extends Maneuver> void sendPlanToVehicleDb(String planName, M... maneuvers) {
@@ -864,15 +891,21 @@ public class DistressSurvey extends TimedFSM {
         DistressPosition dp = AisCsvParser.distressPosition;
 
         approachCorner = calcApproachCorner(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
-        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs, approachCorner, surfacePointIdx);
-        double[] posRef = calcApproachPoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs,
-                approachCorner, surfacePointIdx, refPoints);
-        
+        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs);
+        double[] posRef = calcApproachPoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, refPoints);
+
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setCourseSpeed();
         sendPlanToVehicleDb("approach-survey-point", PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
                 posRef[2], getCourseSpeedValue(), getCourseSpeedUnit()));
-        
+
+        resetPatternPathOffsetsForPlan(dp.latDegs, dp.lonDegs, 0);
+        addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.ordinal(),
+                surfacePointIdx.ordinal() == 0 ? refPoints : refPoints.subList(surfacePointIdx.ordinal(), refPoints.size()));
+        sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
+                patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
+                patternPathOffsetsForPlan, ""));
+
         return this::approachSurveyPointStayState;
     }
 
@@ -886,9 +919,8 @@ public class DistressSurvey extends TimedFSM {
         }
 
         DistressPosition dp = AisCsvParser.distressPosition;
-        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs, approachCorner, surfacePointIdx);
-        double[] newPosRef = calcApproachPoint(dp.latDegs, dp.lonDegs, dp.depth, dp.headingDegs,
-                approachCorner, surfacePointIdx, refPoints);
+        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs);
+        double[] newPosRef = calcApproachPoint(dp.latDegs, dp.lonDegs, dp.depth, dp.headingDegs, refPoints);
         double distToNewRef = WGS84Utilities.distance(Math.toDegrees(ref.reference.lat),
                 Math.toDegrees(ref.reference.lon), newPosRef[0], newPosRef[1]);
         EstimatedState estState = get(EstimatedState.class);
@@ -900,6 +932,13 @@ public class DistressSurvey extends TimedFSM {
             setGoingRef(newPosRef[0], newPosRef[1], newPosRef[2]);
             sendPlanToVehicleDb("approach-go", PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
                     newPosRef[2], getCourseSpeedValue(), getCourseSpeedUnit()));
+
+            addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.ordinal(),
+                    surfacePointIdx.ordinal() == 0 ? refPoints : refPoints.subList(surfacePointIdx.ordinal(), refPoints.size()));
+            sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
+                    patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
+                    patternPathOffsetsForPlan, ""));
+
             return this::approachSurveyPointStayState;
         }
         
@@ -942,12 +981,19 @@ public class DistressSurvey extends TimedFSM {
         }
         
         DistressPosition dp = AisCsvParser.distressPosition;
-        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs, approachCorner, surfacePointIdx);
-        double[] posRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, approachCorner, surfacePointIdx, refPoints);
+        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs);
+        double[] posRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, refPoints);
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setSurveySpeed();
         sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
                 posRef[2], getSurveySpeedValue(), getSurveySpeedUnit()));
+
+        addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.ordinal(),
+                surfacePointIdx.ordinal() == 0 ? refPoints : refPoints.subList(surfacePointIdx.ordinal(), refPoints.size()));
+
+        sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
+                patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
+                patternPathOffsetsForPlan, ""));
 
         return this::firstSurveyPointStayState;
     }
@@ -957,8 +1003,8 @@ public class DistressSurvey extends TimedFSM {
         markState(this::firstSurveyPointState);
 
         DistressPosition dp = AisCsvParser.distressPosition;
-        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs, approachCorner, surfacePointIdx);
-        double[] newPosRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, approachCorner, surfacePointIdx, refPoints);
+        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs);
+        double[] newPosRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, refPoints);
         double distToNewRef = WGS84Utilities.distance(Math.toDegrees(ref.reference.lat),
                 Math.toDegrees(ref.reference.lon), newPosRef[0], newPosRef[1]);
         EstimatedState estState = get(EstimatedState.class);
@@ -970,6 +1016,14 @@ public class DistressSurvey extends TimedFSM {
             setGoingRef(newPosRef[0], newPosRef[1], newPosRef[2]);
             sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
                     newPosRef[2], getSurveySpeedValue(), getSurveySpeedUnit()));
+
+            addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.ordinal(),
+                    surfacePointIdx.ordinal() == 0 ? refPoints : refPoints.subList(surfacePointIdx.ordinal(), refPoints.size()));
+
+            sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
+                    patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
+                    patternPathOffsetsForPlan, ""));
+
             return this::firstSurveyPointStayState;
         }
         
