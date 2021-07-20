@@ -114,4 +114,26 @@ public class AngleUtils {
             ret += 360;
         return ret;
     }
+
+    /**
+     * XY Coordinate conversion considering a rotation angle.
+     *
+     * @param angleRadians Angle
+     * @param x original x value on entry, rotated x value on exit.
+     * @param y original y value on entry, rotated y value on exit.
+     * @param clockwiseRotation ClockwiseRotation rotation or not
+     */
+    public static double[] rotate(double angleRadians, double x, double y, boolean clockwiseRotation) {
+        double sina = Math.sin(angleRadians), cosa = Math.cos(angleRadians);
+        double[] xy = { 0, 0 };
+        if (clockwiseRotation) {
+            xy[0] = x * cosa + y * sina;
+            xy[1] = -x * sina + y * cosa;
+        }
+        else {
+            xy[0] = x * cosa - y * sina;
+            xy[1] = x * sina + y * cosa;
+        }
+        return xy;
+    }
 }
