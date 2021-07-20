@@ -17,9 +17,11 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import pt.lsts.backseat.TimedFSM;
 import pt.lsts.backseat.distress.ais.AisCsvParser;
@@ -32,7 +34,6 @@ import pt.lsts.imc4j.def.SpeedUnits;
 import pt.lsts.imc4j.msg.Announce;
 import pt.lsts.imc4j.msg.EstimatedState;
 import pt.lsts.imc4j.msg.FollowRefState;
-import pt.lsts.imc4j.msg.Goto;
 import pt.lsts.imc4j.msg.Maneuver;
 import pt.lsts.imc4j.msg.PlanDB;
 import pt.lsts.imc4j.msg.ReportControl;
@@ -499,8 +500,8 @@ public class DistressSurvey extends TimedFSM {
         reportSentMillis = curTimeMillis;
     }
     
-    private ApproachCornerEnum calcApproachCorner(double latDegs, double lonDegs, double depth, double headingDegs, double speedKnots,
-            long timestamp) {
+    private ApproachCornerEnum calcApproachCorner(double latDegs, double lonDegs, double depth,
+            double headingDegs, double speedKnots, long timestamp) {
         double[] vehPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
         ApproachCornerEnum approachCorner = ApproachCornerEnum.FRONT_LEFT;
         double angRads = Math.toRadians(headingDegs);
@@ -538,17 +539,16 @@ public class DistressSurvey extends TimedFSM {
         return approachCorner;
     }
     
-    private double[] calcApproachPoint(double latDegs, double lonDegs, double depth, double headingDegs, double speedKnots,
-            long timestamp) {
+    private double[] calcApproachPoint(double latDegs, double lonDegs, double depth,
+            double headingDegs, ApproachCornerEnum approachCorner, SurveyPathEnum surfacePointIdx,
+            List<double[]> refPoints) {
         surfacePointIdx = SurveyPathEnum.FIRST;
-        return calcSurveyLinePoint(latDegs, lonDegs, depth, headingDegs, speedKnots, timestamp);
+        return calcSurveyLinePoint(latDegs, lonDegs, approachCorner, surfacePointIdx, refPoints);
     }
 
-    private double[] calcSurveyLinePoint(double latDegs, double lonDegs, double depth, double headingDegs,
-            double speedKnots, long timestamp) {
+    private List<double[]> calcSurveyLinePathOffsets(double depth, double headingDegs,
+            ApproachCornerEnum approachCorner, SurveyPathEnum surfacePointIdx) {
         double angRads = Math.toRadians(headingDegs);
-        double ol = -targetLenght;
-        double ow = -(targetWidth + surveyDeltaAltitudeFromTarget * 10 / 2.);
 
         double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
 
@@ -566,9 +566,9 @@ public class DistressSurvey extends TimedFSM {
         // FrontRight
         olPointsList.add(targetLenght); // + approachLenghtOffset;
         owPointsList.add(targetWidth + surveyDeltaAltitudeFromTarget * 10);
-        
+
         double approachLenghtOffsetFixed = approachLenghtOffset;
-        
+
         switch (approachCorner) {
             case FRONT_LEFT: // 1,2,3,4
             default:
@@ -590,40 +590,73 @@ public class DistressSurvey extends TimedFSM {
                 Collections.reverse(owPointsList);
                 break;
         }
-        
+
+        olPointsList.set(0, olPointsList.get(0) + approachLenghtOffsetFixed);
+        olPointsList.set(3, olPointsList.get(3) + approachLenghtOffsetFixed);
+
+        List<double[]> refPoints = new ArrayList<>();
+        for (int i = 0; i < olPointsList.size(); i++) {
+            double ol = olPointsList.get(i);
+            double ow = owPointsList.get(i);
+            double d = i == 0 ? workingDepth : depthRef;
+
+            double offsetX = Math.cos(angRads) * ol - Math.sin(angRads) * ow;
+            double offsetY = Math.sin(angRads) * ol + Math.cos(angRads) * ow;
+
+            refPoints.add(new double[] {offsetX, offsetY, d});
+        }
+
+        double[] offXyzFromIdx = refPoints.get(surfacePointIdx.ordinal());
+        print(String.format("Calc survey 1 deltas %s idx=%s   l %.2f  w %.2f  offn %.2f  offe %.2f ::  l=%s  w=%s",
+                approachCorner, surfacePointIdx, olPointsList.get(surfacePointIdx.ordinal()),
+                owPointsList.get(surfacePointIdx.ordinal()), offXyzFromIdx[0], offXyzFromIdx[1],
+                Arrays.toString(olPointsList.toArray()), Arrays.toString(owPointsList.toArray())));
+
+        return refPoints;
+    }
+
+    private double[] calcSurveyLinePoint(double latDegs, double lonDegs, ApproachCornerEnum approachCorner,
+            SurveyPathEnum surfacePointIdx, List<double[]> refPoints) {
+        double offsetX;
+        double offsetY;
+        double offsetZ;
         switch (surfacePointIdx) {
             case FIRST:
             default:
-                ol = olPointsList.get(0) + approachLenghtOffsetFixed;
-                ow = owPointsList.get(0);
-                depthRef = workingDepth;
+                double[] ref = refPoints.get(0);
+                offsetX = ref[0];
+                offsetY = ref[1];
+                offsetZ = ref[2];
                 break;
             case SECOND:
-                ol = olPointsList.get(1);
-                ow = owPointsList.get(1);
+                ref = refPoints.get(1);
+                offsetX = ref[0];
+                offsetY = ref[1];
+                offsetZ = ref[2];
                 break;
             case THIRD:
-                ol = olPointsList.get(2);
-                ow = owPointsList.get(2);
+                ref = refPoints.get(2);
+                offsetX = ref[0];
+                offsetY = ref[1];
+                offsetZ = ref[2];
                 break;
             case FORTH:
-                ol = olPointsList.get(3) + approachLenghtOffsetFixed;
-                ow = owPointsList.get(3);
+                ref = refPoints.get(3);
+                offsetX = ref[0];
+                offsetY = ref[1];
+                offsetZ = ref[2];
                 break;
         }
         
-        double offsetX = Math.cos(angRads) * ol - Math.sin(angRads) * ow;
-        double offsetY = Math.sin(angRads) * ol + Math.cos(angRads) * ow;
         double[] pos = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
 
-        print(String.format("Delta %s %s   l %.2f  w %.2f  offn %.2f  offe %.2f ::  %s  %s", approachCorner,
-                surfacePointIdx, ol, ow, offsetX, offsetY, Arrays.toString(olPointsList.toArray()),
-                Arrays.toString(owPointsList.toArray())));
+        print(String.format("Delta %s %s   offn %.2f  offe %.2f ::  %s", approachCorner, surfacePointIdx,
+                offsetX, offsetY, refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
 
         double latDegsRef = pos[0];
         double lonDegsRef = pos[1];
         
-        double[] posRef = new double[] { latDegsRef, lonDegsRef, depthRef };
+        double[] posRef = new double[] { latDegsRef, lonDegsRef, offsetZ };
         return posRef;
     }
 
@@ -831,7 +864,9 @@ public class DistressSurvey extends TimedFSM {
         DistressPosition dp = AisCsvParser.distressPosition;
 
         approachCorner = calcApproachCorner(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
-        double[] posRef = calcApproachPoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
+        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs, approachCorner, surfacePointIdx);
+        double[] posRef = calcApproachPoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs,
+                approachCorner, surfacePointIdx, refPoints);
         
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setCourseSpeed();
@@ -851,8 +886,11 @@ public class DistressSurvey extends TimedFSM {
         }
 
         DistressPosition dp = AisCsvParser.distressPosition;
-        double[] newPosRef = calcApproachPoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
-        double distToNewRef = WGS84Utilities.distance(Math.toDegrees(ref.reference.lat), Math.toDegrees(ref.reference.lon), newPosRef[0], newPosRef[1]);
+        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs, approachCorner, surfacePointIdx);
+        double[] newPosRef = calcApproachPoint(dp.latDegs, dp.lonDegs, dp.depth, dp.headingDegs,
+                approachCorner, surfacePointIdx, refPoints);
+        double distToNewRef = WGS84Utilities.distance(Math.toDegrees(ref.reference.lat),
+                Math.toDegrees(ref.reference.lon), newPosRef[0], newPosRef[1]);
         EstimatedState estState = get(EstimatedState.class);
         double[] curPos = WGS84Utilities.toLatLonDepth(estState);
         @SuppressWarnings("unused")
@@ -904,7 +942,8 @@ public class DistressSurvey extends TimedFSM {
         }
         
         DistressPosition dp = AisCsvParser.distressPosition;
-        double[] posRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
+        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs, approachCorner, surfacePointIdx);
+        double[] posRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, approachCorner, surfacePointIdx, refPoints);
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setSurveySpeed();
         sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
@@ -918,8 +957,10 @@ public class DistressSurvey extends TimedFSM {
         markState(this::firstSurveyPointState);
 
         DistressPosition dp = AisCsvParser.distressPosition;
-        double[] newPosRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, dp.depth , dp.headingDegs, dp.speedKnots, dp.timestamp);
-        double distToNewRef = WGS84Utilities.distance(Math.toDegrees(ref.reference.lat), Math.toDegrees(ref.reference.lon), newPosRef[0], newPosRef[1]);
+        List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs, approachCorner, surfacePointIdx);
+        double[] newPosRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, approachCorner, surfacePointIdx, refPoints);
+        double distToNewRef = WGS84Utilities.distance(Math.toDegrees(ref.reference.lat),
+                Math.toDegrees(ref.reference.lon), newPosRef[0], newPosRef[1]);
         EstimatedState estState = get(EstimatedState.class);
         double[] curPos = WGS84Utilities.toLatLonDepth(estState);
         @SuppressWarnings("unused")
