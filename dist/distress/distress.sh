@@ -19,6 +19,7 @@ start()
     echo "Starting $Name"
 
     check_if_any_running
+    wait_for_clock
 
     mkdir -p "$RUN_HOME/log"
     unlink $LATEST 2>/dev/null
@@ -30,6 +31,14 @@ start()
     echo $pid > $PIDFILE
     echo "PID "$pid
     ln -s $OUTPUT $LATEST
+}
+
+wait_for_clock()
+{
+   while [ `date +%s` -lt 1507641301 ]; do
+     echo "Waiting for the clock to be synched..."
+     sleep 1
+   done
 }
 
 check_if_any_running()
