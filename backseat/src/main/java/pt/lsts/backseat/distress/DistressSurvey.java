@@ -441,6 +441,10 @@ public class DistressSurvey extends TimedFSM {
             setSpeed(speed, SpeedUnits.METERS_PS);
     }
 
+    private double getCourseSpeedValue() {
+        return speed;
+    }
+
     private SpeedUnits getCourseSpeedUnit() {
         if (speedUnits.equalsIgnoreCase("rpm"))
             return SpeedUnits.RPM;
@@ -450,6 +454,10 @@ public class DistressSurvey extends TimedFSM {
 
     private void setSurveySpeed() {
         setCourseSpeed();
+    }
+
+    private double getSurveySpeedValue() {
+        return speed;
     }
 
     private SpeedUnits getSurveySpeedUnit() {
@@ -647,7 +655,7 @@ public class DistressSurvey extends TimedFSM {
         setLoiterRef(loiterPos[0], loiterPos[1], workingDepth);
         setCourseSpeed();
         sendPlanToVehicleDb("loiter-underwater", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
-                workingDepth, speed, getCourseSpeedUnit()));
+                workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
 
         switch (surveyStage) {
             case ON_GOING:
@@ -658,7 +666,7 @@ public class DistressSurvey extends TimedFSM {
                     print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
                     setLoiterRef(latDegParking, lonDegParking, workingDepth);
                     sendPlanToVehicleDb("loiter-park", PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
-                            workingDepth, speed, getCourseSpeedUnit()));
+                            workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
                 }
                 break;
         }
@@ -683,7 +691,7 @@ public class DistressSurvey extends TimedFSM {
             double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
             setLoiterRef(loiterPos[0], loiterPos[1], workingDepth);
             sendPlanToVehicleDb("loiter-underwater", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
-                    workingDepth, speed, getCourseSpeedUnit()));
+                    workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
 
             switch (surveyStage) {
                 case ON_GOING:
@@ -694,7 +702,7 @@ public class DistressSurvey extends TimedFSM {
                         print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
                         setLoiterRef(latDegParking, lonDegParking, workingDepth);
                         sendPlanToVehicleDb("loiter-park", PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
-                                workingDepth, speed, getCourseSpeedUnit()));
+                                workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
                     }
                     break;
             }
@@ -728,7 +736,7 @@ public class DistressSurvey extends TimedFSM {
         setSurfaceLoiterRef(loiterPos[0], loiterPos[1]);
         setCourseSpeed();
         sendPlanToVehicleDb("loiter-surface", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
-                0, speed, getCourseSpeedUnit()));
+                0, getCourseSpeedValue(), getCourseSpeedUnit()));
 
         // if (isUnderwater())
             atSurfaceMillis = -1;
@@ -769,7 +777,7 @@ public class DistressSurvey extends TimedFSM {
             double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
             setSurfaceLoiterRef(loiterPos[0], loiterPos[1]);
             sendPlanToVehicleDb("loiter-surface", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
-                    0, speed, getCourseSpeedUnit()));
+                    0, getCourseSpeedValue(), getCourseSpeedUnit()));
         }
         
         switch (surveyStage) {
@@ -781,7 +789,7 @@ public class DistressSurvey extends TimedFSM {
                     print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
                     setSurfaceLoiterRef(latDegParking, lonDegParking);
                     sendPlanToVehicleDb("loiter-park", PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
-                            0, speed, getCourseSpeedUnit()));
+                            0, getCourseSpeedValue(), getCourseSpeedUnit()));
                 }
                 break;
         }
@@ -828,7 +836,7 @@ public class DistressSurvey extends TimedFSM {
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setCourseSpeed();
         sendPlanToVehicleDb("approach-survey-point", PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
-                posRef[2], speed, getCourseSpeedUnit()));
+                posRef[2], getCourseSpeedValue(), getCourseSpeedUnit()));
         
         return this::approachSurveyPointStayState;
     }
@@ -853,7 +861,7 @@ public class DistressSurvey extends TimedFSM {
         if (distToNewRef > deltaDistToAdjustApproach) {
             setGoingRef(newPosRef[0], newPosRef[1], newPosRef[2]);
             sendPlanToVehicleDb("approach-go", PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
-                    newPosRef[2], speed, getCourseSpeedUnit()));
+                    newPosRef[2], getCourseSpeedValue(), getCourseSpeedUnit()));
             return this::approachSurveyPointStayState;
         }
         
@@ -900,7 +908,7 @@ public class DistressSurvey extends TimedFSM {
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setSurveySpeed();
         sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
-                posRef[2], speed, getSurveySpeedUnit()));
+                posRef[2], getSurveySpeedValue(), getSurveySpeedUnit()));
 
         return this::firstSurveyPointStayState;
     }
@@ -920,7 +928,7 @@ public class DistressSurvey extends TimedFSM {
         if (distToNewRef > deltaDistToAdjustApproach) {
             setGoingRef(newPosRef[0], newPosRef[1], newPosRef[2]);
             sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
-                    newPosRef[2], speed, getSurveySpeedUnit()));
+                    newPosRef[2], getSurveySpeedValue(), getSurveySpeedUnit()));
             return this::firstSurveyPointStayState;
         }
         
