@@ -38,6 +38,7 @@ import pt.lsts.imc4j.msg.Maneuver;
 import pt.lsts.imc4j.msg.PlanDB;
 import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.util.AngleUtils;
+import pt.lsts.imc4j.util.PointIndex;
 import pt.lsts.imc4j.util.PojoConfig;
 import pt.lsts.imc4j.util.WGS84Utilities;
 
@@ -55,13 +56,6 @@ public class DistressSurvey extends TimedFSM {
         START_OP,
         END_OP,
         PREEMPTIVE_OP
-    }
-
-    private enum SurveyPathEnum {
-        FIRST,
-        SECOND,
-        THIRD,
-        FORTH
     }
 
     private enum SurveyStageEnum {
@@ -195,8 +189,9 @@ public class DistressSurvey extends TimedFSM {
 
     private GoSurfaceTaskEnum goSurfaceTask = GoSurfaceTaskEnum.START_OP;
     private ApproachCornerEnum approachCorner = ApproachCornerEnum.FRONT_LEFT;
-    private SurveyPathEnum surfacePointIdx = SurveyPathEnum.FIRST;
     private SurveyStageEnum surveyStage = SurveyStageEnum.WAITING_TO_START;
+
+    private PointIndex surfacePointIdx = new PointIndex(3);
 
     // Target test vars
     private double tmpTargetLat = 41.184058;
@@ -546,7 +541,8 @@ public class DistressSurvey extends TimedFSM {
     
     private double[] calcApproachPoint(double latDegs, double lonDegs, double depth,
             double headingDegs, List<double[]> refPoints) {
-        surfacePointIdx = SurveyPathEnum.FIRST;
+        //surfacePointIdx = SurveyPathEnum.FIRST;
+        surfacePointIdx.resetIndex();
         return calcSurveyLinePoint(latDegs, lonDegs, refPoints);
     }
 
@@ -609,47 +605,21 @@ public class DistressSurvey extends TimedFSM {
             refPoints.add(new double[] {offsetX, offsetY, d});
         }
 
-        double[] offXyzFromIdx = refPoints.get(surfacePointIdx.ordinal());
+        double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
         print(String.format("Calc survey 1 deltas %s idx=%s   l %.2f  w %.2f  offn %.2f  offe %.2f ::  l=%s  w=%s",
-                approachCorner, surfacePointIdx, olPointsList.get(surfacePointIdx.ordinal()),
-                owPointsList.get(surfacePointIdx.ordinal()), offXyzFromIdx[0], offXyzFromIdx[1],
+                approachCorner, surfacePointIdx, olPointsList.get(surfacePointIdx.index()),
+                owPointsList.get(surfacePointIdx.index()), offXyzFromIdx[0], offXyzFromIdx[1],
                 Arrays.toString(olPointsList.toArray()), Arrays.toString(owPointsList.toArray())));
 
         return refPoints;
     }
 
     private double[] calcSurveyLinePoint(double latDegs, double lonDegs, List<double[]> refPoints) {
-        double offsetX;
-        double offsetY;
-        double offsetZ;
-        switch (surfacePointIdx) {
-            case FIRST:
-            default:
-                double[] ref = refPoints.get(0);
-                offsetX = ref[0];
-                offsetY = ref[1];
-                offsetZ = ref[2];
-                break;
-            case SECOND:
-                ref = refPoints.get(1);
-                offsetX = ref[0];
-                offsetY = ref[1];
-                offsetZ = ref[2];
-                break;
-            case THIRD:
-                ref = refPoints.get(2);
-                offsetX = ref[0];
-                offsetY = ref[1];
-                offsetZ = ref[2];
-                break;
-            case FORTH:
-                ref = refPoints.get(3);
-                offsetX = ref[0];
-                offsetY = ref[1];
-                offsetZ = ref[2];
-                break;
-        }
-        
+        double[] ref = refPoints.get(surfacePointIdx.index());
+        double offsetX = ref[0];
+        double offsetY = ref[1];
+        double offsetZ = ref[2];
+
         double[] pos = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
 
         print(String.format("Delta %s %s   offn %.2f  offe %.2f ::  %s", approachCorner, surfacePointIdx,
@@ -900,8 +870,8 @@ public class DistressSurvey extends TimedFSM {
                 posRef[2], getCourseSpeedValue(), getCourseSpeedUnit()));
 
         resetPatternPathOffsetsForPlan(dp.latDegs, dp.lonDegs, 0);
-        addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.ordinal(),
-                surfacePointIdx.ordinal() == 0 ? refPoints : refPoints.subList(surfacePointIdx.ordinal(), refPoints.size()));
+        addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.index(),
+                surfacePointIdx.index() == 0 ? refPoints : refPoints.subList(surfacePointIdx.index(), refPoints.size()));
         sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
                 patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
                 patternPathOffsetsForPlan, ""));
@@ -933,8 +903,8 @@ public class DistressSurvey extends TimedFSM {
             sendPlanToVehicleDb("approach-go", PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
                     newPosRef[2], getCourseSpeedValue(), getCourseSpeedUnit()));
 
-            addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.ordinal(),
-                    surfacePointIdx.ordinal() == 0 ? refPoints : refPoints.subList(surfacePointIdx.ordinal(), refPoints.size()));
+            addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.index(),
+                    surfacePointIdx.index() == 0 ? refPoints : refPoints.subList(surfacePointIdx.index(), refPoints.size()));
             sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
                     patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
                     patternPathOffsetsForPlan, ""));
@@ -953,8 +923,8 @@ public class DistressSurvey extends TimedFSM {
     	printFSMState();
         markState(this::firstSurveyPointState);
 
-        if (surfaceOnCorners && (SurveyPathEnum.FIRST.compareTo(surfacePointIdx) == 0
-                || SurveyPathEnum.THIRD.compareTo(surfacePointIdx) == 0)) {
+        if (surfaceOnCorners && surfacePointIdx.isMinIndex()
+                || surfacePointIdx.isValIndex(2)) {
             if (isGoSurfaceTime()) {
                 goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
                 deactivatePayload();
@@ -962,23 +932,26 @@ public class DistressSurvey extends TimedFSM {
             }
         }
         
-        surfacePointIdx = SurveyPathEnum.values()[surfacePointIdx.ordinal() + 1];
-        
-        switch (surfacePointIdx) {
-            case SECOND:
-            case FORTH:
-                activatePayload();
-                break;
-            case FIRST:
-            case THIRD:
-                if (!usePeriodicSurfaceForPos) {
+        surfacePointIdx.incrementAndGetIndex();
+
+        surfacePointIdx.test(idx -> {
+            switch (surfacePointIdx.index()) {
+                case 1:
+                case 3:
                     activatePayload();
                     break;
-                }
-            default:
-                deactivatePayload();
-                break;
-        }
+                case 0:
+                case 2:
+                    if (!usePeriodicSurfaceForPos) {
+                        activatePayload();
+                        break;
+                    }
+                default:
+                    deactivatePayload();
+                    break;
+            }
+            return true;
+        });
         
         DistressPosition dp = AisCsvParser.distressPosition;
         List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs);
@@ -988,8 +961,8 @@ public class DistressSurvey extends TimedFSM {
         sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
                 posRef[2], getSurveySpeedValue(), getSurveySpeedUnit()));
 
-        addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.ordinal(),
-                surfacePointIdx.ordinal() == 0 ? refPoints : refPoints.subList(surfacePointIdx.ordinal(), refPoints.size()));
+        addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.index(),
+                surfacePointIdx.index() == 0 ? refPoints : refPoints.subList(surfacePointIdx.index(), refPoints.size()));
 
         sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
                 patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
@@ -1017,8 +990,8 @@ public class DistressSurvey extends TimedFSM {
             sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
                     newPosRef[2], getSurveySpeedValue(), getSurveySpeedUnit()));
 
-            addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.ordinal(),
-                    surfacePointIdx.ordinal() == 0 ? refPoints : refPoints.subList(surfacePointIdx.ordinal(), refPoints.size()));
+            addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.index(),
+                    surfacePointIdx.index() == 0 ? refPoints : refPoints.subList(surfacePointIdx.index(), refPoints.size()));
 
             sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
                     patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
@@ -1028,7 +1001,7 @@ public class DistressSurvey extends TimedFSM {
         }
         
         if (arrivedXY()) {
-            if (surveySideOrAround || surfacePointIdx.ordinal() == SurveyPathEnum.values().length - 1) {
+            if (surveySideOrAround || surfacePointIdx.isMaxIndex()) {
                 goSurfaceTask = GoSurfaceTaskEnum.END_OP;
                 deactivatePayload();
                 return this::goSurfaceState;
