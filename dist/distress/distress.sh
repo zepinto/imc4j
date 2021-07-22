@@ -4,6 +4,9 @@
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 
 JARNAME="Distress.jar"
+# Uncomment to override the default ("<script_name>.props")
+# (Don't use a path, it must be on the script folder.)
+#CONF_FILE_NAME="conf.props"
 
 # Settings to run with an HTTP server
 # Uncomment the following lines will result on running as HTTP server
@@ -37,7 +40,11 @@ fillBASE_DIR
 NAME="$(basename "$PRG")"
 RUN_HOME="$BASE_DIR"
 
-CONF_FILE="$RUN_HOME/$(echo "$NAME" | sed  's/\..*$//').props"
+if [ -z ${CONF_FILE_NAME} ]; then
+  CONF_FILE="$RUN_HOME/$(echo "$NAME" | sed  's/\..*$//').props"
+else
+  CONF_FILE="$RUN_HOME/$CONF_FILE_NAME"
+fi
 
 JAVA="/opt/lsts/jre/bin/java"
 "$JAVA" -version > /dev/null 2>&1
