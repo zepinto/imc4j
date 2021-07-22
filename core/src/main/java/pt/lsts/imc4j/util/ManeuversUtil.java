@@ -41,7 +41,7 @@ import java.util.List;
  */
 public class ManeuversUtil {
     
-    protected static final int X = 0, Y = 1, Z = 2, T = 3;
+    public static final int X = 0, Y = 1, Z = 2, T = 3;
 
     private ManeuversUtil() {
     }

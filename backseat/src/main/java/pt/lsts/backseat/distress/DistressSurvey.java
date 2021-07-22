@@ -38,6 +38,7 @@ import pt.lsts.imc4j.msg.Maneuver;
 import pt.lsts.imc4j.msg.PlanDB;
 import pt.lsts.imc4j.msg.ReportControl;
 import pt.lsts.imc4j.util.AngleUtils;
+import pt.lsts.imc4j.util.ManeuversUtil;
 import pt.lsts.imc4j.util.PointIndex;
 import pt.lsts.imc4j.util.PojoConfig;
 import pt.lsts.imc4j.util.WGS84Utilities;
@@ -68,6 +69,23 @@ public class DistressSurvey extends TimedFSM {
         FRONT_RIGHT,
         BACK_RIGHT,
         BACK_LEFT
+    }
+
+    private enum SurveyPatternEnum {
+        DEFAULT(0, "default"),
+        ROWS(1, "rows"),
+        RI(2, "ri"),
+        CROSS(3, "cross"),
+        EXPANDING(4, "expanding"),
+        ;
+
+        public final int ordinal;
+        public final String pattern;
+
+        SurveyPatternEnum(int ordinal, String pattern) {
+            this.ordinal = ordinal;
+            this.pattern = pattern;
+        }
     }
 
     @Parameter(description = "DUNE Host Address")
@@ -133,6 +151,9 @@ public class DistressSurvey extends TimedFSM {
     private double approachLengthOffset = 50;
     @Parameter(description = "Survey Side (true) or Around Target (false)")
     private boolean surveySideOrAround = false;
+
+    @Parameter(description = "Survey pattern type [default|rows|ri|cross|expanding]")
+    private String surveyPatternName = "default";
 
     @Parameter(description = "Target Width")
     private double targetWidth = 6.3;
@@ -205,6 +226,8 @@ public class DistressSurvey extends TimedFSM {
     private double latDegParking = Double.NaN;
     private double lonDegParking = Double.NaN;
 
+    private SurveyPatternEnum surveyPattern = SurveyPatternEnum.DEFAULT;
+
     private HashMap<String, HashMap<String, String>> payloadToActivate = new LinkedHashMap<>();
 
     private double patternLatDegsForPlan = Double.NaN;
@@ -256,7 +279,26 @@ public class DistressSurvey extends TimedFSM {
             stateToReturnTo = this::loiterUnderwaterState;
             goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
         }
-        
+
+        switch (surveyPatternName.trim().toLowerCase()) {
+            case "default":
+            default:
+                surveyPattern = SurveyPatternEnum.DEFAULT;
+                break;
+            case "rows":
+                surveyPattern = SurveyPatternEnum.ROWS;
+                break;
+            case "ri":
+                surveyPattern = SurveyPatternEnum.RI;
+                break;
+            case "cross":
+                surveyPattern = SurveyPatternEnum.CROSS;
+                break;
+            case "expanding":
+                surveyPattern = SurveyPatternEnum.EXPANDING;
+                break;
+        }
+
         processPayloadToActivate();
     }
 
@@ -547,6 +589,19 @@ public class DistressSurvey extends TimedFSM {
     }
 
     private List<double[]> calcSurveyLinePathOffsets(double depth, double headingDegs) {
+        switch (surveyPattern) {
+            case DEFAULT:
+            case ROWS:
+            case CROSS:
+            case EXPANDING:
+            default:
+                return calcSurveyLinePathOffsetsForDefault(depth, headingDegs);
+            case RI:
+                return calcSurveyLinePathOffsetsForRI(depth, headingDegs);
+        }
+    }
+
+    private List<double[]> calcSurveyLinePathOffsetsForDefault(double depth, double headingDegs) {
         double angRads = Math.toRadians(headingDegs);
 
         double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
@@ -610,6 +665,42 @@ public class DistressSurvey extends TimedFSM {
                 approachCorner, surfacePointIdx, olPointsList.get(surfacePointIdx.index()),
                 owPointsList.get(surfacePointIdx.index()), offXyzFromIdx[0], offXyzFromIdx[1],
                 Arrays.toString(olPointsList.toArray()), Arrays.toString(owPointsList.toArray())));
+
+        return refPoints;
+    }
+
+    private List<double[]> calcSurveyLinePathOffsetsForRI(double depth, double headingDegs) {
+        double angRads = Math.toRadians(headingDegs);
+
+        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
+
+        List<double[]> refPoints = ManeuversUtil.calcRIPatternPoints(targetLength * 1.3  + surveyDeltaAltitudeFromTarget * 10,
+                27, 1, 10, true, angRads);
+        refPoints.forEach(p -> p[ManeuversUtil.Z] = depthRef);
+
+        double[] p0 = refPoints.get(0);
+        double[] p1 = refPoints.get(1);
+        double p0p1AngleRad = AngleUtils.calcAngle(p0[ManeuversUtil.X], p0[ManeuversUtil.Y],
+                p1[ManeuversUtil.X], p1[ManeuversUtil.Y]);
+        double[] rp = AngleUtils.rotate(angRads, p0[ManeuversUtil.X], p0[ManeuversUtil.Y], true);
+        rp[ManeuversUtil.X] -= approachLengthOffset;
+        rp = AngleUtils.rotate(angRads, rp[ManeuversUtil.X], rp[ManeuversUtil.Y], false);
+        refPoints.add(new double[]{ rp[ManeuversUtil.X], rp[ManeuversUtil.Y], workingDepth });
+        Collections.rotate(refPoints, 1);
+
+        double[] p10 = refPoints.get(refPoints.size() - 2);
+        double[] p11 = refPoints.get(refPoints.size() - 1);
+        double p10p11AngleRad = AngleUtils.calcAngle(p10[ManeuversUtil.X], p10[ManeuversUtil.Y],
+                p11[ManeuversUtil.X], p11[ManeuversUtil.Y]);
+        double[] rp1 = AngleUtils.rotate(angRads, p11[ManeuversUtil.X], p11[ManeuversUtil.Y], true);
+        rp1[ManeuversUtil.X] += approachLengthOffset;
+        rp1 = AngleUtils.rotate(angRads, rp1[ManeuversUtil.X], rp1[ManeuversUtil.Y], false);
+        refPoints.add(new double[]{ rp1[ManeuversUtil.X], rp1[ManeuversUtil.Y], workingDepth });
+
+        double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
+        print(String.format("Calc survey ri deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=%s",
+                approachCorner, surfacePointIdx, offXyzFromIdx[0], offXyzFromIdx[1],
+                refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
 
         return refPoints;
     }
