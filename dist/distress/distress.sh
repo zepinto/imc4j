@@ -5,10 +5,17 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 
 JARNAME="Distress.jar"
 
+# Settings to run with an HTTP server
+# Uncomment the following lines will result on running as HTTP server
+# Some backseats don't support this way of running
+#CLASS_BACKSEAT="pt.lsts.backseat.distress.DistressSurvey"
+#SERVER_PORT="8090"
+#HOT_CONFIG="--hot-config"
+
 PRG="$0"
 fillBASE_DIR()
 {
-  readlink -f "$PRG" &> /dev/null
+  readlink -f "$PRG" > /dev/null 2>&1
   status=$?
   if [ $status -eq 0 ]; then
       PRG="$(readlink -f "$PRG")"
@@ -33,11 +40,11 @@ RUN_HOME="$BASE_DIR"
 CONF_FILE="$RUN_HOME/$(echo "$NAME" | sed  's/\..*$//').props"
 
 JAVA="/opt/lsts/jre/bin/java"
-"$JAVA" -version &> /dev/null
+"$JAVA" -version > /dev/null 2>&1
 status=$?
 if [ $status -ne 0 ]; then
   JAVA="$RUN_HOME/jre/bin/java"
-  "$JAVA" -version &> /dev/null
+  "$JAVA" -version > /dev/null 2>&1
   status=$?
   if [ $status -ne 0 ]; then
     JAVA="java"
@@ -48,6 +55,8 @@ DATE=$(date +%Y-%m-%d_%H-%M-%S)
 OUTPUT="$RUN_HOME/log/$DATE.log"
 LATEST="$RUN_HOME/latest.log"
 PIDFILE="$RUN_HOME/pid"
+
+CLASS_SERVER="pt.lsts.httpd.BackSeatServer"
 
 setupPsCmd()
 {
@@ -76,10 +85,17 @@ start()
     mkdir -p "$RUN_HOME/log"
     unlink "$LATEST" 2>/dev/null
     cd "$RUN_HOME"
-    echo "Running with configuration '$CONF_FILE'..."
-    "$JAVA" -jar $JARNAME "$CONF_FILE" < /dev/null > $OUTPUT 2>&1 &
-    pid=$!
-    # pid=$($PSCMD | grep $JARNAME | grep java | awk '{print $1}' c={1:-1})
+    if [ -z ${CLASS_BACKSEAT+x} ]; then
+       echo "Running with configuration '$CONF_FILE'..."
+      "$JAVA" -jar $JARNAME "$CONF_FILE" < /dev/null > "$OUTPUT" 2>&1 &
+      pid=$!
+      # pid=$($PSCMD | grep $JARNAME | grep java | awk '{print $1}' c={1:-1})
+    else
+      echo "Running $CLASS_SERVER for $NAME with configuration '$CONF_FILE'..."
+      "$JAVA" -cp .:"$JARNAME" $CLASS_SERVER $CLASS_BACKSEAT $SERVER_PORT \
+            --config "$CONF_FILE" --log "$OUTPUT" $HOT_CONFIG < /dev/null > "$OUTPUT" 2>&1 &
+      pid=$!
+    fi
     echo $pid > "$PIDFILE"
     echo "PID "$pid
     ln -s "$OUTPUT" "$LATEST"
