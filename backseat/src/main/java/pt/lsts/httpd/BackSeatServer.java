@@ -48,12 +48,15 @@ public class BackSeatServer extends NanoHTTPD {
     protected String name;
 
     protected File configServerFile = new File(this.getClass().getSimpleName()+".ini");
+	protected File configDriverFile;
+	protected File logFile;
 
-	public BackSeatServer(TcpClient back_seat, int http_port, boolean allowHotConfig) {
+	public BackSeatServer(TcpClient back_seat, int http_port, boolean allowHotConfig, String configFilePath,
+						  String logFilePath) {
 		super(http_port);
 		
 		this.allowHotConfig = allowHotConfig;
-		
+
 		if (configServerFile.exists()) {
 		    try {
 		        loadServerSettings(new String(Files.readAllBytes(configServerFile.toPath())));
@@ -73,17 +76,23 @@ public class BackSeatServer extends NanoHTTPD {
             default:
                 break;
         }
-		
-		File config = new File(back_seat.getClass().getSimpleName()+".ini");
-		if (config.exists()) {
+
+		configDriverFile = new File(back_seat.getClass().getSimpleName()+".ini");
+		if(configFilePath != null)
+			configDriverFile = new File(configFilePath);
+		if (configDriverFile.exists()) {
 			try {
-				loadSettings(new String(Files.readAllBytes(config.toPath())));
+				loadSettings(new String(Files.readAllBytes(configDriverFile.toPath())));
 			}
 			catch (Exception e) {
 				e.printStackTrace();
 			}
 		}		
-		
+
+		logFile = logFilePath != null ? new File(logFilePath) : null;
+		try { logFile.createNewFile(); } catch (Exception e) {};
+		if (!logFile.exists())
+			logFile = null;
 		createAndRedirectOutputLog();
 		PeriodicCallbacks.register(this);
         
@@ -152,8 +161,13 @@ public class BackSeatServer extends NanoHTTPD {
     }
 
     private void createAndRedirectOutputLog() {
+		if (logFile != null && logFile.exists()) {
+			output = logFile;
+			return;
+		}
+
         SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMdd_HHmmss");
-		output = new File(sdf.format(new Date())+".log");
+		output = new File("log/" + sdf.format(new Date()) + ".log");
 		try {
 			System.out.println("Redirecting output to " + output.getAbsolutePath());
 			PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(output)), true);
@@ -260,8 +274,8 @@ public class BackSeatServer extends NanoHTTPD {
 	}
 
 	private void saveSettings() throws Exception {
-		File config = new File(driver.getClass().getSimpleName()+".ini");
-		PojoConfig.writeProperties(driver, config);
+		// File config = new File(driver.getClass().getSimpleName()+".ini");
+		PojoConfig.writeProperties(driver, configDriverFile);
 	}
 
 	private void stopBackSeat() throws Exception {
@@ -464,14 +478,29 @@ public class BackSeatServer extends NanoHTTPD {
 	public static void main(String[] args) throws Exception {
 		if (args.length < 2) {
             System.err.println("Usage: java -jar BackSeatServer.jar <class> <port>");
-            System.err.println("    <class>         - The full class name to run");
-            System.err.println("    <port>          - The http server port for this service");
-            System.err.println("    <--hot-config>  - To allow change of config while running");            
+            System.err.println("    <class>                 - The full class name to run");
+            System.err.println("    <port>                  - The http server port for this service");
+            System.err.println("    <--hot-config>?         - To allow change of config while running");
+			System.err.println("    <--config <file_path>>? - To allow change of config while running");
 			System.exit(1);
 		}
-		
-		new BackSeatServer((TcpClient) Class.forName(args[0]).newInstance(), Integer.parseInt(args[1]),
-		        args.length > 2 && "--hot-config".equalsIgnoreCase(args[2].trim()) ? true : false);
+
+		boolean hotConfig = false;
+		String configFilePath = null;
+		String logFilePath = null;
+
+		for (int i = 2; i < args.length; i++) {
+			if ("--hot-config".equalsIgnoreCase(args[i].trim())) {
+				hotConfig = true;
+			} else if ("--config".equalsIgnoreCase(args[i].trim())) {
+				configFilePath = args[++i].trim();
+			} else if ("--log".equalsIgnoreCase(args[i].trim())) {
+				logFilePath = args[++i].trim();
+			}
+		}
+
+		new BackSeatServer((TcpClient) Class.forName(args[0]).getDeclaredConstructor().newInstance(),
+				Integer.parseInt(args[1]), hotConfig, configFilePath, logFilePath);
 		System.exit(0);
 	}
 }
