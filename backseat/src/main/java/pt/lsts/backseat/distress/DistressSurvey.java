@@ -129,15 +129,15 @@ public class DistressSurvey extends TimedFSM {
 
     @Parameter(description = "Survey Delta Altitude from Target (m)")
     private double surveyDeltaAltitudeFromTarget = 5;
-    @Parameter(description = "Approach Lenght Offset")
-    private double approachLenghtOffset = 50;
+    @Parameter(description = "Approach Length Offset")
+    private double approachLengthOffset = 50;
     @Parameter(description = "Survey Side (true) or Around Target (false)")
     private boolean surveySideOrAround = false;
 
     @Parameter(description = "Target Width")
     private double targetWidth = 6.3;
-    @Parameter(description = "Target Lenght")
-    private double targetLenght = 65;
+    @Parameter(description = "Target Length")
+    private double targetLength = 65;
 
     @Parameter(description = "Delta Time for Distress Valid (milliseconds)")
     private long deltaTimeMillisDistressValid = 30000;
@@ -505,11 +505,11 @@ public class DistressSurvey extends TimedFSM {
         double[] vehPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
         ApproachCornerEnum approachCorner = ApproachCornerEnum.FRONT_LEFT;
         double angRads = Math.toRadians(headingDegs);
-        double offsetX = Math.cos(angRads) * targetLenght / 2.;
-        double offsetY = Math.sin(angRads) * targetLenght / 2.;
+        double offsetX = Math.cos(angRads) * targetLength / 2.;
+        double offsetY = Math.sin(angRads) * targetLength / 2.;
         double[] frontCenterPoint = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
-        offsetX = Math.cos(angRads) * -targetLenght / 2.;
-        offsetY = Math.sin(angRads) * -targetLenght / 2.;
+        offsetX = Math.cos(angRads) * -targetLength / 2.;
+        offsetY = Math.sin(angRads) * -targetLength / 2.;
         double[] backCenterPoint = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
         
         double distToFront = WGS84Utilities.distance(vehPos[0], vehPos[1], frontCenterPoint[0], frontCenterPoint[1]);
@@ -554,19 +554,19 @@ public class DistressSurvey extends TimedFSM {
         ArrayList<Double> olPointsList = new ArrayList<>();
         ArrayList<Double> owPointsList = new ArrayList<>();
         // FrontLeft
-        olPointsList.add(targetLenght); // + approachLenghtOffset;
+        olPointsList.add(targetLength); // + approachLengthOffset;
         owPointsList.add(-(targetWidth + surveyDeltaAltitudeFromTarget * 10));
         // BackLeft
-        olPointsList.add(-targetLenght);
+        olPointsList.add(-targetLength);
         owPointsList.add(-(targetWidth + surveyDeltaAltitudeFromTarget * 10));
         // BackRight
-        olPointsList.add(-targetLenght);
+        olPointsList.add(-targetLength);
         owPointsList.add(targetWidth + surveyDeltaAltitudeFromTarget * 10);
         // FrontRight
-        olPointsList.add(targetLenght); // + approachLenghtOffset;
+        olPointsList.add(targetLength); // + approachLengthOffset;
         owPointsList.add(targetWidth + surveyDeltaAltitudeFromTarget * 10);
 
-        double approachLenghtOffsetFixed = approachLenghtOffset;
+        double approachLengthOffsetFixed = approachLengthOffset;
 
         switch (approachCorner) {
             case FRONT_LEFT: // 1,2,3,4
@@ -577,12 +577,12 @@ public class DistressSurvey extends TimedFSM {
                 Collections.reverse(owPointsList);
                 Collections.rotate(olPointsList, 2);
                 Collections.rotate(owPointsList, 2);
-                approachLenghtOffsetFixed *= -1;
+                approachLengthOffsetFixed *= -1;
                 break;
             case BACK_RIGHT: // 3,4,1,2
                 Collections.rotate(olPointsList, 2);
                 Collections.rotate(owPointsList, 2);
-                approachLenghtOffsetFixed *= -1;
+                approachLengthOffsetFixed *= -1;
                 break;
             case FRONT_RIGHT: // 4,3,2,1
                 Collections.reverse(olPointsList);
@@ -590,8 +590,8 @@ public class DistressSurvey extends TimedFSM {
                 break;
         }
 
-        olPointsList.set(0, olPointsList.get(0) + approachLenghtOffsetFixed);
-        olPointsList.set(3, olPointsList.get(3) + approachLenghtOffsetFixed);
+        olPointsList.set(0, olPointsList.get(0) + approachLengthOffsetFixed);
+        olPointsList.set(3, olPointsList.get(3) + approachLengthOffsetFixed);
 
         List<double[]> refPoints = new ArrayList<>();
         for (int i = 0; i < olPointsList.size(); i++) {

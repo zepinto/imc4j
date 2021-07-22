@@ -54,8 +54,8 @@ speedUnits=RPM
 #Survey Delta Altitude from Target (m)
 surveyDeltaAltitudeFromTarget=5.0
 
-#Approach Lenght Offset
-approachLenghtOffset=20.0
+#Approach Length Offset
+approachLengthOffset=20.0
 
 #Survey Side (true) or Around (false)
 surveySideOrAround=false
@@ -63,8 +63,8 @@ surveySideOrAround=false
 #Target Width
 targetWidth=6.3
 
-#Target Lenght
-targetLenght=65.0
+#Target Length
+targetLength=65.0
 
 #Delta Time for Distress Valid (milliseconds)
 deltaTimeMillisDistressValid=30000
