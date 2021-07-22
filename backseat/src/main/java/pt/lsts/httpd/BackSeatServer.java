@@ -163,11 +163,11 @@ public class BackSeatServer extends NanoHTTPD {
     private void createAndRedirectOutputLog() {
 		if (logFile != null && logFile.exists()) {
 			output = logFile;
-			return;
+		} else {
+			SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMdd_HHmmss");
+			output = new File("log/" + sdf.format(new Date()) + ".log");
 		}
 
-        SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMdd_HHmmss");
-		output = new File("log/" + sdf.format(new Date()) + ".log");
 		try {
 			System.out.println("Redirecting output to " + output.getAbsolutePath());
 			PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(output)), true);
@@ -463,7 +463,7 @@ public class BackSeatServer extends NanoHTTPD {
 			sb.append("<h2><label for=\"logbook\">Log Book</label>:\n");
 			sb.append("&nbsp; <input id='reloadLogbook' name='reloadLogbook' type=\"button\" onclick=\"reloadLogbookFrame()\" value=\"Reload\"><br/>");
             sb.append("</h2>\n");
-			sb.append("<iframe onload='scrollToEnd();' name='logbook' id='logbook' title='log book' src='/logbook' width='600px'></iframe>\n");
+			sb.append("<iframe onload='scrollToEnd();' name='logbook' id='logbook' title='log book' src='/logbook' height='400px' width='800px'></iframe>\n");
 		}
 
 		sb.append("</form>\n");
