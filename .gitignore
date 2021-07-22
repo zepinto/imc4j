@@ -7,4 +7,18 @@ bin/
 build/
 */build/
 .idea
+.run
+out/
+.vscode
 
+\#*#
+*~
+
+/dist/*/*.props
+/dist/*/*.ini
+/dist/*/latest.log
+/dist/*/*.log
+/dist/*/log
+/dist/*/pid
+/dist/*.jar
+/dist/*/*.jar
