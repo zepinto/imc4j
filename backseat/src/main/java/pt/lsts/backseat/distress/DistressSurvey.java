@@ -787,7 +787,7 @@ public class DistressSurvey extends TimedFSM {
         double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
         print(String.format("Calc survey rows deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
                 approachCorner, surfacePointIdx, offXyzFromIdx[0], offXyzFromIdx[1]));
-        System.out.println(String.format("Survey ri deltas offs=%s",
+        System.out.println(String.format("Survey rows deltas offs=%s",
                 refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
 
         return refPoints;
@@ -823,7 +823,7 @@ public class DistressSurvey extends TimedFSM {
         refPoints = addApproachAndExitPointsExtendingLines(refPoints, Math.toDegrees(angRads), approachLengthOffset, workingDepth);
 
         double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
-        print(String.format("Calc survey cross deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
+        print(String.format("Calc survey ri deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
                 approachCorner, surfacePointIdx, offXyzFromIdx[0], offXyzFromIdx[1]));
         System.out.println(String.format("Survey ri deltas offs=%s",
                 refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
@@ -863,7 +863,7 @@ public class DistressSurvey extends TimedFSM {
                 approachLengthOffset + expWidth / 2.0, approachLengthOffset, workingDepth);
 
         double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
-        print(String.format("Calc survey cross deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
+        print(String.format("Calc survey expanding deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
                 approachCorner, surfacePointIdx, offXyzFromIdx[0], offXyzFromIdx[1]));
         System.out.println(String.format("Survey expanding deltas offs=%s",
                 refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
