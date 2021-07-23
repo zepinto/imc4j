@@ -21,6 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class PlanPointsUtil {
+    private static final String MAN_ID_PREFIX = "m";
+
     private static Random idRamdomGen = new Random();
     private static AtomicInteger reqId = new AtomicInteger(idRamdomGen.nextInt());
 
@@ -86,7 +88,7 @@ public class PlanPointsUtil {
         final AtomicInteger manCounter = new AtomicInteger(0);
         ArrayList<PlanManeuver> planManList = Arrays.stream(maneuvers).map(m -> {
             PlanManeuver pm = new PlanManeuver();
-            pm.maneuver_id = "man-" + manCounter.incrementAndGet();
+            pm.maneuver_id = MAN_ID_PREFIX + manCounter.incrementAndGet();
             pm.data = m;
             return pm;
         }).collect(Collectors.toCollection(ArrayList::new));
@@ -97,8 +99,8 @@ public class PlanPointsUtil {
         ArrayList<PlanTransition> planTransList = new ArrayList<>();
         for (int i = 2; i <= manCounter.get(); i++) {
             PlanTransition pt = new PlanTransition();
-            pt.source_man = "man-" + (i - 1);
-            pt.dest_man = "man-" + i;
+            pt.source_man = MAN_ID_PREFIX + (i - 1);
+            pt.dest_man = MAN_ID_PREFIX + i;
         }
         pspec.transitions = planTransList;
 
