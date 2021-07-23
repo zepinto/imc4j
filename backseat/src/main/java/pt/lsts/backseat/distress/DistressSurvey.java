@@ -53,7 +53,10 @@ public class DistressSurvey extends TimedFSM {
     public static final double MS_TO_KNOT = 3.6 / 1.852; // 1.9438444924406047516198704103672
     @SuppressWarnings("unused")
     private static final String PAYLOAD_TO_ACTIVATE_PATTERN = "(?i)(payload *?=[\\w- \\[\\]\\(\\)]+)((\\;)[\\w- \\[\\]\\(\\)]+)=[\\w- \\[\\]\\(\\)]+))*(\\; *)";
-    
+
+    public static final String PLAN_PATTERN_SUFIX = "pattern";
+    public static final String PLAN_REF_SUFIX = "ref";
+
     private enum GoSurfaceTaskEnum {
         START_OP,
         END_OP,
@@ -235,6 +238,9 @@ public class DistressSurvey extends TimedFSM {
     private double patternLonDegsForPlan = Double.NaN;
     private double patternDepthForPlan = Double.NaN;
     private List<double[]> patternPathOffsetsForPlan = new ArrayList<>();
+
+    private int lastSentPlanRefHash = -1;
+    private int lastSentPlanPatternHash = -1;
 
     public DistressSurvey() {
         if (waitDistressUnderwater) {
@@ -944,8 +950,12 @@ public class DistressSurvey extends TimedFSM {
         double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
         setLoiterRef(loiterPos[0], loiterPos[1], workingDepth);
         setCourseSpeed();
-        sendPlanToVehicleDb("loiter-underwater", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
-                workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
+        int pHash = Arrays.hashCode(loiterPos);
+        if (lastSentPlanRefHash != pHash) {
+            sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
+                    workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
+            lastSentPlanRefHash = pHash;
+        }
 
         switch (surveyStage) {
             case ON_GOING:
@@ -955,8 +965,12 @@ public class DistressSurvey extends TimedFSM {
                 if (keepInParkingPosAtStart && (Double.isFinite(latDegParking) && Double.isFinite(lonDegParking))) {
                     print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
                     setLoiterRef(latDegParking, lonDegParking, workingDepth);
-                    sendPlanToVehicleDb("loiter-park", PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
-                            workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
+                    pHash = Arrays.hashCode(new double[]{latDegParking, lonDegParking, workingDepth});
+                    if (lastSentPlanRefHash != pHash) {
+                        sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
+                                workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
+                        lastSentPlanRefHash = pHash;
+                    }
                 }
                 break;
         }
@@ -980,8 +994,12 @@ public class DistressSurvey extends TimedFSM {
             atWaitingUnderwaterMillis = curTimeMillis;
             double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
             setLoiterRef(loiterPos[0], loiterPos[1], workingDepth);
-            sendPlanToVehicleDb("loiter-underwater", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
-                    workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
+            int pHash = Arrays.hashCode(loiterPos);
+            if (lastSentPlanRefHash != pHash) {
+                sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
+                        workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
+                lastSentPlanRefHash = pHash;
+            }
 
             switch (surveyStage) {
                 case ON_GOING:
@@ -991,8 +1009,12 @@ public class DistressSurvey extends TimedFSM {
                     if (keepInParkingPosAtStart && (Double.isFinite(latDegParking) && Double.isFinite(lonDegParking))) {
                         print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
                         setLoiterRef(latDegParking, lonDegParking, workingDepth);
-                        sendPlanToVehicleDb("loiter-park", PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
-                                workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
+                        pHash = Arrays.hashCode(new double[]{latDegParking, lonDegParking, workingDepth});
+                        if (lastSentPlanRefHash != pHash) {
+                            sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
+                                    workingDepth, getCourseSpeedValue(), getCourseSpeedUnit()));
+                            lastSentPlanRefHash = pHash;
+                        }
                     }
                     break;
             }
@@ -1025,8 +1047,12 @@ public class DistressSurvey extends TimedFSM {
         double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
         setSurfaceLoiterRef(loiterPos[0], loiterPos[1]);
         setCourseSpeed();
-        sendPlanToVehicleDb("loiter-surface", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
-                0, getCourseSpeedValue(), getCourseSpeedUnit()));
+        int pHash = Arrays.hashCode(loiterPos);
+        if (lastSentPlanRefHash != pHash) {
+            sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
+                    0, getCourseSpeedValue(), getCourseSpeedUnit()));
+            lastSentPlanRefHash = pHash;
+        }
 
         // if (isUnderwater())
             atSurfaceMillis = -1;
@@ -1066,8 +1092,12 @@ public class DistressSurvey extends TimedFSM {
             atSurfaceMillis = curTimeMillis;
             double[] loiterPos = WGS84Utilities.toLatLonDepth(get(EstimatedState.class));
             setSurfaceLoiterRef(loiterPos[0], loiterPos[1]);
-            sendPlanToVehicleDb("loiter-surface", PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
-                    0, getCourseSpeedValue(), getCourseSpeedUnit()));
+            int pHash = Arrays.hashCode(loiterPos);
+            if (lastSentPlanRefHash != pHash) {
+                sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(loiterPos[0], loiterPos[1],
+                        0, getCourseSpeedValue(), getCourseSpeedUnit()));
+                lastSentPlanRefHash = pHash;
+            }
         }
         
         switch (surveyStage) {
@@ -1078,8 +1108,12 @@ public class DistressSurvey extends TimedFSM {
                 if (keepInParkingPosAtStart && (Double.isFinite(latDegParking) && Double.isFinite(lonDegParking))) {
                     print(String.format("Ref to parking PLat %.6f    PLon %.6f", latDegParking, lonDegParking));
                     setSurfaceLoiterRef(latDegParking, lonDegParking);
-                    sendPlanToVehicleDb("loiter-park", PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
-                            0, getCourseSpeedValue(), getCourseSpeedUnit()));
+                    int pHash = Arrays.hashCode(new double[]{latDegParking, lonDegParking});
+                    if (lastSentPlanRefHash != pHash) {
+                        sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(latDegParking, lonDegParking,
+                                0, getCourseSpeedValue(), getCourseSpeedUnit()));
+                        lastSentPlanRefHash = pHash;
+                    }
                 }
                 break;
         }
@@ -1126,15 +1160,23 @@ public class DistressSurvey extends TimedFSM {
 
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setCourseSpeed();
-        sendPlanToVehicleDb("approach-survey-point", PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
-                posRef[2], getCourseSpeedValue(), getCourseSpeedUnit()));
+        int pHash = Arrays.hashCode(posRef);
+        if (lastSentPlanRefHash != pHash) {
+            sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
+                    posRef[2], getCourseSpeedValue(), getCourseSpeedUnit()));
+            lastSentPlanRefHash = pHash;
+        }
 
         resetPatternPathOffsetsForPlan(dp.latDegs, dp.lonDegs, 0);
         addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.index(),
                 surfacePointIdx.index() == 0 ? refPoints : refPoints.subList(surfacePointIdx.index(), refPoints.size()));
-        sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
-                patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
-                patternPathOffsetsForPlan, ""));
+        pHash = refPoints.hashCode();
+        if (lastSentPlanPatternHash != pHash) {
+            sendPlanToVehicleDb(PLAN_PATTERN_SUFIX, PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
+                    patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
+                    patternPathOffsetsForPlan, ""));
+            lastSentPlanPatternHash = pHash;
+        }
 
         return this::approachSurveyPointStayState;
     }
@@ -1160,14 +1202,22 @@ public class DistressSurvey extends TimedFSM {
         
         if (distToNewRef > deltaDistToAdjustApproach) {
             setGoingRef(newPosRef[0], newPosRef[1], newPosRef[2]);
-            sendPlanToVehicleDb("approach-go", PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
-                    newPosRef[2], getCourseSpeedValue(), getCourseSpeedUnit()));
+            int pHash = Arrays.hashCode(newPosRef);
+            if (lastSentPlanRefHash != pHash) {
+                sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
+                        newPosRef[2], getCourseSpeedValue(), getCourseSpeedUnit()));
+                lastSentPlanRefHash = pHash;
+            }
 
             addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.index(),
                     surfacePointIdx.index() == 0 ? refPoints : refPoints.subList(surfacePointIdx.index(), refPoints.size()));
-            sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
-                    patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
-                    patternPathOffsetsForPlan, ""));
+            pHash = refPoints.hashCode();
+            if (lastSentPlanPatternHash != pHash) {
+                sendPlanToVehicleDb("spattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
+                        patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
+                        patternPathOffsetsForPlan, ""));
+                lastSentPlanPatternHash = pHash;
+            }
 
             return this::approachSurveyPointStayState;
         }
@@ -1245,15 +1295,23 @@ public class DistressSurvey extends TimedFSM {
         double[] posRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, refPoints);
         setGoingRef(posRef[0], posRef[1], posRef[2]);
         setSurveySpeed();
-        sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
-                posRef[2], getSurveySpeedValue(), getSurveySpeedUnit()));
+        int pHash = Arrays.hashCode(posRef);
+        if (lastSentPlanRefHash != pHash) {
+            sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(posRef[0], posRef[1],
+                    posRef[2], getSurveySpeedValue(), getSurveySpeedUnit()));
+            lastSentPlanRefHash = pHash;
+        }
 
         addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.index(),
                 surfacePointIdx.index() == 0 ? refPoints : refPoints.subList(surfacePointIdx.index(), refPoints.size()));
 
-        sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
-                patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
-                patternPathOffsetsForPlan, ""));
+        pHash = refPoints.hashCode();
+        if (lastSentPlanPatternHash != pHash) {
+            sendPlanToVehicleDb(PLAN_PATTERN_SUFIX, PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
+                    patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
+                    patternPathOffsetsForPlan, ""));
+            lastSentPlanPatternHash = pHash;
+        }
 
         return this::firstSurveyPointStayState;
     }
@@ -1274,15 +1332,23 @@ public class DistressSurvey extends TimedFSM {
 
         if (distToNewRef > deltaDistToAdjustApproach) {
             setGoingRef(newPosRef[0], newPosRef[1], newPosRef[2]);
-            sendPlanToVehicleDb("survey-go", PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
-                    newPosRef[2], getSurveySpeedValue(), getSurveySpeedUnit()));
+            int pHash = Arrays.hashCode(newPosRef);
+            if (lastSentPlanRefHash != pHash) {
+                sendPlanToVehicleDb(PLAN_REF_SUFIX, PlanPointsUtil.createGotoFrom(newPosRef[0], newPosRef[1],
+                        newPosRef[2], getSurveySpeedValue(), getSurveySpeedUnit()));
+                lastSentPlanRefHash = pHash;
+            }
 
             addOffsetToPatternList(dp.latDegs, dp.lonDegs, 0, surfacePointIdx.index(),
                     surfacePointIdx.index() == 0 ? refPoints : refPoints.subList(surfacePointIdx.index(), refPoints.size()));
 
-            sendPlanToVehicleDb("survey-pattern", PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
-                    patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
-                    patternPathOffsetsForPlan, ""));
+            pHash = refPoints.hashCode();
+            if (lastSentPlanPatternHash != pHash) {
+                sendPlanToVehicleDb(PLAN_PATTERN_SUFIX, PlanPointsUtil.createFollowPathFrom(patternLatDegsForPlan,
+                        patternLonDegsForPlan, patternDepthForPlan, getCourseSpeedValue(), getCourseSpeedUnit(),
+                        patternPathOffsetsForPlan, ""));
+                lastSentPlanPatternHash = pHash;
+            }
 
             return this::firstSurveyPointStayState;
         }
