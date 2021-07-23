@@ -589,16 +589,22 @@ public class DistressSurvey extends TimedFSM {
     }
 
     private List<double[]> calcSurveyLinePathOffsets(double depth, double headingDegs) {
+        List<double[]> ret;
         switch (surveyPattern) {
             case DEFAULT:
             case ROWS:
             case CROSS:
             case EXPANDING:
             default:
-                return calcSurveyLinePathOffsetsForDefault(depth, headingDegs);
+                ret = calcSurveyLinePathOffsetsForDefault(depth, headingDegs);
+                break;
             case RI:
-                return calcSurveyLinePathOffsetsForRI(depth, headingDegs);
+                ret = calcSurveyLinePathOffsetsForRI(depth, headingDegs);
+                break;
         }
+
+        surfacePointIdx.resetMinMax(0, ret.size());
+        return ret;
     }
 
     private List<double[]> calcSurveyLinePathOffsetsForDefault(double depth, double headingDegs) {
@@ -674,6 +680,21 @@ public class DistressSurvey extends TimedFSM {
 
         double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
 
+        switch (approachCorner) {
+            case FRONT_LEFT:
+                angRads += Math.PI / 2.0;
+                break;
+            case BACK_LEFT:
+            default:
+                break;
+            case BACK_RIGHT:
+                angRads -= Math.PI / 2.0;
+                break;
+            case FRONT_RIGHT:
+                angRads += Math.PI;
+                break;
+        }
+
         List<double[]> refPoints = ManeuversUtil.calcRIPatternPoints(targetLength * 1.3  + surveyDeltaAltitudeFromTarget * 10,
                 27, 1, 10, true, angRads);
         refPoints.forEach(p -> p[ManeuversUtil.Z] = depthRef);
@@ -698,8 +719,9 @@ public class DistressSurvey extends TimedFSM {
         refPoints.add(new double[]{ rp1[ManeuversUtil.X], rp1[ManeuversUtil.Y], workingDepth });
 
         double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
-        print(String.format("Calc survey ri deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=%s",
-                approachCorner, surfacePointIdx, offXyzFromIdx[0], offXyzFromIdx[1],
+        print(String.format("Calc survey ri deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
+                approachCorner, surfacePointIdx, offXyzFromIdx[0], offXyzFromIdx[1]));
+        System.out.println(String.format("Survey ri deltas offs=%s",
                 refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
 
         return refPoints;
@@ -713,8 +735,10 @@ public class DistressSurvey extends TimedFSM {
 
         double[] pos = WGS84Utilities.WGS84displace(latDegs, lonDegs, 0, offsetX, offsetY, 0);
 
-        print(String.format("Delta %s %s   offn %.2f  offe %.2f ::  %s", approachCorner, surfacePointIdx,
-                offsetX, offsetY, refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
+        print(String.format("Delta %s %s   offn %.2f  offe %.2f ::  -->",
+                approachCorner, surfacePointIdx,offsetX, offsetY));
+        System.out.println(String.format("Deltas offs=%s",
+                refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
 
         double latDegsRef = pos[0];
         double lonDegsRef = pos[1];
