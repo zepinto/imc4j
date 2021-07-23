@@ -136,4 +136,24 @@ public class AngleUtils {
         }
         return xy;
     }
+
+    /**
+     * XY Coordinate conversion considering a rotation angle.
+     *
+     * @param angleRadians Angle
+     * @param x original x value on entry, rotated x value on exit.
+     * @param y original y value on entry, rotated y value on exit.
+     * @param clockwiseRotation ClockwiseRotation rotation or not
+     * @param xPivot pivot x for rotation.
+     * @param yPivot pivot y for rotation.
+     */
+    public static double[] rotate(double angleRadians, double x, double y, boolean clockwiseRotation,
+            double xPivot, double yPivot) {
+        double nx = x - xPivot;
+        double ny = y - yPivot;
+        double[] xy = rotate(angleRadians, nx, ny, clockwiseRotation);
+        xy[0] += xPivot;
+        xy[1] += yPivot;
+        return xy;
+    }
 }
