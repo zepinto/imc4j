@@ -6,7 +6,7 @@ import java.util.function.Function;
 public class PointIndex {
     private int min;
     private int max;
-    private int curIdx = min;
+    private int curIdx;
 
     private Function<Integer, Boolean> customTest = (v) -> true;
 
@@ -44,11 +44,23 @@ public class PointIndex {
     }
 
     public int getAndIncrementIndex() {
-        return setIndex(curIdx++);
+        int ret = curIdx;
+        incrementAndGetIndex();
+        return ret;
     }
 
     public int incrementAndGetIndex() {
-        return setIndex(++curIdx);
+        return setIndex(curIdx + 1);
+    }
+
+    public boolean resetMinMax(int min, int max) {
+        if (min > max || max < min) {
+            return false;
+        }
+        this.min = min;
+        this.max = max;
+        setIndex(curIdx);
+        return true;
     }
 
     public int resetIndex() {
