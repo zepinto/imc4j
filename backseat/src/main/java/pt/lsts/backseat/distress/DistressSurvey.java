@@ -701,8 +701,6 @@ public class DistressSurvey extends TimedFSM {
 
         double[] p0 = refPoints.get(0);
         double[] p1 = refPoints.get(1);
-        double p0p1AngleRad = AngleUtils.calcAngle(p0[ManeuversUtil.X], p0[ManeuversUtil.Y],
-                p1[ManeuversUtil.X], p1[ManeuversUtil.Y]);
         double[] rp = AngleUtils.rotate(angRads, p0[ManeuversUtil.X], p0[ManeuversUtil.Y], true);
         rp[ManeuversUtil.X] -= approachLengthOffset;
         rp = AngleUtils.rotate(angRads, rp[ManeuversUtil.X], rp[ManeuversUtil.Y], false);
@@ -711,12 +709,17 @@ public class DistressSurvey extends TimedFSM {
 
         double[] p10 = refPoints.get(refPoints.size() - 2);
         double[] p11 = refPoints.get(refPoints.size() - 1);
-        double p10p11AngleRad = AngleUtils.calcAngle(p10[ManeuversUtil.X], p10[ManeuversUtil.Y],
-                p11[ManeuversUtil.X], p11[ManeuversUtil.Y]);
-        double[] rp1 = AngleUtils.rotate(angRads, p11[ManeuversUtil.X], p11[ManeuversUtil.Y], true);
-        rp1[ManeuversUtil.X] += approachLengthOffset;
-        rp1 = AngleUtils.rotate(angRads, rp1[ManeuversUtil.X], rp1[ManeuversUtil.Y], false);
-        refPoints.add(new double[]{ rp1[ManeuversUtil.X], rp1[ManeuversUtil.Y], workingDepth });
+        double[] rp10 = AngleUtils.rotate(angRads, p10[ManeuversUtil.X], p10[ManeuversUtil.Y], true);
+        double[] rp11 = AngleUtils.rotate(angRads, p11[ManeuversUtil.X], p11[ManeuversUtil.Y], true);
+        double p10p11AngleRad = AngleUtils.calcAngle(rp10[ManeuversUtil.X], rp10[ManeuversUtil.Y],
+                rp11[ManeuversUtil.X], rp11[ManeuversUtil.Y]);
+        rp11 = AngleUtils.rotate(p10p11AngleRad, rp11[ManeuversUtil.X], rp11[ManeuversUtil.Y], false,
+                rp10[ManeuversUtil.X], rp10[ManeuversUtil.Y]);
+        rp11[ManeuversUtil.Y] += approachLengthOffset;
+        rp11 = AngleUtils.rotate(p10p11AngleRad, rp11[ManeuversUtil.X], rp11[ManeuversUtil.Y], true,
+                rp10[ManeuversUtil.X], rp10[ManeuversUtil.Y]);
+        rp11 = AngleUtils.rotate(angRads, rp11[ManeuversUtil.X], rp11[ManeuversUtil.Y], false);
+        refPoints.add(new double[]{ rp11[ManeuversUtil.X], rp11[ManeuversUtil.Y], workingDepth });
 
         double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
         print(String.format("Calc survey ri deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
