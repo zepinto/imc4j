@@ -286,15 +286,21 @@ public class DistressSurvey extends TimedFSM {
                 surveyPattern = SurveyPatternEnum.DEFAULT;
                 break;
             case "rows":
+            case "row":
                 surveyPattern = SurveyPatternEnum.ROWS;
                 break;
             case "ri":
+            case "ripattern":
+            case "ri-pattern":
                 surveyPattern = SurveyPatternEnum.RI;
                 break;
             case "cross":
+            case "crosshatch":
                 surveyPattern = SurveyPatternEnum.CROSS;
                 break;
             case "expanding":
+            case "expandingsquare":
+            case "expanding-square":
                 surveyPattern = SurveyPatternEnum.EXPANDING;
                 break;
         }
@@ -592,14 +598,20 @@ public class DistressSurvey extends TimedFSM {
         List<double[]> ret;
         switch (surveyPattern) {
             case DEFAULT:
-            case ROWS:
-            case CROSS:
-            case EXPANDING:
             default:
                 ret = calcSurveyLinePathOffsetsForDefault(depth, headingDegs);
                 break;
+            case ROWS:
+                ret = calcSurveyLinePathOffsetsForRows(depth, headingDegs);
+                break;
             case RI:
                 ret = calcSurveyLinePathOffsetsForRI(depth, headingDegs);
+                break;
+            case CROSS:
+                ret = calcSurveyLinePathOffsetsForCrossHatch(depth, headingDegs);
+                break;
+            case EXPANDING:
+                ret = calcSurveyLinePathOffsetsForExpanding(depth, headingDegs);
                 break;
         }
 
@@ -675,34 +687,40 @@ public class DistressSurvey extends TimedFSM {
         return refPoints;
     }
 
-    private List<double[]> calcSurveyLinePathOffsetsForRI(double depth, double headingDegs) {
-        double angRads = Math.toRadians(headingDegs);
-
-        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
-
+    private static double fixHeadingDegsForEntryBottomLeft(double headingDegs, ApproachCornerEnum approachCorner) {
+        double angDegs = headingDegs;
         switch (approachCorner) {
             case FRONT_LEFT:
-                angRads += Math.PI / 2.0;
+                angDegs += 90;
                 break;
             case BACK_LEFT:
             default:
                 break;
             case BACK_RIGHT:
-                angRads -= Math.PI / 2.0;
+                angDegs -= 90;
                 break;
             case FRONT_RIGHT:
-                angRads += Math.PI;
+                angDegs += 180;
                 break;
         }
 
-        List<double[]> refPoints = ManeuversUtil.calcRIPatternPoints(targetLength * 1.3  + surveyDeltaAltitudeFromTarget * 10,
-                27, 1, 10, true, angRads);
-        refPoints.forEach(p -> p[ManeuversUtil.Z] = depthRef);
+        return angDegs;
+    }
+
+    private static List<double[]> addApproachAndExitPointsExtendingLines(List<double[]> refPoints,
+            double headingDegs, double approachLengthOffset, double workingDepth) {
+        return addApproachAndExitPointsExtendingLines(refPoints, headingDegs, approachLengthOffset,
+                approachLengthOffset, workingDepth);
+    }
+
+    private static List<double[]> addApproachAndExitPointsExtendingLines(List<double[]> refPoints,
+            double headingDegs, double entryApproachLengthOffset, double exitApproachLengthOffset,
+            double workingDepth) {
+        double angRads = Math.toRadians(headingDegs);
 
         double[] p0 = refPoints.get(0);
-        double[] p1 = refPoints.get(1);
         double[] rp = AngleUtils.rotate(angRads, p0[ManeuversUtil.X], p0[ManeuversUtil.Y], true);
-        rp[ManeuversUtil.X] -= approachLengthOffset;
+        rp[ManeuversUtil.X] -= entryApproachLengthOffset;
         rp = AngleUtils.rotate(angRads, rp[ManeuversUtil.X], rp[ManeuversUtil.Y], false);
         refPoints.add(new double[]{ rp[ManeuversUtil.X], rp[ManeuversUtil.Y], workingDepth });
         Collections.rotate(refPoints, 1);
@@ -715,16 +733,139 @@ public class DistressSurvey extends TimedFSM {
                 rp11[ManeuversUtil.X], rp11[ManeuversUtil.Y]);
         rp11 = AngleUtils.rotate(p10p11AngleRad, rp11[ManeuversUtil.X], rp11[ManeuversUtil.Y], false,
                 rp10[ManeuversUtil.X], rp10[ManeuversUtil.Y]);
-        rp11[ManeuversUtil.Y] += approachLengthOffset;
+        rp11[ManeuversUtil.Y] += exitApproachLengthOffset;
         rp11 = AngleUtils.rotate(p10p11AngleRad, rp11[ManeuversUtil.X], rp11[ManeuversUtil.Y], true,
                 rp10[ManeuversUtil.X], rp10[ManeuversUtil.Y]);
         rp11 = AngleUtils.rotate(angRads, rp11[ManeuversUtil.X], rp11[ManeuversUtil.Y], false);
         refPoints.add(new double[]{ rp11[ManeuversUtil.X], rp11[ManeuversUtil.Y], workingDepth });
 
+        return refPoints;
+    }
+
+    private List<double[]> calcSurveyLinePathOffsetsForRows(double depth, double headingDegs) {
+        double angRads = Math.toRadians(headingDegs);
+        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
+
+        boolean invertRows;
+        switch (approachCorner) {
+            case FRONT_LEFT:
+                angRads += Math.PI;
+                invertRows = true;
+                break;
+            case BACK_LEFT:
+            default:
+                invertRows = false;
+                break;
+            case BACK_RIGHT:
+                invertRows = true;
+                break;
+            case FRONT_RIGHT:
+                angRads += Math.PI;
+                invertRows = false;
+                break;
+        }
+
+        double rowsWidth = (targetWidth + surveyDeltaAltitudeFromTarget * 10) * 2;
+        double rowsLength = targetLength * 1.3 + surveyDeltaAltitudeFromTarget * 10;
+        List<double[]> refPoints = ManeuversUtil.calcRowsPoints(rowsWidth, rowsLength, 27, 1,
+                10, true, angRads, 0, invertRows);
+        refPoints.forEach(p -> p[ManeuversUtil.Z] = depthRef);
+
+        // Because this is not a centered maneuver we need to offset it
+        final double angRadsFinal = angRads;
+        refPoints.forEach(p -> {
+            double[] np = AngleUtils.rotate(angRadsFinal, p[ManeuversUtil.X], p[ManeuversUtil.Y], true);
+            p[ManeuversUtil.X] = np[ManeuversUtil.X] - rowsLength / 2.0;
+            p[ManeuversUtil.Y] = np[ManeuversUtil.Y] - (invertRows ? -1 : 1) * rowsWidth / 2.0;
+            np = AngleUtils.rotate(angRadsFinal, p[ManeuversUtil.X], p[ManeuversUtil.Y], false);
+            p[ManeuversUtil.X] = np[ManeuversUtil.X];
+            p[ManeuversUtil.Y] = np[ManeuversUtil.Y];
+        });
+
+        refPoints = addApproachAndExitPointsExtendingLines(refPoints, Math.toDegrees(angRads), approachLengthOffset, workingDepth);
+
+        double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
+        print(String.format("Calc survey rows deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
+                approachCorner, surfacePointIdx, offXyzFromIdx[0], offXyzFromIdx[1]));
+        System.out.println(String.format("Survey ri deltas offs=%s",
+                refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
+
+        return refPoints;
+    }
+
+    private List<double[]> calcSurveyLinePathOffsetsForRI(double depth, double headingDegs) {
+        double angRads = Math.toRadians(fixHeadingDegsForEntryBottomLeft(headingDegs, approachCorner));
+        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
+
+        List<double[]> refPoints = ManeuversUtil.calcRIPatternPoints(targetLength * 1.3  + surveyDeltaAltitudeFromTarget * 10,
+                27, 1, 10, true, angRads);
+        refPoints.forEach(p -> p[ManeuversUtil.Z] = depthRef);
+
+        refPoints = addApproachAndExitPointsExtendingLines(refPoints, Math.toDegrees(angRads), approachLengthOffset, workingDepth);
+
         double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
         print(String.format("Calc survey ri deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
                 approachCorner, surfacePointIdx, offXyzFromIdx[0], offXyzFromIdx[1]));
         System.out.println(String.format("Survey ri deltas offs=%s",
+                refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
+
+        return refPoints;
+    }
+
+    private List<double[]> calcSurveyLinePathOffsetsForCrossHatch(double depth, double headingDegs) {
+        double angRads = Math.toRadians(fixHeadingDegsForEntryBottomLeft(headingDegs, approachCorner));
+        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
+
+        List<double[]> refPoints = ManeuversUtil.calcCrossHatchPatternPoints(targetLength * 1.3  + surveyDeltaAltitudeFromTarget * 10,
+                27, 10, true, angRads);
+        refPoints.forEach(p -> p[ManeuversUtil.Z] = depthRef);
+
+        refPoints = addApproachAndExitPointsExtendingLines(refPoints, Math.toDegrees(angRads), approachLengthOffset, workingDepth);
+
+        double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
+        print(String.format("Calc survey cross deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
+                approachCorner, surfacePointIdx, offXyzFromIdx[0], offXyzFromIdx[1]));
+        System.out.println(String.format("Survey ri deltas offs=%s",
+                refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
+
+        return refPoints;
+    }
+
+    private List<double[]> calcSurveyLinePathOffsetsForExpanding(double depth, double headingDegs) {
+        double angRads = Math.toRadians(headingDegs);
+        double depthRef = Math.max(0, depth - surveyDeltaAltitudeFromTarget);
+
+        boolean invertY;
+        switch (approachCorner) {
+            case FRONT_LEFT:
+                angRads += Math.PI;
+                invertY = false;
+                break;
+            case FRONT_RIGHT:
+                angRads += Math.PI;
+                invertY = true;
+                break;
+            case BACK_LEFT:
+            default:
+                invertY = false;
+                break;
+            case BACK_RIGHT:
+                invertY = true;
+                break;
+        }
+
+        double expWidth = targetLength * 1.3  + surveyDeltaAltitudeFromTarget * 10;
+        List<double[]> refPoints = ManeuversUtil.calcExpansiveSquarePatternPointsMaxBox(
+                expWidth, 27, angRads, invertY);
+        refPoints.forEach(p -> p[ManeuversUtil.Z] = depthRef);
+
+        refPoints = addApproachAndExitPointsExtendingLines(refPoints, Math.toDegrees(angRads),
+                approachLengthOffset + expWidth / 2.0, approachLengthOffset, workingDepth);
+
+        double[] offXyzFromIdx = refPoints.get(surfacePointIdx.index());
+        print(String.format("Calc survey cross deltas %s idx=%s  offn %.2f  offe %.2f ::  offs=-->",
+                approachCorner, surfacePointIdx, offXyzFromIdx[0], offXyzFromIdx[1]));
+        System.out.println(String.format("Survey expanding deltas offs=%s",
                 refPoints.stream().map(o -> Arrays.toString(o)).collect(Collectors.joining())));
 
         return refPoints;
@@ -907,7 +1048,7 @@ public class DistressSurvey extends TimedFSM {
         // markState(this::goSurfaceState);
 
         if (isUnderwater()) {
-            print("Wainting to surface");
+            print("Waiting to surface");
             atSurfaceMillis = -1;
             return this::goSurfaceStayState;
         }
