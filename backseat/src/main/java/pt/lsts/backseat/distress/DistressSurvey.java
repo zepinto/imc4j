@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Random;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import pt.lsts.backseat.TimedFSM;
@@ -1182,8 +1183,28 @@ public class DistressSurvey extends TimedFSM {
     	printFSMState();
         markState(this::firstSurveyPointState);
 
-        if (surfaceOnCorners && surfacePointIdx.isMinIndex()
-                || surfacePointIdx.isValIndex(2)) {
+        boolean permitResurface = surfacePointIdx.test(idx -> {
+            Function<Integer, Boolean> testPermitSurface;
+            switch (surveyPattern) {
+                case DEFAULT: // index approach(0) or 2;
+                    testPermitSurface = p -> (p & 1) == 0;
+                    break;
+                case ROWS: // index approach(0) and corners (odd) except start(0);
+                case RI:
+                case CROSS:
+                    testPermitSurface = p -> p != 1 && ((p & 1) == 1);
+                    break;
+                case EXPANDING: // approach(0) or last
+                    testPermitSurface = p -> p == 0 || p == surfacePointIdx.getMax();
+                    break;
+                default:
+                    testPermitSurface = p -> false;
+                    break;
+            }
+            return testPermitSurface.apply(surfacePointIdx.index());
+        });
+
+        if (surfaceOnCorners && permitResurface) {
             if (isGoSurfaceTime()) {
                 goSurfaceTask = GoSurfaceTaskEnum.PREEMPTIVE_OP;
                 deactivatePayload();
@@ -1193,25 +1214,32 @@ public class DistressSurvey extends TimedFSM {
         
         surfacePointIdx.incrementAndGetIndex();
 
-        surfacePointIdx.test(idx -> {
-            switch (surfacePointIdx.index()) {
-                case 1:
-                case 3:
-                    activatePayload();
-                    break;
-                case 0:
-                case 2:
-                    if (!usePeriodicSurfaceForPos) {
-                        activatePayload();
-                        break;
-                    }
-                default:
-                    deactivatePayload();
-                    break;
+//        surfacePointIdx.test(idx -> {
+//            switch (idx) {
+//                case 1:
+//                case 3:
+//                    activatePayload();
+//                    break;
+//                case 0:
+//                case 2:
+//                    if (!usePeriodicSurfaceForPos) {
+//                        activatePayload();
+//                        break;
+//                    }
+//                default:
+//                    deactivatePayload();
+//                    break;
+//            }
+//            return true;
+//        });
+        if (!permitResurface) {
+            activatePayload();
+        } else {
+            if (!usePeriodicSurfaceForPos) {
+                activatePayload();
             }
-            return true;
-        });
-        
+        }
+
         DistressPosition dp = AisCsvParser.distressPosition;
         List<double[]> refPoints = calcSurveyLinePathOffsets(dp.depth, dp.headingDegs);
         double[] posRef = calcSurveyLinePoint(dp.latDegs, dp.lonDegs, refPoints);
