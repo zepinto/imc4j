@@ -7,12 +7,17 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 ## (Don't use a path, it must be on the script folder.)
 #CONF_FILE_NAME="conf.props"
 
+## Uncomment to synchronize clock before start (with any text)
+## If set outside script, unset var to disable
+SYNC_CLOCK="true"
+
 ## Settings to run with an HTTP server
-## Uncomment the following lines will result on running as HTTP server
+## Uncomment the following lines will result on running as HTTP server (with any text)
+## If set outside script, unset var to disable
 ## Some backseats don't support this way of running
-#RUN_AS_HTTP_SERVER="yes"
+#RUN_AS_HTTP_SERVER="true"
 ## Set the http port to serve html
-# SERVER_PORT="8090"
+#SERVER_PORT="8090"
 ## To use hot config put "--hot-config" or leave it empty
 #HOT_CONFIG="--hot-config"
 
@@ -130,10 +135,12 @@ start()
 
 wait_for_clock()
 {
-   while [ $(date +%s) -lt 1507641301 ]; do
-     echo "Waiting for the clock to be synchronized... ($(date)"
-     sleep 1
-   done
+  if [ -n ${SYNC_CLOCK+x} ]; then
+    while [ $(date +%s) -lt 1507641301 ]; do
+      echo "Waiting for the clock to be synchronized... ($(date)"
+      sleep 1
+    done
+  fi
 }
 
 check_if_any_running()
