@@ -22,3 +22,5 @@ out/
 /dist/*/pid
 /dist/*.jar
 /dist/*/*.jar
+/dist/*/*.sh
+
