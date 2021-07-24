@@ -9,26 +9,26 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 
 ## Uncomment to synchronize clock before start (with any text)
 ## If set outside script, unset var to disable
-#SYNC_CLOCK="true"
+@SYNC_CLOCK@SYNC_CLOCK="true"
 
 ## Settings to run with an HTTP server
 ## Uncomment the following lines will result on running as HTTP server (with any text)
 ## If set outside script, unset var to disable
 ## Some backseats don't support this way of running
-#RUN_AS_HTTP_SERVER="true"
+@RUN_AS_HTTP_SERVER@RUN_AS_HTTP_SERVER="true"
 ## Set the http port to serve html
-#SERVER_PORT="8092"
+#SERVER_PORT="@HTTP_PORT@"
 
 ## -- No need to change beyond this point -- ##
-JARNAME="DripExecutive.jar"
+JARNAME="@JARNAME@"
 
 # Settings to run with an HTTP server
-CLASS_BACKSEAT="pt.lsts.backseat.drip.DripExecutive"
+CLASS_BACKSEAT="@CLASS_BACKSEAT@"
 if [ -z ${SERVER_PORT+x} ]; then
-  SERVER_PORT="8092"
+  SERVER_PORT="@HTTP_PORT@"
 fi
 
-#HOT_CONFIG="--hot-config"
+@HOT_CONFIG@HOT_CONFIG="--hot-config"
 
 PRG="$0"
 fillBASE_DIR()
@@ -87,7 +87,7 @@ OUTPUT="$RUN_HOME/log/$DATE.log"
 LATEST="$RUN_HOME/latest.log"
 PIDFILE="$RUN_HOME/pid"
 
-CLASS_SERVER="pt.lsts.httpd.BackSeatServer"
+CLASS_SERVER="@CLASS_SERVER@"
 
 setupPsCmd()
 {
