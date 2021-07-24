@@ -47,7 +47,7 @@ public class BackSeatServer extends NanoHTTPD {
     protected BackSeatType type;
     protected String name;
 
-    protected File configServerFile = new File(this.getClass().getSimpleName()+".ini");
+    protected File configServerFile = new File(this.getClass().getSimpleName().toLowerCase() + ".ini");
 	protected File configDriverFile;
 	protected File logFile;
 
