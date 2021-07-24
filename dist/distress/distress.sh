@@ -123,7 +123,7 @@ start()
       "$JAVA" -jar $JARNAME "$CONF_FILE" < /dev/null > "$OUTPUT" 2>&1 &
       pid=$!
     else
-      echo "Running $CLASS_SERVER for $NAME with configuration \n  -> '$CONF_FILE'..."
+      echo "Running $CLASS_SERVER on port $SERVER_PORT for $NAME with configuration \n  -> '$CONF_FILE'..."
       "$JAVA" -cp .:"$JARNAME" $CLASS_SERVER $CLASS_BACKSEAT $SERVER_PORT \
             --config "$CONF_FILE" --log "$OUTPUT" $HOT_CONFIG < /dev/null > "$OUTPUT" 2>&1 &
       pid=$!
