@@ -47,7 +47,7 @@ public class ArpaoExecutive extends MissionExecutive {
 	public String host = "127.0.0.1";
 
 	@Parameter(description = "DUNE TCP port")
-	public int port = 6003;
+	public int port = 6006;
 
 	@Parameter(description = "Speed for the generated maneuvers (in m/s), except compass calibration")
 	public double speed_for_generated_maneuvers = 1;
