@@ -1466,7 +1466,26 @@ public class DistressSurvey extends TimedFSM {
         
         tmpTargetLastSendTime = System.currentTimeMillis();
     }
-    
+
+    @Override
+    public void connect() throws Exception {
+        print("Distress Survey started");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Distress Survey read the following settings:");
+        for (Field f : getClass().getDeclaredFields()) {
+            Parameter p = f.getAnnotation(Parameter.class);
+            if (p != null) {
+                sb.append("\n").append(f.getName()).append("=").append(f.get(this));
+            }
+        }
+        System.out.println(sb.append("\n").toString());
+
+        init();
+        setPaused(false);
+        connect(hostAddr, hostPort);
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             System.err.println("Usage: java -jar Distress.jar <CONF_FILE>");
@@ -1486,23 +1505,7 @@ public class DistressSurvey extends TimedFSM {
                 
         DistressSurvey tracker = PojoConfig.create(DistressSurvey.class, props);
 
-        tracker.print("Distress Survey started");
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("Distress Survey read the following settings:");
-        for (Field f : tracker.getClass().getDeclaredFields()) {
-            Parameter p = f.getAnnotation(Parameter.class);
-            if (p != null) {
-                sb.append("\n").append(f.getName()).append("=").append(f.get(tracker));
-            }
-        }
-        System.out.println(sb.append("\n").toString());
-
-        tracker.init();
-
-        tracker.setPaused(false);
-        
-        tracker.connect(tracker.hostAddr, tracker.hostPort);
+        tracker.connect();
         tracker.join();
     }
 }
