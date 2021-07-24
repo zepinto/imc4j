@@ -127,7 +127,7 @@ public class DistressSurvey extends TimedFSM {
     @Parameter(description = "AIS Txt Host Port (TCP)")
     private int aisHostPort = 13000;
     @Parameter(description = "AIS Txt by UDP")
-    private boolean aisByUDP = false;
+    private boolean aisByUDP = true;
     @Parameter(description = "AIS Txt UDP Host Port (UDP)")
     private int aisUdpHostPort = 7879;
     
@@ -183,9 +183,9 @@ public class DistressSurvey extends TimedFSM {
     @Parameter(description = "Test Target Simulate")
     private boolean testTargetSimulate = false;
     @Parameter(description = "Test Target Lat (decimal degs)")
-    private double testTargetLat = 41.184058;
+    private double testTargetLat = 41.18049409;
     @Parameter(description = "Test Target Lon (decimal degs)")
-    private double testTargetLon = -8.706333;
+    private double testTargetLon = -8.72928722;
     @Parameter(description = "Test Target Depth (m)")
     private double testTargetDepth = 10;
     @Parameter(description = "Test Target Heading (degs)")
@@ -269,6 +269,17 @@ public class DistressSurvey extends TimedFSM {
         else {
             print("Will terminate by " + deadline);
         }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("To simulate you can send a DISTRESS message ")
+                .append(aisByUDP ? "to UDP@" : "if you set UDP@")
+                .append(aisUdpHostPort)
+                .append(" like:")
+                .append("\n \"")
+                .append(getAisDistressString(testTargetLat, testTargetLon, testTargetDepth,
+                        testTargetSpeedKt, testTargetHeading))
+                .append("\"");
+        print(sb.toString());
 
         if (aisByTCP) {
             aisTxtTcp = new TCPClientConnection(aisHostAddr, aisHostPort);
