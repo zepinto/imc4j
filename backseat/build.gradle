@@ -38,6 +38,10 @@ createLauncher(project, 'drip', '/dist/drip', DripExecutive.archiveFileName.get(
         'pt.lsts.backseat.drip.DripExecutive', false,
         false, 'pt.lsts.httpd.BackSeatServer', '8092', false)
 DripExecutive.dependsOn launcherDrip
+createLauncher(project, 'drip-http', '/dist/drip', DripExecutive.archiveFileName.get(),
+        'pt.lsts.backseat.drip.RiverPlumeTracker', false,
+        true, 'pt.lsts.httpd.BackSeatServer', '80', true)
+DripExecutive.dependsOn launcherDriphttp
 
 jarTask('ArpaoExec', '/dist/arpao', 'pt.lsts.autonomy.ArpaoExecutive')
 createLauncher(project, 'arpao', '/dist/arpao', ArpaoExec.archiveFileName.get(),

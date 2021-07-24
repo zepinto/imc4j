@@ -30,7 +30,7 @@ def createLauncher(proj, String launcherName, String destFolder, String jarName,
                       boolean synckClock, boolean runAsHttpServer, String classHttpServer, String httpPort,
                       boolean httpConfigHotReload) {
     configure(proj) {
-        proj.tasks.create("launcher${launcherName.capitalize()}", Copy) {
+        proj.tasks.create("launcher${launcherName.capitalize().replaceAll('[-_]+(\\w?)', '$1')}", Copy) {
             description = "Generate $name launcher"
             group = 'Distribution'
             def workTmpDirectory = "${rootDir}/${destFolder}"
