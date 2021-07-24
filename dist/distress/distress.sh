@@ -18,8 +18,6 @@ SYNC_CLOCK="true"
 #RUN_AS_HTTP_SERVER="true"
 ## Set the http port to serve html
 #SERVER_PORT="8090"
-## To use hot config put "--hot-config" or leave it empty
-#HOT_CONFIG="--hot-config"
 
 ## -- No need to change beyond this point -- ##
 JARNAME="Distress.jar"
@@ -29,6 +27,8 @@ CLASS_BACKSEAT="pt.lsts.backseat.distress.DistressSurvey"
 if [ -z ${SERVER_PORT+x} ]; then
   SERVER_PORT="8090"
 fi
+
+#HOT_CONFIG="--hot-config"
 
 PRG="$0"
 fillBASE_DIR()
