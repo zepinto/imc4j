@@ -153,7 +153,7 @@ public class DistressSurvey extends TimedFSM {
     private double surveyDeltaAltitudeFromTarget = 5;
     @Parameter(description = "Approach Length Offset")
     private double approachLengthOffset = 50;
-    @Parameter(description = "Survey Side (true) or Around Target (false)")
+    @Parameter(description = "Survey Side (true) or Around Target (false) (only for default pattern)")
     private boolean surveySideOrAround = false;
 
     @Parameter(description = "Survey pattern type [default|rows|ri|cross|expanding]")
@@ -199,7 +199,8 @@ public class DistressSurvey extends TimedFSM {
     private boolean usePayload = false;
     @Parameter(description = "(Payload=<Payload Name>(;<Param Name>=<Param Value>)*)*")
     private String activatePayload = "Payload=Sidescan; High-Frequency Channels=Both; High-Frequency Range=75; "
-            + "Low-Frequency Channels=Both; Low-Frequency Range=150; Range Multiplier=2";
+            + "Low-Frequency Channels=Both; Low-Frequency Range=150; Range Multiplier=2;"
+            + "Payload=Camera;";
 
     private TCPClientConnection aisTxtTcp = null;
     private UDPConnection aisTxtUdp = null;
@@ -339,37 +340,57 @@ public class DistressSurvey extends TimedFSM {
     }
 
     private void processPayloadToActivate() {
-        if (activatePayload == null || activatePayload.length() < 3)
-            return;
-        
-        try {
-            String[] itemsList = activatePayload.split(" *; *");
-            LinkedHashMap<String, String> paramValue = null;
-            for (String it : itemsList) {
-                String[] paramNameTk = it.split(" *= *");
-                if (paramNameTk.length != 2)
-                    continue;
-                
-                try {
-                    String name = paramNameTk[0].trim();
-                    String value = paramNameTk[1].trim();
-                    
-                    if ("payload".equalsIgnoreCase(name)) {
-                        paramValue = new LinkedHashMap<>();
-                        payloadToActivate.put(value, paramValue);
+        payloadToActivate.clear();
+
+        if (activatePayload != null && activatePayload.length() >= 3) {
+            try {
+                String[] itemsList = activatePayload.split(" *; *");
+                LinkedHashMap<String, String> paramValue = null;
+                for (String it : itemsList) {
+                    String[] paramNameTk = it.split(" *= *");
+                    if (paramNameTk.length != 2)
+                        continue;
+
+                    try {
+                        String name = paramNameTk[0].trim();
+                        String value = paramNameTk[1].trim();
+
+                        if ("payload".equalsIgnoreCase(name)) {
+                            paramValue = new LinkedHashMap<>();
+                            payloadToActivate.put(value, paramValue);
+                        }
+                        else if (paramValue != null) {
+                            paramValue.put(name, value);
+                        }
                     }
-                    else if (paramValue != null) {
-                        paramValue.put(name, value);
+                    catch (Exception e) {
+                        printError(e.getMessage());
+                        e.printStackTrace();
                     }
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
+            catch (Exception e) {
+                printError(e.getMessage());
+                e.printStackTrace();
+            }
         }
-        catch (Exception e) {
-            e.printStackTrace();
+
+        print(getPayloadParseAsString());
+    }
+
+    private String getPayloadParseAsString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Payloads Set:");
+        for (String ent : payloadToActivate.keySet()) {
+            sb.append("\n  Payload: ").append(ent).append(" {");
+            HashMap<String, String> params = payloadToActivate.get(ent);
+            for (String v : params.keySet()) {
+                sb.append("\n    ").append(v).append("=").append(params.get(v)).append(";");
+            }
+            sb.append("\n  }");
         }
+        sb.append("\n End Payloads Set");
+        return sb.toString();
     }
 
     private void activatePayload() {
@@ -1354,7 +1375,8 @@ public class DistressSurvey extends TimedFSM {
         }
         
         if (arrivedXY()) {
-            if (surveySideOrAround || surfacePointIdx.isMaxIndex()) {
+            if (surveySideOrAround && surveyPattern == SurveyPatternEnum.DEFAULT
+                    || surfacePointIdx.isMaxIndex()) {
                 goSurfaceTask = GoSurfaceTaskEnum.END_OP;
                 deactivatePayload();
                 return this::goSurfaceState;
@@ -1434,32 +1456,27 @@ public class DistressSurvey extends TimedFSM {
             PojoConfig.writeProperties(new DistressSurvey(), file);
             System.exit(0);         
         }
-        
+
+        System.out.println("Distress Survey starting...");
+
         Properties props = new Properties();
         props.load(new FileInputStream(file));
                 
         DistressSurvey tracker = PojoConfig.create(DistressSurvey.class, props);
-        tracker.init();
 
-        System.out.println("Distress Survey started with settings:");
+        tracker.print("Distress Survey started");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Distress Survey read the following settings:");
         for (Field f : tracker.getClass().getDeclaredFields()) {
             Parameter p = f.getAnnotation(Parameter.class);
             if (p != null) {
-                System.out.println(f.getName() + "=" + f.get(tracker));
+                sb.append("\n").append(f.getName()).append("=").append(f.get(tracker));
             }
         }
-        System.out.println();
+        System.out.println(sb.append("\n").toString());
 
-        System.out.print("Payloads Set:");
-        for (String ent : tracker.payloadToActivate.keySet()) {
-            System.out.print("\nPayload: " + ent + " (");
-            HashMap<String, String> params = tracker.payloadToActivate.get(ent);
-            for (String v : params.keySet()) {
-                System.out.print(v + "=" + params.get(v) + "; ");
-            }
-        }
-        System.out.println(" End Payloads Set");
-        
+        tracker.init();
 
         tracker.setPaused(false);
         
