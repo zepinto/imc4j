@@ -402,7 +402,9 @@ public class BackSeatServer extends NanoHTTPD {
     			        catch (Exception e) {
     			            e.printStackTrace();
     			        }
-    			    }
+				    } else {
+				        System.out.println("Backseat settings are not allowed at this moment. Wait till stop first.");
+					}
     				
     				String checkAutoStart = parms.get("autoStart");
     				autoStartOnPowerOn = checkAutoStart != null && checkAutoStart.equalsIgnoreCase("checked");
