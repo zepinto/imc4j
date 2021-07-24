@@ -3,17 +3,27 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 
-JARNAME="Distress.jar"
-# Uncomment to override the default ("<script_name>.props")
-# (Don't use a path, it must be on the script folder.)
+## Uncomment to override the default ("<script_name>.props")
+## (Don't use a path, it must be on the script folder.)
 #CONF_FILE_NAME="conf.props"
 
-# Settings to run with an HTTP server
-# Uncomment the following lines will result on running as HTTP server
-# Some backseats don't support this way of running
-#CLASS_BACKSEAT="pt.lsts.backseat.distress.DistressSurvey"
-#SERVER_PORT="8090"
+## Settings to run with an HTTP server
+## Uncomment the following lines will result on running as HTTP server
+## Some backseats don't support this way of running
+#RUN_AS_HTTP_SERVER="yes"
+## Set the http port to serve html
+# SERVER_PORT="8090"
+## To use hot config put "--hot-config" or leave it empty
 #HOT_CONFIG="--hot-config"
+
+## -- No need to change beyond this point -- ##
+JARNAME="Distress.jar"
+
+# Settings to run with an HTTP server
+CLASS_BACKSEAT="pt.lsts.backseat.distress.DistressSurvey"
+if [ -z ${SERVER_PORT+x} ]; then
+  SERVER_PORT="8090"
+fi
 
 PRG="$0"
 fillBASE_DIR()
@@ -37,24 +47,33 @@ fillBASE_DIR()
 }
 fillBASE_DIR
 
-NAME="$(basename "$PRG")"
+PRG_NAME="$(basename "$PRG" | sed  's/\..*$//')"
+NAME="$(echo "$PRG_NAME" | sed 's/[^ ]\+/\L\u&/g')"
 RUN_HOME="$BASE_DIR"
 
 if [ -z ${CONF_FILE_NAME} ]; then
-  CONF_FILE="$RUN_HOME/$(echo "$NAME" | sed  's/\..*$//').props"
+  CONF_FILE="$RUN_HOME/$(echo "$PRG_NAME" | sed  's/\..*$//').props"
 else
   CONF_FILE="$RUN_HOME/$CONF_FILE_NAME"
 fi
 
-JAVA="/opt/lsts/jre/bin/java"
+JAVA="$RUN_HOME/jre/bin/java"
 "$JAVA" -version > /dev/null 2>&1
 status=$?
 if [ $status -ne 0 ]; then
-  JAVA="$RUN_HOME/jre/bin/java"
+  JAVA="/opt/lsts/jre/bin/java"
   "$JAVA" -version > /dev/null 2>&1
   status=$?
   if [ $status -ne 0 ]; then
-    JAVA="java"
+    JAVA="$JAVA_HOME/bin/java"
+    "$JAVA" -version > /dev/null 2>&1
+    status=$?
+    if [ $status -ne 0 ]; then
+      JAVA="java"
+      which java || (echo "No Java found!!
+If installed put it on the PATH or set the JAVA_HOME var.
+A 'jre' folder is the preferred lookup for java, or the '/opt/lsts/jre/'." && exit 10)
+    fi
   fi
 fi
 
@@ -89,29 +108,30 @@ start()
     check_if_any_running
     wait_for_clock
 
+    echo "Running with Java command: '$JAVA'..."
+
     mkdir -p "$RUN_HOME/log"
     unlink "$LATEST" 2>/dev/null
     cd "$RUN_HOME"
-    if [ -z ${CLASS_BACKSEAT+x} ]; then
-       echo "Running with configuration '$CONF_FILE'..."
+    if [ -z ${RUN_AS_HTTP_SERVER+x} ]; then
+       echo "Running with configuration \n  -> '$CONF_FILE'..."
       "$JAVA" -jar $JARNAME "$CONF_FILE" < /dev/null > "$OUTPUT" 2>&1 &
       pid=$!
-      # pid=$($PSCMD | grep $JARNAME | grep java | awk '{print $1}' c={1:-1})
     else
-      echo "Running $CLASS_SERVER for $NAME with configuration '$CONF_FILE'..."
+      echo "Running $CLASS_SERVER for $NAME with configuration \n  -> '$CONF_FILE'..."
       "$JAVA" -cp .:"$JARNAME" $CLASS_SERVER $CLASS_BACKSEAT $SERVER_PORT \
             --config "$CONF_FILE" --log "$OUTPUT" $HOT_CONFIG < /dev/null > "$OUTPUT" 2>&1 &
       pid=$!
     fi
     echo $pid > "$PIDFILE"
-    echo "PID "$pid
+    echo "$NAME running with PID "$pid
     ln -s "$OUTPUT" "$LATEST"
 }
 
 wait_for_clock()
 {
    while [ $(date +%s) -lt 1507641301 ]; do
-     echo "Waiting for the clock to be synchronized... ($date)"
+     echo "Waiting for the clock to be synchronized... ($(date)"
      sleep 1
    done
 }
