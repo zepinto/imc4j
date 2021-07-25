@@ -53,7 +53,7 @@ fillBASE_DIR()
 fillBASE_DIR
 
 PRG_NAME="$(basename "$PRG" | sed  's/\..*$//')"
-NAME="$(echo "$PRG_NAME" | sed 's/[^ ]\+/\L\u&/g' | sed -E 's/^Lu(.*)/\1/')"
+NAME="$(echo "$PRG_NAME" | sed 's/[^ -_]\+/\L\u&/g' | sed -E 's/((^)|([-_]))Lu(.)/\3\4/g')"
 RUN_HOME="$BASE_DIR"
 
 if [ -z ${CONF_FILE_NAME} ]; then
