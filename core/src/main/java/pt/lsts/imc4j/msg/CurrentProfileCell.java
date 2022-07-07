@@ -6,37 +6,48 @@ import java.io.IOException;
 import java.lang.Exception;
 import java.lang.String;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
+import pt.lsts.imc4j.util.SerializationUtils;
 
 /**
- * Report of salinity.
+ * One Current measurement at a specific CellPosition.
  */
-public class Salinity extends Message {
-	public static final int ID_STATIC = 270;
+public class CurrentProfileCell extends Message {
+	public static final int ID_STATIC = 1015;
 
 	/**
-	 * The value of the salinity as measured by the sensor.
+	 * Distance of each measurment cell along the Z-axis in the coordintate frame.
 	 */
 	@FieldType(
 			type = IMCField.TYPE_FP32,
-			units = "PSU"
+			units = "m"
 	)
-	public float value = 0f;
+	public float cell_position = 0f;
+
+	/**
+	 * List of beams measurements at the current cell level.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_MESSAGELIST
+	)
+	public ArrayList<ADCPBeam> beams = new ArrayList<>();
 
 	public String abbrev() {
-		return "Salinity";
+		return "CurrentProfileCell";
 	}
 
 	public int mgid() {
-		return 270;
+		return 1015;
 	}
 
 	public byte[] serializeFields() {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeFloat(value);
+			_out.writeFloat(cell_position);
+			SerializationUtils.serializeMsgList(_out, beams);
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -47,7 +58,8 @@ public class Salinity extends Message {
 
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
-			value = buf.getFloat();
+			cell_position = buf.getFloat();
+			beams = SerializationUtils.deserializeMsgList(buf);
 		}
 		catch (Exception e) {
 			throw new IOException(e);

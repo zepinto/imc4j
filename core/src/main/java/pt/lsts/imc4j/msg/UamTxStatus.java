@@ -11,20 +11,34 @@ import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.util.SerializationUtils;
 
+/**
+ * This message shall be used by acoustic modem drivers to send updates
+ * on the transmission status of data frames.
+ */
 public class UamTxStatus extends Message {
 	public static final int ID_STATIC = 816;
 
+	/**
+	 * The sequence identifier of the frame transmission request.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT16
 	)
 	public int seq = 0;
 
+	/**
+	 * Frame transmission status.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT8,
 			units = "Enumerated"
 	)
 	public VALUE value = VALUE.values()[0];
 
+	/**
+	 * Where applicable this field shall contain a human-readable message
+	 * explaining the error.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT
 	)

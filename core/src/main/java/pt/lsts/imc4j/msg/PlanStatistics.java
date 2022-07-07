@@ -40,7 +40,7 @@ public class PlanStatistics extends Message {
 	public EnumSet<PROPERTIES> properties = EnumSet.noneOf(PROPERTIES.class);
 
 	/**
-	 * Maneuver and plan duration statistics in seconds, for example: “Total=1000,Goto1=20,Rows=980”
+	 * Maneuver and plan duration statistics in seconds, for example: Total=1000,Goto1=20,Rows=980
 	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT,
@@ -49,7 +49,7 @@ public class PlanStatistics extends Message {
 	public TupleList durations = new TupleList("");
 
 	/**
-	 * Distances travelled in meters in each maneuver and/or total: “Total=2000,Rows=1800,Elevator=200”
+	 * Distances travelled in meters in each maneuver and/or total: Total=2000,Rows=1800,Elevator=200
 	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT,
@@ -58,7 +58,7 @@ public class PlanStatistics extends Message {
 	public TupleList distances = new TupleList("");
 
 	/**
-	 * List of components active by plan actions during the plan and time active in seconds: “Sidescan=100,Camera Module=150”
+	 * List of components active by plan actions during the plan and time active in seconds: Sidescan=100,Camera Module=150
 	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT,
@@ -67,7 +67,7 @@ public class PlanStatistics extends Message {
 	public TupleList actions = new TupleList("");
 
 	/**
-	 * Amount of fuel spent, in battery percentage, by different parcels (if applicable): “Total=35,Hotel=5,Payload=10,Motion=20,IMU=0”
+	 * Amount of fuel spent, in battery percentage, by different parcels (if applicable): Total=35,Hotel=5,Payload=10,Motion=20,IMU=0
 	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT,

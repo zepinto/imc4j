@@ -8,35 +8,44 @@ import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
+import pt.lsts.imc4j.util.SerializationUtils;
 
 /**
- * Report of salinity.
+ * Current state of a GPIO.
  */
-public class Salinity extends Message {
-	public static final int ID_STATIC = 270;
+public class GpioState extends Message {
+	public static final int ID_STATIC = 2000;
 
 	/**
-	 * The value of the salinity as measured by the sensor.
+	 * GPIO Name.
 	 */
 	@FieldType(
-			type = IMCField.TYPE_FP32,
-			units = "PSU"
+			type = IMCField.TYPE_PLAINTEXT
 	)
-	public float value = 0f;
+	public String name = "";
+
+	/**
+	 * Logical level of the GPIO.
+	 */
+	@FieldType(
+			type = IMCField.TYPE_UINT8
+	)
+	public int value = 0;
 
 	public String abbrev() {
-		return "Salinity";
+		return "GpioState";
 	}
 
 	public int mgid() {
-		return 270;
+		return 2000;
 	}
 
 	public byte[] serializeFields() {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeFloat(value);
+			SerializationUtils.serializePlaintext(_out, name);
+			_out.writeByte(value);
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -47,7 +56,8 @@ public class Salinity extends Message {
 
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
-			value = buf.getFloat();
+			name = SerializationUtils.deserializePlaintext(buf);
+			value = buf.get() & 0xFF;
 		}
 		catch (Exception e) {
 			throw new IOException(e);

@@ -8,35 +8,36 @@ import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
+import pt.lsts.imc4j.util.SerializationUtils;
 
 /**
- * Report of salinity.
+ * Request the state of a given GPIO. The receiving entity shall reply
+ * with a GpioState message.
  */
-public class Salinity extends Message {
-	public static final int ID_STATIC = 270;
+public class GpioStateGet extends Message {
+	public static final int ID_STATIC = 2001;
 
 	/**
-	 * The value of the salinity as measured by the sensor.
+	 * GPIO Name.
 	 */
 	@FieldType(
-			type = IMCField.TYPE_FP32,
-			units = "PSU"
+			type = IMCField.TYPE_PLAINTEXT
 	)
-	public float value = 0f;
+	public String name = "";
 
 	public String abbrev() {
-		return "Salinity";
+		return "GpioStateGet";
 	}
 
 	public int mgid() {
-		return 270;
+		return 2001;
 	}
 
 	public byte[] serializeFields() {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeFloat(value);
+			SerializationUtils.serializePlaintext(_out, name);
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -47,7 +48,7 @@ public class Salinity extends Message {
 
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
-			value = buf.getFloat();
+			name = SerializationUtils.deserializePlaintext(buf);
 		}
 		catch (Exception e) {
 			throw new IOException(e);

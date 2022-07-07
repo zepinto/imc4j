@@ -12,25 +12,46 @@ import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.util.SerializationUtils;
 
+/**
+ * This message shall be sent to acoustic modem drivers to request
+ * transmission of a data frame via the acoustic channel.
+ */
 public class UamTxFrame extends Message {
 	public static final int ID_STATIC = 814;
 
+	/**
+	 * A sequence identifier that should be incremented for each
+	 * request. This number will then be used to issue transmission
+	 * status updates via the message UamTxStatus.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT16
 	)
 	public int seq = 0;
 
+	/**
+	 * The canonical name of the destination system. If supported, the
+	 * special destination 'broadcast' shall be used to dispatch messages
+	 * to all nodes.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT
 	)
 	public String sys_dst = "";
 
+	/**
+	 * Transmission flags.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT8,
 			units = "Bitfield"
 	)
 	public EnumSet<FLAGS> flags = EnumSet.noneOf(FLAGS.class);
 
+	/**
+	 * The actual data frame to transmit. The data size shall not exceed
+	 * the MTU of the acoustic modem.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_RAWDATA
 	)
@@ -87,7 +108,9 @@ public class UamTxFrame extends Message {
 	public enum FLAGS {
 		UTF_ACK(0x01l),
 
-		UTF_DELAYED(0x02l);
+		UTF_DELAYED(0x02l),
+
+		UTF_FORCED(0x04l);
 
 		protected long value;
 

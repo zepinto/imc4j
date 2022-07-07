@@ -11,51 +11,47 @@ import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.util.SerializationUtils;
 
 /**
- * Acoustic range measurement.
+ * File fragment.
  */
-public class UamRxRange extends Message {
-	public static final int ID_STATIC = 817;
+public class FileFragment extends Message {
+	public static final int ID_STATIC = 912;
 
-	/**
-	 * The sequence identifier of the ranging request.
-	 */
-	@FieldType(
-			type = IMCField.TYPE_UINT16
-	)
-	public int seq = 0;
-
-	/**
-	 * The canonical name of the ranged system.
-	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT
 	)
-	public String sys = "";
+	public String id = "";
 
-	/**
-	 * The actual range. Negative values denote invalid measurements.
-	 */
 	@FieldType(
-			type = IMCField.TYPE_FP32,
-			units = "m"
+			type = IMCField.TYPE_UINT16
 	)
-	public float value = 0f;
+	public int frag_number = 0;
+
+	@FieldType(
+			type = IMCField.TYPE_UINT16
+	)
+	public int num_frags = 0;
+
+	@FieldType(
+			type = IMCField.TYPE_RAWDATA
+	)
+	public byte[] data = new byte[0];
 
 	public String abbrev() {
-		return "UamRxRange";
+		return "FileFragment";
 	}
 
 	public int mgid() {
-		return 817;
+		return 912;
 	}
 
 	public byte[] serializeFields() {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeShort(seq);
-			SerializationUtils.serializePlaintext(_out, sys);
-			_out.writeFloat(value);
+			SerializationUtils.serializePlaintext(_out, id);
+			_out.writeShort(frag_number);
+			_out.writeShort(num_frags);
+			SerializationUtils.serializeRawdata(_out, data);
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -66,9 +62,10 @@ public class UamRxRange extends Message {
 
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
-			seq = buf.getShort() & 0xFFFF;
-			sys = SerializationUtils.deserializePlaintext(buf);
-			value = buf.getFloat();
+			id = SerializationUtils.deserializePlaintext(buf);
+			frag_number = buf.getShort() & 0xFFFF;
+			num_frags = buf.getShort() & 0xFFFF;
+			data = SerializationUtils.deserializeRawdata(buf);
 		}
 		catch (Exception e) {
 			throw new IOException(e);

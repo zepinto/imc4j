@@ -10,26 +10,26 @@ import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
 
 /**
- * Report of salinity.
+ * Colored Dissolved Organic Matter measurement.
  */
-public class Salinity extends Message {
-	public static final int ID_STATIC = 270;
+public class ColoredDissolvedOrganicMatter extends Message {
+	public static final int ID_STATIC = 2003;
 
 	/**
-	 * The value of the salinity as measured by the sensor.
+	 * Colored Dissolved Organic Matter reading.
 	 */
 	@FieldType(
 			type = IMCField.TYPE_FP32,
-			units = "PSU"
+			units = "PPB"
 	)
 	public float value = 0f;
 
 	public String abbrev() {
-		return "Salinity";
+		return "ColoredDissolvedOrganicMatter";
 	}
 
 	public int mgid() {
-		return 270;
+		return 2003;
 	}
 
 	public byte[] serializeFields() {

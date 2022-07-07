@@ -12,25 +12,43 @@ import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
 import pt.lsts.imc4j.util.SerializationUtils;
 
+/**
+ * This message shall be dispatched by acoustic modem drivers each time
+ * a data frame is received over the acoustic channel.
+ */
 public class UamRxFrame extends Message {
 	public static final int ID_STATIC = 815;
 
+	/**
+	 * The canonical name of the node that transmitted the data frame. If
+	 * this name cannot be resolved the string 'unknown' shall be used.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT
 	)
 	public String sys_src = "";
 
+	/**
+	 * The canonical name of the destination node of the data frame. If
+	 * this name cannot be resolved the string 'unknown' shall be used.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_PLAINTEXT
 	)
 	public String sys_dst = "";
 
+	/**
+	 * Reception flags.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT8,
 			units = "Bitfield"
 	)
 	public EnumSet<FLAGS> flags = EnumSet.noneOf(FLAGS.class);
 
+	/**
+	 * The actual received data frame.
+	 */
 	@FieldType(
 			type = IMCField.TYPE_RAWDATA
 	)

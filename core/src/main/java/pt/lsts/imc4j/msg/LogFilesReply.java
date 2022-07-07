@@ -9,35 +9,51 @@ import java.lang.String;
 import java.nio.ByteBuffer;
 import pt.lsts.imc4j.annotations.FieldType;
 import pt.lsts.imc4j.annotations.IMCField;
+import pt.lsts.imc4j.util.SerializationUtils;
 
 /**
- * This message notifies the vehicle is ready for dead-reckoning missions.
+ * Files Data Reply.
  */
-public class AlignmentState extends Message {
-	public static final int ID_STATIC = 361;
+public class LogFilesReply extends Message {
+	public static final int ID_STATIC = 911;
 
 	/**
-	 * Alignment State.
+	 * Associated Request Id
+	 */
+	@FieldType(
+			type = IMCField.TYPE_UINT16
+	)
+	public int req_id = 0;
+
+	/**
+	 * Associated Request Type
 	 */
 	@FieldType(
 			type = IMCField.TYPE_UINT8,
 			units = "Enumerated"
 	)
-	public STATE state = STATE.values()[0];
+	public TYPE type = TYPE.values()[0];
+
+	@FieldType(
+			type = IMCField.TYPE_MESSAGE
+	)
+	public FileFragment data = null;
 
 	public String abbrev() {
-		return "AlignmentState";
+		return "LogFilesReply";
 	}
 
 	public int mgid() {
-		return 361;
+		return 911;
 	}
 
 	public byte[] serializeFields() {
 		try {
 			ByteArrayOutputStream _data = new ByteArrayOutputStream();
 			DataOutputStream _out = new DataOutputStream(_data);
-			_out.writeByte((int)(state != null? state.value() : 0));
+			_out.writeShort(req_id);
+			_out.writeByte((int)(type != null? type.value() : 0));
+			SerializationUtils.serializeInlineMsg(_out, data);
 			return _data.toByteArray();
 		}
 		catch (IOException e) {
@@ -48,33 +64,27 @@ public class AlignmentState extends Message {
 
 	public void deserializeFields(ByteBuffer buf) throws IOException {
 		try {
-			state = STATE.valueOf(buf.get() & 0xFF);
+			req_id = buf.getShort() & 0xFFFF;
+			type = TYPE.valueOf(buf.get() & 0xFF);
+			data = SerializationUtils.deserializeInlineMsg(buf);
 		}
 		catch (Exception e) {
 			throw new IOException(e);
 		}
 	}
 
-	public enum STATE {
-		AS_NOT_ALIGNED(0l),
+	public enum TYPE {
+		LFRTYPE_FETCH(0l),
 
-		AS_ALIGNED(1l),
+		LFRTYPE_QUERY(1l),
 
-		AS_NOT_SUPPORTED(2l),
+		LFRTYPE_CLEAR(2l),
 
-		AS_ALIGNING(3l),
-
-		AS_WRONG_MEDIUM(4l),
-
-		AS_COARSE_ALIGNMENT(5l),
-
-		AS_FINE_ALIGNMENT(6l),
-
-		AS_SYSTEM_READY(7l);
+		LFRTYPE_CANCEL(3l);
 
 		protected long value;
 
-		STATE(long value) {
+		TYPE(long value) {
 			this.value = value;
 		}
 
@@ -82,13 +92,13 @@ public class AlignmentState extends Message {
 			return value;
 		}
 
-		public static STATE valueOf(long value) throws IllegalArgumentException {
-			for (STATE v : STATE.values()) {
+		public static TYPE valueOf(long value) throws IllegalArgumentException {
+			for (TYPE v : TYPE.values()) {
 				if (v.value == value) {
 					return v;
 				}
 			}
-			throw new IllegalArgumentException("Invalid value for STATE: "+value);
+			throw new IllegalArgumentException("Invalid value for TYPE: "+value);
 		}
 	}
 }
