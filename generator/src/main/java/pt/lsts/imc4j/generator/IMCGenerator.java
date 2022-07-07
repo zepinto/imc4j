@@ -38,7 +38,7 @@ public class IMCGenerator {
 
 	private static final String pkgMsgs = "pt.lsts.imc4j.msg";
 	private static final String pkgDefs = "pt.lsts.imc4j.def";
-	private static String outDir = "src";
+	private static String outDir = "core/src/main/java";
 
 
 	static LinkedHashMap<String, TypeSpec> bitfields = null;
@@ -725,7 +725,7 @@ public class IMCGenerator {
 			outDir = args[1];
 		}
 		else {
-			specsFile = new File("res/IMC.xml");
+			specsFile = new File("core/src/main/resources/IMC.xml");
 		}
 
 		File msgsDir = new File(outDir+File.separatorChar+pkgMsgs.replace('.', File.separatorChar));
